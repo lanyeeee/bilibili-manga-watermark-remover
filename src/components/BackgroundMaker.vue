@@ -127,7 +127,7 @@ function handleMouseUp(moveEventHandler: (event: MouseEvent) => void, upEventHan
 }
 
 async function onConfirm() {
-  await invoke('generate_black_or_white', {imagePath: srcImagePath, rectData: rectData, isBlack: props.isBlack})
+  await invoke('generate_background', {imagePath: srcImagePath, rectData: rectData, isBlack: props.isBlack})
 }
 
 </script>

@@ -9,7 +9,7 @@ fn greet(name: &str) -> String {
 }
 
 #[tauri::command]
-async fn generate_black_or_white(
+async fn generate_background(
     image_path: &str,
     rect_data: types::RectData,
     is_black: bool,
@@ -30,8 +30,8 @@ async fn generate_black_or_white(
             *count += 1;
         }
     }
-    // 找出出现次数最多的RGB值，即矩形框内的主要颜色
-    let dominant_rgb = *color_count
+    // 找出出现次数最多的RGB值，即矩形框内的主要颜色，作为背景颜色
+    let background_rgb = *color_count
         .into_iter()
         .max_by_key(|(_, count)| *count)
         .unwrap()
@@ -40,7 +40,7 @@ async fn generate_black_or_white(
     for y in 0..height {
         for x in 0..width {
             if x < left || x > right || y < top || y > bottom {
-                img.put_pixel(x, y, dominant_rgb);
+                img.put_pixel(x, y, background_rgb);
             }
         }
     }
@@ -64,7 +64,7 @@ fn main() {
         .plugin(tauri_plugin_shell::init())
         .invoke_handler(tauri::generate_handler![
             greet,
-            generate_black_or_white,
+            generate_background,
             read_file,
         ])
         .run(tauri::generate_context!())
