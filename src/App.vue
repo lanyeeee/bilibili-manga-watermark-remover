@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import WatermarkPicker from "./components/WatermarkPicker.vue";
+import BackgroundMaker from "./components/BackgroundMaker.vue";
 </script>
 
 <template>
   <div>
-    <watermark-picker :is-black="true"/>
-    <watermark-picker :is-black="false"/>
+    <background-maker :is-black="true"/>
+    <background-maker :is-black="false"/>
   </div>
 </template>
