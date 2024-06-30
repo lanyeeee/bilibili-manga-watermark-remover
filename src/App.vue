@@ -6,8 +6,8 @@ import BackgroundCropper from "./components/BackgroundCropper.vue";
 
 const mangaDir = ref<string>();
 const outputDir = ref<string>();
-const showBlackModal = ref(false);
-const showWhiteModal = ref(false);
+const showCropper = ref<boolean>(false);
+const isBlackCropper = ref<boolean>(false);
 
 
 async function removeWatermark() {
@@ -54,7 +54,17 @@ async function selectOutputDir() {
   outputDir.value = dirPath;
 }
 
-async function test(){
+function showBlackCropper() {
+  isBlackCropper.value = true;
+  showCropper.value = true;
+}
+
+function showWhiteCropper() {
+  isBlackCropper.value = false;
+  showCropper.value = true;
+}
+
+async function test() {
 }
 
 </script>
@@ -63,17 +73,14 @@ async function test(){
   <n-modal-provider>
     <div class="flex flex-col">
       <n-button @click="selectMangaDir">1.选择漫画文件夹</n-button>
-      <n-button @click="showBlackModal=true">2.框出黑色背景的水印</n-button>
-      <n-button @click="showWhiteModal=true">3.框出白色背景的水印</n-button>
+      <n-button @click="showBlackCropper">2.框出黑色背景的水印</n-button>
+      <n-button @click="showWhiteCropper">3.框出白色背景的水印</n-button>
       <n-button @click="selectOutputDir">4.选择输出文件夹</n-button>
       <n-button @click="removeWatermark">5.开始去水印</n-button>
       <n-button @click="test">测试</n-button>
     </div>
-    <n-modal v-model:show="showBlackModal" :mask-closable="false">
-      <background-cropper :is-black="true" :manga-dir="mangaDir" v-model:show="showBlackModal"/>
-    </n-modal>
-    <n-modal v-model:show="showWhiteModal" :mask-closable="false">
-      <background-cropper :is-black="false" :manga-dir="mangaDir" v-model:show="showWhiteModal"/>
+    <n-modal v-model:show="showCropper" :mask-closable="false">
+      <background-cropper :is-black="isBlackCropper" :manga-dir="mangaDir" v-model:show="showCropper"/>
     </n-modal>
   </n-modal-provider>
 </template>
