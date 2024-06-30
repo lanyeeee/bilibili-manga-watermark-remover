@@ -1,7 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::{fs, thread::sleep};
+use std::fs;
 
 use image::{ImageBuffer, RgbImage};
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
@@ -48,15 +48,15 @@ fn generate_background(image_path: &str, rect_data: types::RectData, is_black: b
     }
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 fn read_file(path: String) -> Result<Vec<u8>, String> {
     std::fs::read(&path).map_err(|err| err.to_string())
 }
 
 #[tauri::command(async)]
-fn remove_watermark(white_path: &str, black_path: &str, manga_dir: &str, output_dir: &str) {
-    let white = image::open(white_path).unwrap().to_rgb8();
-    let black = image::open(black_path).unwrap().to_rgb8();
+fn remove_watermark(manga_dir: &str, output_dir: &str) {
+    let white = image::open("white.png").unwrap().to_rgb8();
+    let black = image::open("black.png").unwrap().to_rgb8();
     let manga_dir = std::path::Path::new(manga_dir);
     let output_dir = std::path::Path::new(output_dir);
     // 用于将像素点的值限制在指定范围内
@@ -125,6 +125,12 @@ fn remove_watermark(white_path: &str, black_path: &str, manga_dir: &str, output_
         .unwrap();
 }
 
+#[tauri::command(async)]
+fn background_exists(is_black: bool) -> bool {
+    let path = if is_black { "black.png" } else { "white.png" };
+    std::path::Path::new(path).exists()
+}
+
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
@@ -132,7 +138,8 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             generate_background,
             read_file,
-            remove_watermark
+            remove_watermark,
+            background_exists,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

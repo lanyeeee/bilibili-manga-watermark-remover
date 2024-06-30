@@ -1,22 +1,24 @@
 <script setup lang="ts">
-import BackgroundMaker from "./components/BackgroundMaker.vue";
 import {invoke} from "@tauri-apps/api/core";
 import {ref} from "vue";
 import {open} from "@tauri-apps/plugin-dialog";
+import BackgroundCropper from "./components/BackgroundCropper.vue";
 
-const whitePath = ref<string>();
-const blackPath = ref<string>();
 const mangaDir = ref<string>();
 const outputDir = ref<string>();
+const showBlackModal = ref(false);
+const showWhiteModal = ref(false);
 
 
 async function removeWatermark() {
-  if (whitePath.value === undefined) {
-    console.error("请选择白底水印图片");
+  const blackExist: boolean = await invoke("background_exists", {isBlack: true});
+  const whiteExist: boolean = await invoke("background_exists", {isBlack: false});
+  if (!blackExist) {
+    console.error("请选择黑色背景图");
     return;
   }
-  if (blackPath.value === undefined) {
-    console.error("请选择黑底水印图片");
+  if (!whiteExist) {
+    console.error("请选择白色背景图");
     return;
   }
   if (mangaDir.value === undefined) {
@@ -29,29 +31,9 @@ async function removeWatermark() {
   }
 
   await invoke("remove_watermark", {
-    whitePath: whitePath.value,
-    blackPath: blackPath.value,
     mangaDir: mangaDir.value,
     outputDir: outputDir.value,
   });
-}
-
-async function selectWhitePath() {
-  const fileResponse = await open();
-  if (fileResponse === null) {
-    return;
-  }
-
-  whitePath.value = fileResponse.path;
-}
-
-async function selectBlackPath() {
-  const fileResponse = await open();
-  if (fileResponse === null) {
-    return;
-  }
-
-  blackPath.value = fileResponse.path;
 }
 
 async function selectMangaDir() {
@@ -72,18 +54,26 @@ async function selectOutputDir() {
   outputDir.value = dirPath;
 }
 
+async function test(){
+}
 
 </script>
 
 <template>
-  <div>
-    <background-maker :is-black="true"/>
-    <background-maker :is-black="false"/>
-  </div>
-  <button @click="selectWhitePath">选择白底水印图片</button>
-  <button @click="selectBlackPath">选择黑底水印图片</button>
-  <button @click="selectMangaDir">选择漫画文件夹</button>
-  <button @click="selectOutputDir">选择输出文件夹</button>
-  <button @click="removeWatermark">去水印</button>
-  <n-button class="w-full">测试</n-button>
+  <n-modal-provider>
+    <div class="flex flex-col">
+      <n-button @click="selectMangaDir">1.选择漫画文件夹</n-button>
+      <n-button @click="showBlackModal=true">2.框出黑色背景的水印</n-button>
+      <n-button @click="showWhiteModal=true">3.框出白色背景的水印</n-button>
+      <n-button @click="selectOutputDir">4.选择输出文件夹</n-button>
+      <n-button @click="removeWatermark">5.开始去水印</n-button>
+      <n-button @click="test">测试</n-button>
+    </div>
+    <n-modal v-model:show="showBlackModal" :mask-closable="false">
+      <background-cropper :is-black="true" :manga-dir="mangaDir" v-model:show="showBlackModal"/>
+    </n-modal>
+    <n-modal v-model:show="showWhiteModal" :mask-closable="false">
+      <background-cropper :is-black="false" :manga-dir="mangaDir" v-model:show="showWhiteModal"/>
+    </n-modal>
+  </n-modal-provider>
 </template>
