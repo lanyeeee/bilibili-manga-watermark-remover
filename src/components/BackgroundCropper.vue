@@ -6,7 +6,9 @@ import {open} from "@tauri-apps/plugin-dialog";
 
 const props = defineProps<{
   isBlack: boolean;
+  mangaDir: string | undefined;
 }>();
+const show = defineModel<boolean>("show", {required: true});
 
 const MASKER_OPACITY = 0.7;
 const maskerValue = computed(() => props.isBlack ? 255 : 0);
@@ -38,9 +40,9 @@ onMounted(() => {
     //设置canvas大小
     canvas.value.width = srcImage.width;
     canvas.value.height = srcImage.height;
-    canvasContainer.value.style.width = `${srcImage.width}px`;
-    canvasContainer.value.style.height = `${srcImage.height}px`;
     canvasContainer.value.style.display = "block";
+    canvasContainer.value.scrollTop = canvasContainer.value.scrollHeight;
+    canvasContainer.value.scrollLeft = canvasContainer.value.scrollWidth;
     // 绘制图片，并设置masker
     ctx.fillStyle = `rgba(${maskerValue.value}, ${maskerValue.value}, ${maskerValue.value}, ${MASKER_OPACITY})`;
     ctx.fillRect(0, 0, canvas.value.width, canvas.value.height);
@@ -50,7 +52,7 @@ onMounted(() => {
 });
 
 async function selectImage() {
-  const fileResponse = await open();
+  const fileResponse = await open({defaultPath: props.mangaDir});
   if (fileResponse === null) {
     // 用户取消选择文件
     return;
@@ -128,6 +130,7 @@ function handleMouseUp(moveEventHandler: (event: MouseEvent) => void, upEventHan
 
 async function onConfirm() {
   await invoke("generate_background", {imagePath: srcImagePath, rectData: rectData, isBlack: props.isBlack});
+  show.value = false;
 }
 
 </script>
@@ -135,10 +138,10 @@ async function onConfirm() {
 <template>
   <div>
     <button @click="selectImage">选择图片</button>
-    <div ref="canvasContainer" class="canvasContainer" style="display: none;">
+    <div ref="canvasContainer" class="overflow-auto hidden" style="height: 70vh;width: 90vw">
       <canvas ref="canvas" @mousedown="handleMouseDown"/>
     </div>
-    <button @click="onConfirm">确定</button>
+    <n-button type="primary" @click="onConfirm">确定</n-button>
+    <n-button type="info" @click="show=false">取消</n-button>
   </div>
-
 </template>
