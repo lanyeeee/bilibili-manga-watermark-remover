@@ -12,19 +12,19 @@ const outputDir = ref<string>();
 
 async function removeWatermark() {
   if (whitePath.value === undefined) {
-    console.error("请选择白底水印图片")
+    console.error("请选择白底水印图片");
     return;
   }
   if (blackPath.value === undefined) {
-    console.error("请选择黑底水印图片")
+    console.error("请选择黑底水印图片");
     return;
   }
   if (mangaDir.value === undefined) {
-    console.error("请选择漫画文件夹")
+    console.error("请选择漫画文件夹");
     return;
   }
   if (outputDir.value === undefined) {
-    console.error("请选择输出文件夹")
+    console.error("请选择输出文件夹");
     return;
   }
 
