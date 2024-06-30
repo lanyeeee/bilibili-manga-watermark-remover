@@ -7,7 +7,12 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
-    BackgroundMaker: typeof import('./src/components/BackgroundMaker.vue')['default']
+    BackgroundCropper: typeof import('./src/components/BackgroundCropper.vue')['default']
     NButton: typeof import('naive-ui')['NButton']
+    NModal: typeof import('naive-ui')['NModal']
+    NModalProvider: typeof import('naive-ui')['NModalProvider']
+    NStep: typeof import('naive-ui')['NStep']
+    NSteps: typeof import('naive-ui')['NSteps']
+    NText: typeof import('naive-ui')['NText']
   }
 }
