@@ -85,5 +85,5 @@ async function selectOutputDir() {
   <button @click="selectMangaDir">选择漫画文件夹</button>
   <button @click="selectOutputDir">选择输出文件夹</button>
   <button @click="removeWatermark">去水印</button>
-  <n-button>测试</n-button>
+  <n-button class="w-full">测试</n-button>
 </template>
