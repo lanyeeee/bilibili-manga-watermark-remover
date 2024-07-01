@@ -11,8 +11,6 @@ declare module 'vue' {
     NButton: typeof import('naive-ui')['NButton']
     NModal: typeof import('naive-ui')['NModal']
     NModalProvider: typeof import('naive-ui')['NModalProvider']
-    NStep: typeof import('naive-ui')['NStep']
-    NSteps: typeof import('naive-ui')['NSteps']
     NText: typeof import('naive-ui')['NText']
   }
 }
