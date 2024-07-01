@@ -19,6 +19,7 @@ image = "0.25.1"
 tauri-plugin-dialog = "2.0.0-beta.9"
 rayon = "1.10"
 jpeg-encoder = { version = "0.6.0", features = ["simd"] }
+walkdir = "2"
 
 [profile.release]
 strip = true      # Automatically strip symbols from the binary.
