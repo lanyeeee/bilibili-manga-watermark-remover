@@ -1,8 +1,6 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::path::Path;
-
 mod types;
 mod watermark;
 
@@ -18,7 +16,7 @@ fn read_file(path: String) -> Result<Vec<u8>, String> {
 
 #[tauri::command(async)]
 fn remove_watermark(manga_dir: &str, output_dir: &str) {
-    watermark::remove_manga_watermark(Path::new(manga_dir), Path::new(output_dir));
+    watermark::remove_manga_watermark(manga_dir, output_dir);
 }
 
 #[tauri::command(async)]
