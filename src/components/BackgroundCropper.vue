@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import {computed, onMounted, Ref, ref} from "vue";
+import {computed, onMounted, Ref, ref, watch} from "vue";
 import {RectData} from "../types.ts";
 import {invoke} from "@tauri-apps/api/core";
 import {open} from "@tauri-apps/plugin-dialog";
+import {event} from "@tauri-apps/api";
 
 const props = defineProps<{
   isBlack: boolean;
@@ -15,9 +16,22 @@ const maskerValue = computed(() => props.isBlack ? 255 : 0);
 
 const canvasContainer: Ref<HTMLDivElement | null> = ref(null);
 const canvas: Ref<HTMLCanvasElement | null> = ref(null);
+const srcImagePath = ref<string>();
+watch(srcImagePath, async () => {
+  const imageData: ArrayBuffer = await invoke("read_file", {path: srcImagePath.value});
+  // 转换为 Base64
+  const base64 = btoa(
+      new Uint8Array(imageData).reduce(
+          (data, byte) => data + String.fromCharCode(byte),
+          ""
+      )
+  );
+  // 创建数据 URL 并更新 imageSrc
+  srcImage.src = `data:image/jpeg;base64,${base64}`;
+});
+
 const srcImage: HTMLImageElement = new Image();
 let rectData: RectData = {left: 0, top: 0, right: 0, bottom: 0,};
-let srcImagePath: string = "";
 
 
 onMounted(() => {
@@ -37,18 +51,29 @@ onMounted(() => {
       console.error("canvasContainer or canvas is null");
       return;
     }
-    //设置canvas大小
+    //设置canvas大小并显示
     canvas.value.width = srcImage.width;
     canvas.value.height = srcImage.height;
-    canvasContainer.value.style.display = "block";
+    canvas.value.style.display = "block";
+    // 滚动到右下角
     canvasContainer.value.scrollTop = canvasContainer.value.scrollHeight;
     canvasContainer.value.scrollLeft = canvasContainer.value.scrollWidth;
-    // 绘制图片，并设置masker
+    // 在canvas上绘制图片，并设置masker
     ctx.fillStyle = `rgba(${maskerValue.value}, ${maskerValue.value}, ${maskerValue.value}, ${MASKER_OPACITY})`;
     ctx.fillRect(0, 0, canvas.value.width, canvas.value.height);
     ctx.globalCompositeOperation = "destination-over";
     ctx.drawImage(srcImage, 0, 0, srcImage.width, srcImage.height);
   };
+
+  event.listen("tauri://drop", (e: any) => {
+    const hoveredElement = document.elementFromPoint(e.payload.position.x, e.payload.position.y);
+    // 如果鼠标悬停的元素不是canvasContainer，则不处理
+    if (hoveredElement !== canvasContainer.value as HTMLElement) {
+      return;
+    }
+    // 如果鼠标悬停的元素是canvasContainer，则获取图片路径
+    srcImagePath.value = e.payload.paths[0];
+  });
 });
 
 async function selectImage() {
@@ -58,19 +83,7 @@ async function selectImage() {
     return;
   }
 
-  srcImagePath = fileResponse.path;
-
-  const imageData: ArrayBuffer = await invoke("read_file", {path: srcImagePath});
-  // 转换为 Base64
-  const base64 = btoa(
-      new Uint8Array(imageData).reduce(
-          (data, byte) => data + String.fromCharCode(byte),
-          ""
-      )
-  );
-
-  // 创建数据 URL 并更新 imageSrc
-  srcImage.src = `data:image/jpeg;base64,${base64}`;
+  srcImagePath.value = fileResponse.path;
 }
 
 function handleMouseDown(event: MouseEvent) {
@@ -129,7 +142,7 @@ function handleMouseUp(moveEventHandler: (event: MouseEvent) => void, upEventHan
 }
 
 async function onConfirm() {
-  await invoke("generate_background", {imagePath: srcImagePath, rectData: rectData, isBlack: props.isBlack});
+  await invoke("generate_background", {imagePath: srcImagePath.value, rectData: rectData, isBlack: props.isBlack});
   show.value = false;
 }
 
@@ -137,11 +150,12 @@ async function onConfirm() {
 
 <template>
   <div>
-    <button @click="selectImage">选择图片</button>
-    <div ref="canvasContainer" class="overflow-auto hidden" style="height: 70vh;width: 90vw">
-      <canvas ref="canvas" @mousedown="handleMouseDown"/>
+    <n-button type="primary" @click="selectImage">选择图片</n-button>
+    <div ref="canvasContainer" class="overflow-auto bg-gray" style="height: 70vh;width: 90vw">
+      <span v-if="srcImagePath===undefined">使用左上角的按钮选择图片，或者直接拖拽图片到这里</span>
+      <canvas class="hidden" ref="canvas" @mousedown="handleMouseDown"/>
     </div>
     <n-button type="primary" @click="onConfirm">确定</n-button>
-    <n-button type="info" @click="show=false">取消</n-button>
+    <n-button secondary type="primary" @click="show=false">取消</n-button>
   </div>
 </template>
