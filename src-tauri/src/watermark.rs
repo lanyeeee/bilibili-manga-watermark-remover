@@ -50,7 +50,9 @@ pub fn generate_background(image_path: &str, rect_data: &types::RectData, is_bla
 }
 
 /// 移除manga_dir目录下所有图片的水印，并保存到output_dir目录
-pub fn remove_manga_watermark(manga_dir: &Path, output_dir: &Path) {
+pub fn remove_manga_watermark(manga_dir: &str, output_dir: &str) {
+    let manga_dir = Path::new(manga_dir);
+    let output_dir = Path::new(output_dir);
     let white = image::open("white.png").unwrap().to_rgb8();
     let black = image::open("black.png").unwrap().to_rgb8();
     // 构建一个HashMap，key是目录的路径，value是该目录下的所有jpg文件的路径
