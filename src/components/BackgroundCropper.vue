@@ -13,20 +13,15 @@ const props = defineProps<{
 const show = defineModel<boolean>("show", {required: true});
 
 const MASKER_OPACITY = 0.7;
-const maskerValue = computed(() => props.isBlack ? 255 : 0);
+const maskerValue = computed<number>(() => props.isBlack ? 255 : 0);
 
 const canvasContainer: Ref<HTMLDivElement | null> = ref(null);
 const canvas: Ref<HTMLCanvasElement | null> = ref(null);
 const srcImagePath = ref<string>();
 watch(srcImagePath, async () => {
-  const imageData: ArrayBuffer = await invoke("read_file", {path: srcImagePath.value});
+  const imageData: ArrayBuffer = await invoke<ArrayBuffer>("read_file", {path: srcImagePath.value});
   // 转换为 Base64
-  const base64 = btoa(
-      new Uint8Array(imageData).reduce(
-          (data, byte) => data + String.fromCharCode(byte),
-          ""
-      )
-  );
+  const base64 = btoa(new Uint8Array(imageData).reduce((data, byte) => data + String.fromCharCode(byte), ""));
   // 创建数据 URL 并更新 imageSrc
   srcImage.src = `data:image/jpeg;base64,${base64}`;
   rectData = {left: 0, top: 0, right: 0, bottom: 0,};
@@ -63,15 +58,11 @@ onMounted(() => {
     ctx.drawImage(srcImage, 0, 0, srcImage.width, srcImage.height);
   };
   // 监听拖入事件
-  // TODO: 去除any
   event.listen(TauriEvent.DROP, (e: any) => {
     const hoveredElement = document.elementFromPoint(e.payload.position.x, e.payload.position.y);
-    // 如果鼠标悬停的元素不是canvasContainer或canvas，则返回
-    if (hoveredElement !== canvasContainer.value as HTMLElement && hoveredElement !== canvas.value as HTMLElement) {
-      return;
+    if (hoveredElement === canvasContainer.value as HTMLElement || hoveredElement === canvas.value as HTMLElement) {
+      srcImagePath.value = e.payload.paths[0];
     }
-    // 如果鼠标悬停的元素是canvasContainer，则获取图片路径
-    srcImagePath.value = e.payload.paths[0];
   });
 });
 
