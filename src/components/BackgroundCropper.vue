@@ -4,6 +4,7 @@ import {RectData} from "../types.ts";
 import {invoke} from "@tauri-apps/api/core";
 import {open} from "@tauri-apps/plugin-dialog";
 import {event} from "@tauri-apps/api";
+import {TauriEvent} from "@tauri-apps/api/event";
 
 const props = defineProps<{
   isBlack: boolean;
@@ -28,6 +29,7 @@ watch(srcImagePath, async () => {
   );
   // 创建数据 URL 并更新 imageSrc
   srcImage.src = `data:image/jpeg;base64,${base64}`;
+  rectData = {left: 0, top: 0, right: 0, bottom: 0,};
 });
 
 const srcImage: HTMLImageElement = new Image();
@@ -40,11 +42,7 @@ onMounted(() => {
     return;
   }
 
-  const ctx = canvas.value.getContext("2d");
-  if (ctx === null) {
-    console.error("ctx is null");
-    return;
-  }
+  const ctx = canvas.value.getContext("2d")!;
   // 图片加载完成后
   srcImage.onload = () => {
     if (canvasContainer.value === null || canvas.value === null) {
@@ -64,11 +62,12 @@ onMounted(() => {
     ctx.globalCompositeOperation = "destination-over";
     ctx.drawImage(srcImage, 0, 0, srcImage.width, srcImage.height);
   };
-
-  event.listen("tauri://drop", (e: any) => {
+  // 监听拖入事件
+  // TODO: 去除any
+  event.listen(TauriEvent.DROP, (e: any) => {
     const hoveredElement = document.elementFromPoint(e.payload.position.x, e.payload.position.y);
-    // 如果鼠标悬停的元素不是canvasContainer，则不处理
-    if (hoveredElement !== canvasContainer.value as HTMLElement) {
+    // 如果鼠标悬停的元素不是canvasContainer或canvas，则返回
+    if (hoveredElement !== canvasContainer.value as HTMLElement && hoveredElement !== canvas.value as HTMLElement) {
       return;
     }
     // 如果鼠标悬停的元素是canvasContainer，则获取图片路径
@@ -78,12 +77,9 @@ onMounted(() => {
 
 async function selectImage() {
   const fileResponse = await open({defaultPath: props.mangaDir});
-  if (fileResponse === null) {
-    // 用户取消选择文件
-    return;
+  if (fileResponse !== null) {
+    srcImagePath.value = fileResponse.path;
   }
-
-  srcImagePath.value = fileResponse.path;
 }
 
 function handleMouseDown(event: MouseEvent) {
@@ -95,11 +91,7 @@ function handleMouseDown(event: MouseEvent) {
   rectData.left = event.offsetX;
   rectData.top = event.offsetY;
 
-  const ctx = canvas.value.getContext("2d");
-  if (ctx === null) {
-    console.error("ctx is null");
-    return;
-  }
+  const ctx = canvas.value.getContext("2d")!;
   // 定义鼠标移动和鼠标释放事件的处理函数
   const moveEventHandler = (e: MouseEvent) => handleMouseMove(e, ctx);
   const upEventHandler = () => handleMouseUp(moveEventHandler, upEventHandler);
