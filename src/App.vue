@@ -2,8 +2,7 @@
 import {onMounted, ref} from "vue";
 import {open} from "@tauri-apps/plugin-dialog";
 import BackgroundCropper from "./components/BackgroundCropper.vue";
-import {JpgImage} from "./types.ts";
-import {commands} from "./bindings.ts";
+import {commands, JpgImage, MangaSize} from "./bindings.ts";
 
 const mangaDir = ref<string>();
 const outputDir = ref<string>();
@@ -11,6 +10,7 @@ const showCropper = ref<boolean>(false);
 const isBlackCropper = ref<boolean>(false);
 const blackImage = ref<JpgImage | null>(null);
 const whiteImage = ref<JpgImage | null>(null);
+const mangaSizes = ref<MangaSize[]>([]);
 
 onMounted(async () => {
   blackImage.value = await commands.openBackground(true);
@@ -48,6 +48,7 @@ async function selectMangaDir() {
   }
 
   mangaDir.value = dirPath;
+  mangaSizes.value = await commands.getMangaSizes(dirPath);
 }
 
 async function selectOutputDir() {
@@ -78,6 +79,9 @@ async function test() {
   <n-modal-provider>
     <div class="flex flex-col">
       <n-button @click="selectMangaDir">1.选择漫画文件夹</n-button>
+      <div v-for="size in mangaSizes" :key="size.count">
+        <span>{{ size.height }}x{{ size.width }}: {{ size.count }}</span>
+      </div>
       <n-button @click="showBlackCropper">2.框出黑色背景的水印</n-button>
       <n-button @click="showWhiteCropper">3.框出白色背景的水印</n-button>
       <n-button @click="selectOutputDir">4.选择输出文件夹</n-button>
