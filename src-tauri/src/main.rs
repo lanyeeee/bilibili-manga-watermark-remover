@@ -60,16 +60,52 @@ fn background_exists(is_black: bool) -> bool {
     std::path::Path::new(path).exists()
 }
 
+#[tauri::command(async)]
+#[specta::specta]
+fn get_manga_sizes(manga_dir: &str) -> Vec<types::MangaSize> {
+    // 用于存储不同尺寸的图片的数量
+    let mut size_count = std::collections::HashMap::new();
+    // 遍历漫画目录下的所有文件，统计不同尺寸的图片的数量
+    for entry in walkdir::WalkDir::new(std::path::Path::new(manga_dir))
+        .into_iter()
+        .filter_map(Result::ok)
+    {
+        let path = entry.into_path();
+        if path.is_file() && path.extension().map_or(false, |e| e == "jpg") {
+            let size = imagesize::size(&path).unwrap();
+            let (height, width) = (size.height as u32, size.width as u32);
+            let key = (height, width);
+            let count = size_count.entry(key).or_insert(0);
+            *count += 1;
+        }
+    }
+    // 将统计结果转换为MangaSize对象的Vec，并以count降序排序
+    let mut manga_sizes: Vec<types::MangaSize> = size_count
+        .into_iter()
+        .map(|((height, width), count)| types::MangaSize {
+            width: width,
+            height: height,
+            count: count,
+        })
+        .collect();
+    manga_sizes.sort_by(|a, b| b.count.cmp(&a.count));
+    // 返回MangaSize对象的Vec
+    manga_sizes
+}
+
 fn main() {
     let invoke_handler = {
-        let builder = tauri_specta::ts::builder().commands(tauri_specta::collect_commands![
-            generate_background,
-            read_file,
-            remove_watermark,
-            background_exists,
-            open_image,
-            open_background,
-        ]);
+        let builder = tauri_specta::ts::builder()
+            .commands(tauri_specta::collect_commands![
+                generate_background,
+                read_file,
+                remove_watermark,
+                background_exists,
+                open_image,
+                open_background,
+                get_manga_sizes,
+            ])
+            .header("// @ts-nocheck\n"); // <- This this appended to the start of the file;
 
         #[cfg(debug_assertions)] // <- Only export on non-release builds
         let builder = builder.path("../src/bindings.ts");

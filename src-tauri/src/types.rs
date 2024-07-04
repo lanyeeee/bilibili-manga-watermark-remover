@@ -16,3 +16,10 @@ pub struct JpgImage {
     pub src: String,
     pub path: String,
 }
+
+#[derive(Debug, Deserialize, Serialize, Type)]
+pub struct MangaSize {
+    pub width: u32,
+    pub height: u32,
+    pub count: u32,
+}
