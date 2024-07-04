@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import {invoke} from "@tauri-apps/api/core";
 import {onMounted, ref} from "vue";
 import {open} from "@tauri-apps/plugin-dialog";
 import BackgroundCropper from "./components/BackgroundCropper.vue";
 import {JpgImage} from "./types.ts";
+import {commands} from "./bindings.ts";
 
 const mangaDir = ref<string>();
 const outputDir = ref<string>();
@@ -13,14 +13,14 @@ const blackImage = ref<JpgImage | null>(null);
 const whiteImage = ref<JpgImage | null>(null);
 
 onMounted(async () => {
-  blackImage.value = await invoke<JpgImage | null>("open_background", {isBlack: true});
-  whiteImage.value = await invoke<JpgImage | null>("open_background", {isBlack: false});
+  blackImage.value = await commands.openBackground(true);
+  whiteImage.value = await commands.openBackground(false);
 });
 
 
 async function removeWatermark() {
-  const blackExist: boolean = await invoke("background_exists", {isBlack: true});
-  const whiteExist: boolean = await invoke("background_exists", {isBlack: false});
+  const blackExist = await commands.backgroundExists(true);
+  const whiteExist = await commands.backgroundExists(false);
   if (!blackExist) {
     console.error("请选择黑色背景图");
     return;
@@ -38,10 +38,7 @@ async function removeWatermark() {
     return;
   }
 
-  await invoke("remove_watermark", {
-    mangaDir: mangaDir.value,
-    outputDir: outputDir.value,
-  });
+  await commands.removeWatermark(mangaDir.value, outputDir.value);
 }
 
 async function selectMangaDir() {
