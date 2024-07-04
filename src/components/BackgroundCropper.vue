@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import {computed, onMounted, Ref, ref, watch} from "vue";
-import {JpgImage, RectData} from "../types.ts";
 import {open} from "@tauri-apps/plugin-dialog";
 import {event} from "@tauri-apps/api";
 import {TauriEvent} from "@tauri-apps/api/event";
-import {commands} from "../bindings.ts";
+import {commands, JpgImage, RectData} from "../bindings.ts";
 
 const props = defineProps<{
   isBlack: boolean;

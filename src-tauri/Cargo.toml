@@ -22,11 +22,11 @@ jpeg-encoder = { version = "0.6.0", features = ["simd"] }
 walkdir = "2"
 base64 = "0.22.1"
 specta = "=2.0.0-rc.12"
-tauri-specta = { version = "=2.0.0-rc.11", features = ["javascript", "typescript"] }
+tauri-specta = { version = "=2.0.0-rc.11", features = ["typescript"] }
+imagesize = "0.13.0"
 
 [profile.release]
 strip = true      # Automatically strip symbols from the binary.
 lto = true
 codegen-units = 1
 panic = "abort"
-
