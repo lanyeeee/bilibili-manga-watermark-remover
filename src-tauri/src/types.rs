@@ -1,4 +1,7 @@
-#[derive(Debug, serde::Deserialize, serde::Serialize)]
+use serde::{Deserialize, Serialize};
+use specta::Type;
+
+#[derive(Debug, Deserialize, Serialize, Type)]
 pub struct RectData {
     pub left: u32,
     pub top: u32,
@@ -6,7 +9,7 @@ pub struct RectData {
     pub bottom: u32,
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, Deserialize, Serialize, Type)]
 pub struct JpgImage {
     pub width: u32,
     pub height: u32,
