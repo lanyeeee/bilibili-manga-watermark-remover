@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {computed, onMounted, Ref, ref, watch} from "vue";
-import {RectData} from "../types.ts";
+import {JpgImage, RectData} from "../types.ts";
 import {invoke} from "@tauri-apps/api/core";
 import {open} from "@tauri-apps/plugin-dialog";
 import {event} from "@tauri-apps/api";
@@ -11,6 +11,8 @@ const props = defineProps<{
   mangaDir: string | undefined;
 }>();
 const show = defineModel<boolean>("show", {required: true});
+const blackImage = defineModel<JpgImage | null>("blackImage", {required: true});
+const whiteImage = defineModel<JpgImage | null>("whiteImage", {required: true});
 
 const MASKER_OPACITY = 0.7;
 const maskerValue = computed<number>(() => props.isBlack ? 255 : 0);
@@ -19,11 +21,8 @@ const canvasContainer: Ref<HTMLDivElement | null> = ref(null);
 const canvas: Ref<HTMLCanvasElement | null> = ref(null);
 const srcImagePath = ref<string>();
 watch(srcImagePath, async () => {
-  const imageData: ArrayBuffer = await invoke<ArrayBuffer>("read_file", {path: srcImagePath.value});
-  // 转换为 Base64
-  const base64 = btoa(new Uint8Array(imageData).reduce((data, byte) => data + String.fromCharCode(byte), ""));
-  // 创建数据 URL 并更新 imageSrc
-  srcImage.src = `data:image/jpeg;base64,${base64}`;
+  const jpgImage = await invoke<JpgImage>("open_image", {path: srcImagePath.value});
+  srcImage.src = jpgImage.src;
   rectData = {left: 0, top: 0, right: 0, bottom: 0,};
 });
 
@@ -36,6 +35,8 @@ onMounted(() => {
     console.error("canvas is null");
     return;
   }
+  console.log(blackImage)
+  console.log(whiteImage)
 
   const ctx = canvas.value.getContext("2d")!;
   // 图片加载完成后
@@ -138,7 +139,9 @@ async function onConfirm() {
       <span v-if="srcImagePath===undefined">使用左上角的按钮选择图片，或者直接拖拽图片到这里</span>
       <canvas class="hidden" ref="canvas" @mousedown="handleMouseDown"/>
     </div>
-    <n-button type="primary" @click="onConfirm">确定</n-button>
-    <n-button secondary type="primary" @click="show=false">取消</n-button>
+    <div class="flex flex-justify-end">
+      <n-button type="primary" @click="onConfirm">确定</n-button>
+      <n-button secondary type="primary" @click="show=false">取消</n-button>
+    </div>
   </div>
 </template>
