@@ -5,16 +5,19 @@ mod types;
 mod watermark;
 
 #[tauri::command(async)]
+#[specta::specta]
 fn generate_background(image_path: &str, rect_data: types::RectData, is_black: bool) {
     watermark::generate_background(image_path, &rect_data, is_black);
 }
 
 #[tauri::command(async)]
+#[specta::specta]
 fn read_file(path: String) -> Result<Vec<u8>, String> {
     std::fs::read(&path).map_err(|err| err.to_string())
 }
 
 #[tauri::command(async)]
+#[specta::specta]
 fn open_image(path: String) -> Option<types::JpgImage> {
     let img = image::open(&path).ok()?.to_rgb8();
     // 获取图片的宽高
@@ -38,34 +41,45 @@ fn open_image(path: String) -> Option<types::JpgImage> {
 }
 
 #[tauri::command(async)]
+#[specta::specta]
 fn open_background(is_black: bool) -> Option<types::JpgImage> {
     let path = if is_black { "black.png" } else { "white.png" };
     open_image(path.to_string())
 }
 
 #[tauri::command(async)]
+#[specta::specta]
 fn remove_watermark(manga_dir: &str, output_dir: &str) {
     watermark::remove_manga_watermark(manga_dir, output_dir);
 }
 
 #[tauri::command(async)]
+#[specta::specta]
 fn background_exists(is_black: bool) -> bool {
     let path = if is_black { "black.png" } else { "white.png" };
     std::path::Path::new(path).exists()
 }
 
 fn main() {
-    tauri::Builder::default()
-        .plugin(tauri_plugin_dialog::init())
-        .plugin(tauri_plugin_shell::init())
-        .invoke_handler(tauri::generate_handler![
+    let invoke_handler = {
+        let builder = tauri_specta::ts::builder().commands(tauri_specta::collect_commands![
             generate_background,
             read_file,
             remove_watermark,
             background_exists,
             open_image,
             open_background,
-        ])
+        ]);
+
+        #[cfg(debug_assertions)] // <- Only export on non-release builds
+        let builder = builder.path("../src/bindings.ts");
+
+        builder.build().unwrap()
+    };
+    tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_shell::init())
+        .invoke_handler(invoke_handler)
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import {computed, onMounted, Ref, ref, watch} from "vue";
 import {JpgImage, RectData} from "../types.ts";
-import {invoke} from "@tauri-apps/api/core";
 import {open} from "@tauri-apps/plugin-dialog";
 import {event} from "@tauri-apps/api";
 import {TauriEvent} from "@tauri-apps/api/event";
+import {commands} from "../bindings.ts";
 
 const props = defineProps<{
   isBlack: boolean;
@@ -21,7 +21,14 @@ const canvasContainer: Ref<HTMLDivElement | null> = ref(null);
 const canvas: Ref<HTMLCanvasElement | null> = ref(null);
 const srcImagePath = ref<string>();
 watch(srcImagePath, async () => {
-  const jpgImage = await invoke<JpgImage>("open_image", {path: srcImagePath.value});
+  if (srcImagePath.value === undefined) {
+    return;
+  }
+  const jpgImage = await commands.openImage(srcImagePath.value);
+  if (jpgImage === null) {
+    console.error(`打开图片 ${srcImagePath.value} 失败`);
+    return;
+  }
   srcImage.src = jpgImage.src;
   rectData = {left: 0, top: 0, right: 0, bottom: 0,};
 });
@@ -35,8 +42,8 @@ onMounted(() => {
     console.error("canvas is null");
     return;
   }
-  console.log(blackImage)
-  console.log(whiteImage)
+  console.log(blackImage);
+  console.log(whiteImage);
 
   const ctx = canvas.value.getContext("2d")!;
   // 图片加载完成后
@@ -126,7 +133,11 @@ function handleMouseUp(moveEventHandler: (event: MouseEvent) => void, upEventHan
 }
 
 async function onConfirm() {
-  await invoke("generate_background", {imagePath: srcImagePath.value, rectData: rectData, isBlack: props.isBlack});
+  if (srcImagePath.value === undefined) {
+    console.error("请先选择图片");
+    return;
+  }
+  await commands.generateBackground(srcImagePath.value, rectData, props.isBlack);
   show.value = false;
 }
 
