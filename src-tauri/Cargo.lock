@@ -317,6 +317,7 @@ checksum = "72b3254f16251a8381aa12e40e3c4d2f0199f8c6508fbecb9d91f575e0fbb8c6"
 name = "bili-manga-watermark-remover"
 version = "0.0.0"
 dependencies = [
+ "base64 0.22.1",
  "image",
  "jpeg-encoder",
  "rayon",

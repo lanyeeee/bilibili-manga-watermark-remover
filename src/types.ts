@@ -4,3 +4,10 @@ export interface RectData {
     right: number;
     bottom: number;
 }
+
+export interface JpgImage {
+    width: number;
+    height: number;
+    src: string;
+    path: string;
+}

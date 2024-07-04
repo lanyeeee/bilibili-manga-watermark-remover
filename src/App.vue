@@ -1,13 +1,21 @@
 <script setup lang="ts">
 import {invoke} from "@tauri-apps/api/core";
-import {ref} from "vue";
+import {onMounted, ref} from "vue";
 import {open} from "@tauri-apps/plugin-dialog";
 import BackgroundCropper from "./components/BackgroundCropper.vue";
+import {JpgImage} from "./types.ts";
 
 const mangaDir = ref<string>();
 const outputDir = ref<string>();
 const showCropper = ref<boolean>(false);
 const isBlackCropper = ref<boolean>(false);
+const blackImage = ref<JpgImage | null>(null);
+const whiteImage = ref<JpgImage | null>(null);
+
+onMounted(async () => {
+  blackImage.value = await invoke<JpgImage | null>("open_background", {isBlack: true});
+  whiteImage.value = await invoke<JpgImage | null>("open_background", {isBlack: false});
+});
 
 
 async function removeWatermark() {
@@ -80,7 +88,12 @@ async function test() {
       <n-button @click="test">测试</n-button>
     </div>
     <n-modal v-model:show="showCropper" :mask-closable="false">
-      <background-cropper :is-black="isBlackCropper" :manga-dir="mangaDir" v-model:show="showCropper"/>
+      <background-cropper :is-black="isBlackCropper"
+                          :manga-dir="mangaDir"
+                          v-model:show="showCropper"
+                          v-model:black-image="blackImage"
+                          v-model:white-image="whiteImage"
+      />
     </n-modal>
   </n-modal-provider>
 </template>
