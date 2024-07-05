@@ -6,19 +6,18 @@ mod watermark;
 
 #[tauri::command(async)]
 #[specta::specta]
-fn generate_background(image_path: &str, rect_data: types::RectData, is_black: bool) {
-    watermark::generate_background(image_path, &rect_data, is_black);
+fn generate_background(
+    manga_dir: &str,
+    rect_data: types::RectData,
+    height: u32,
+    width: u32,
+) -> (String, String) {
+    watermark::generate_background(manga_dir, &rect_data, height, width)
 }
 
 #[tauri::command(async)]
 #[specta::specta]
-fn read_file(path: String) -> Result<Vec<u8>, String> {
-    std::fs::read(&path).map_err(|err| err.to_string())
-}
-
-#[tauri::command(async)]
-#[specta::specta]
-fn open_image(path: String) -> Option<types::JpgImage> {
+fn open_image(path: String) -> Option<types::JpgImageData> {
     let img = image::open(&path).ok()?.to_rgb8();
     // 获取图片的宽高
     let (width, height) = img.dimensions();
@@ -32,19 +31,14 @@ fn open_image(path: String) -> Option<types::JpgImage> {
     // 构建图片的src属性
     let src = format!("data:image/jpeg;base64,{base64}");
     // 返回JpgImage对象
-    Some(types::JpgImage {
-        width: width,
-        height: height,
-        src: src,
-        path: path,
+    Some(types::JpgImageData {
+        info: types::JpgImageInfo {
+            width,
+            height,
+            path,
+        },
+        src,
     })
-}
-
-#[tauri::command(async)]
-#[specta::specta]
-fn open_background(is_black: bool) -> Option<types::JpgImage> {
-    let path = if is_black { "black.png" } else { "white.png" };
-    open_image(path.to_string())
 }
 
 #[tauri::command(async)]
@@ -62,7 +56,7 @@ fn background_exists(is_black: bool) -> bool {
 
 #[tauri::command(async)]
 #[specta::specta]
-fn get_manga_sizes(manga_dir: &str) -> Vec<types::MangaSize> {
+fn get_image_size_count(manga_dir: &str) -> Vec<types::ImageSizeCount> {
     // 用于存储不同尺寸的图片的数量
     let mut size_count = std::collections::HashMap::new();
     // 遍历漫画目录下的所有文件，统计不同尺寸的图片的数量
@@ -73,24 +67,47 @@ fn get_manga_sizes(manga_dir: &str) -> Vec<types::MangaSize> {
         let path = entry.into_path();
         if path.is_file() && path.extension().map_or(false, |e| e == "jpg") {
             let size = imagesize::size(&path).unwrap();
-            let (height, width) = (size.height as u32, size.width as u32);
-            let key = (height, width);
+            let key = (size.height as u32, size.width as u32);
             let count = size_count.entry(key).or_insert(0);
             *count += 1;
         }
     }
-    // 将统计结果转换为MangaSize对象的Vec，并以count降序排序
-    let mut manga_sizes: Vec<types::MangaSize> = size_count
+    // 将统计结果转换为Vec<ImageSizeCount>
+    let mut image_size_count: Vec<types::ImageSizeCount> = size_count
         .into_iter()
-        .map(|((height, width), count)| types::MangaSize {
-            width: width,
-            height: height,
-            count: count,
+        .map(|((height, width), count)| types::ImageSizeCount {
+            width,
+            height,
+            count,
         })
         .collect();
-    manga_sizes.sort_by(|a, b| b.count.cmp(&a.count));
-    // 返回MangaSize对象的Vec
-    manga_sizes
+    // 以count降序排序
+    image_size_count.sort_by(|a, b| b.count.cmp(&a.count));
+    // 返回结果
+    image_size_count
+}
+
+#[tauri::command(async)]
+#[specta::specta]
+fn get_jpg_image_infos(manga_dir: &str) -> Vec<types::JpgImageInfo> {
+    // 用于存储jpg图片的信息
+    let mut jpg_image_infos = vec![];
+    // 遍历漫画目录下的所有文件，获取jpg图片的信息
+    for entry in walkdir::WalkDir::new(std::path::Path::new(manga_dir))
+        .into_iter()
+        .filter_map(Result::ok)
+    {
+        let path = entry.into_path();
+        if path.is_file() && path.extension().map_or(false, |e| e == "jpg") {
+            let size = imagesize::size(&path).unwrap();
+            jpg_image_infos.push(types::JpgImageInfo {
+                height: size.height as u32,
+                width: size.width as u32,
+                path: path.to_str().unwrap().to_string(),
+            });
+        }
+    }
+    jpg_image_infos
 }
 
 fn main() {
@@ -98,20 +115,20 @@ fn main() {
         let builder = tauri_specta::ts::builder()
             .commands(tauri_specta::collect_commands![
                 generate_background,
-                read_file,
                 remove_watermark,
                 background_exists,
                 open_image,
-                open_background,
-                get_manga_sizes,
+                get_image_size_count,
+                get_jpg_image_infos,
             ])
-            .header("// @ts-nocheck\n"); // <- This this appended to the start of the file;
+            .header("// @ts-nocheck"); // 跳过检查，避免__makeEvents__错误
 
-        #[cfg(debug_assertions)] // <- Only export on non-release builds
+        #[cfg(debug_assertions)] // 只有在debug模式下才会生成bindings.ts
         let builder = builder.path("../src/bindings.ts");
 
         builder.build().unwrap()
     };
+
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
