@@ -1,51 +1,124 @@
 use std::{
     collections::HashMap,
+    env::current_exe,
     path::{Path, PathBuf},
+    sync::Mutex,
 };
 
 use image::{Rgb, RgbImage};
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
+use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
 use walkdir::{DirEntry, WalkDir};
 
 use crate::types;
 
-/// 生成带水印的背景图片
-pub fn generate_background(image_path: &str, rect_data: &types::RectData, is_black: bool) {
-    let mut img = image::open(image_path).unwrap().to_rgb8();
-    // 获取图片的宽高
-    let (width, height) = img.dimensions();
-    // 获取矩形框的左上角和右下角坐标
-    let (left, top) = (rect_data.left, rect_data.top);
-    let (right, bottom) = (rect_data.right, rect_data.bottom);
-    // 用于统计矩形框内每种颜色的像素点数量
-    let mut color_count = std::collections::HashMap::new();
-    // 统计矩形框内每种颜色的像素点数量
-    for y in top..=bottom {
-        for x in left..=right {
-            let pixel = img.get_pixel(x, y);
-            let count = color_count.entry(pixel).or_insert(0);
-            *count += 1;
-        }
-    }
-    // 找出出现次数最多的RGB值，即矩形框内的主要颜色，作为背景颜色
-    let background_rgb = *color_count
+pub fn generate_background(
+    manga_dir: &str,
+    rect_data: &types::RectData,
+    height: u32,
+    width: u32,
+) -> (String, String) {
+    // 遍历manga_dir目录下的所有jpg文件，收集尺寸符合要求的图片的路径
+    let image_paths: Vec<PathBuf> = WalkDir::new(Path::new(manga_dir))
         .into_iter()
-        .max_by_key(|(_, count)| *count)
-        .unwrap()
-        .0;
-    // 将不在矩形框内的其他像素点设为背景颜色
-    for y in 0..height {
-        for x in 0..width {
+        .filter_map(Result::ok)
+        .filter_map(|entry| {
+            let path = entry.into_path();
+            if !path.is_file() || path.extension()? != "jpg" {
+                return None;
+            }
+            let size = imagesize::size(&path).ok()?;
+            if size.width as u32 == width && size.height as u32 == height {
+                Some(path)
+            } else {
+                None
+            }
+        })
+        .collect();
+
+    let black_path: Mutex<Option<String>> = Mutex::new(None);
+    let white_path: Mutex<Option<String>> = Mutex::new(None);
+    // 并发遍历image_paths
+    image_paths.par_iter().for_each(|path| {
+        // 如果black_path和white_path都已经找到了，则直接跳过
+        if black_path.lock().unwrap().is_some() && white_path.lock().unwrap().is_some() {
+            return;
+        }
+        let mut img = image::open(path).unwrap().to_rgb8();
+        let (left, top) = (rect_data.left, rect_data.top);
+        let (right, bottom) = (rect_data.right, rect_data.bottom);
+        // 检查图片是否满足黑色或白色背景的条件
+        let is_black = match is_black_background(&img, rect_data) {
+            Some(is_black) => is_black,
+            None => return, // 如果既不是黑色背景也不是白色背景，则跳过
+        };
+        // 获取左上角的颜色
+        let color = *img.get_pixel(left, top);
+        // 把截图区域外的像素点设置为左上角的颜色
+        for (x, y, pixel) in img.enumerate_pixels_mut() {
             if x < left || x > right || y < top || y > bottom {
-                img.put_pixel(x, y, background_rgb);
+                *pixel = color;
             }
         }
+        let exe_path = current_exe().unwrap();
+        let exe_dir_path = exe_path.parent().unwrap();
+        let filename = if is_black { "black.png" } else { "white.png" };
+        let output_path = exe_dir_path.join(filename);
+        // 保存黑色背景或白色背景的图片
+        let mut background_path = if is_black {
+            black_path.lock().unwrap()
+        } else {
+            white_path.lock().unwrap()
+        };
+        // 如果background_path是None，则把output_path赋值给background_path，并保存图片
+        if background_path.is_none() {
+            *background_path = Some(output_path.to_str().unwrap().to_string());
+            // 因为save是耗时操作，所以在这里手动释放锁
+            drop(background_path);
+            img.save(&output_path).unwrap();
+        }
+    });
+    // 获取黑色背景和白色背景的图片路径
+    let black_path = black_path.lock().unwrap().as_ref().unwrap().clone();
+    let white_path = white_path.lock().unwrap().as_ref().unwrap().clone();
+    // 返回黑色背景和白色背景的图片路径
+    (black_path, white_path)
+}
+
+/// 检查图片是否满足黑色或白色背景的条件，如果为None则表示既不满足黑色背景的条件也不满足白色背景的条件
+fn is_black_background(img: &RgbImage, rect_data: &types::RectData) -> Option<bool> {
+    let (left, top) = (rect_data.left, rect_data.top);
+    let (right, bottom) = (rect_data.right, rect_data.bottom);
+    // 获取左上角的颜色
+    let color = *img.get_pixel(left, top);
+    let [r, g, b] = color.0;
+    // 如果r,g,b通道之间不相等，则不满足黑色背景或白色背景的条件
+    if r != g || g != b {
+        return None;
     }
-    // 保存生成的背景图片
-    if is_black {
-        img.save("black.png").unwrap();
-    } else {
-        img.save("white.png").unwrap();
+    // 如果截图区域的左右两边的颜色有一个与左上角的颜色不同，则不满足黑色背景或白色背景的条件
+    for y in top..=bottom {
+        if img.get_pixel(left, y) != &color || img.get_pixel(right, y) != &color {
+            return None;
+        }
+    }
+    // 如果截图区域的上下两边的颜色有一个与左上角的颜色不同，则不满足黑色背景或白色背景的条件
+    for x in left..=right {
+        if img.get_pixel(x, top) != &color || img.get_pixel(x, bottom) != &color {
+            return None;
+        }
+    }
+    // 如果所有通道的值都小于25，则认为是黑色背景
+    let is_black = r <= 25;
+    // 如果所有通道的值都大于230，并且截图区域内的通道值都大于100(小于100一般是页码)，则认为是白色背景
+    let is_white = r >= 230
+        && img
+            .enumerate_pixels()
+            .filter(|(x, y, _)| x >= &left && x <= &right && y >= &top && y <= &bottom) //矩形区域内的像素
+            .all(|(_, _, pixel)| pixel.0[0] > 100); // 通道值大于100
+    match (is_black, is_white) {
+        (true, false) => Some(true),
+        (false, true) => Some(false),
+        _ => None,
     }
 }
 
@@ -70,7 +143,7 @@ pub fn remove_manga_watermark(manga_dir: &str, output_dir: &str) {
             // 去除水印
             remove_image_watermark(&white, &black, &mut img);
             // 保存去除水印后的图片(无论是否成功去除水印都会保存)
-            save_image(&img, &out_image_path);
+            save_jpg_image(&img, &out_image_path);
         });
     }
 }
@@ -134,8 +207,8 @@ fn remove_image_watermark(white: &RgbImage, black: &RgbImage, img: &mut RgbImage
     }
 }
 
-/// 保存图片到指定路径
-fn save_image(img: &RgbImage, path: &Path) {
+/// 保存jpg图片到指定路径
+fn save_jpg_image(img: &RgbImage, path: &Path) {
     // 保证输出目录存在
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent).unwrap();
