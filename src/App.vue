@@ -1,20 +1,14 @@
 <script setup lang="ts">
 import {onMounted, ref} from "vue";
 import {open} from "@tauri-apps/plugin-dialog";
-import BackgroundCropper from "./components/BackgroundCropper.vue";
-import {commands, JpgImage, MangaSize} from "./bindings.ts";
+import {commands, ImageSizeCount} from "./bindings.ts";
+import WatermarkCropper from "./components/WatermarkCropper.vue";
 
 const mangaDir = ref<string>();
 const outputDir = ref<string>();
-const showCropper = ref<boolean>(false);
-const isBlackCropper = ref<boolean>(false);
-const blackImage = ref<JpgImage | null>(null);
-const whiteImage = ref<JpgImage | null>(null);
-const mangaSizes = ref<MangaSize[]>([]);
+const imageSizeCounts = ref<ImageSizeCount[]>([]);
 
 onMounted(async () => {
-  blackImage.value = await commands.openBackground(true);
-  whiteImage.value = await commands.openBackground(false);
 });
 
 
@@ -42,13 +36,13 @@ async function removeWatermark() {
 }
 
 async function selectMangaDir() {
-  const dirPath = await open({directory: true});
-  if (dirPath === null) {
+  const selectedDirPath = await open({directory: true});
+  if (selectedDirPath === null) {
     return;
   }
-
-  mangaDir.value = dirPath;
-  mangaSizes.value = await commands.getMangaSizes(dirPath);
+  // 获取图片尺寸统计
+  imageSizeCounts.value = await commands.getImageSizeCount(selectedDirPath);
+  mangaDir.value = selectedDirPath;
 }
 
 async function selectOutputDir() {
@@ -60,16 +54,6 @@ async function selectOutputDir() {
   outputDir.value = dirPath;
 }
 
-function showBlackCropper() {
-  isBlackCropper.value = true;
-  showCropper.value = true;
-}
-
-function showWhiteCropper() {
-  isBlackCropper.value = false;
-  showCropper.value = true;
-}
-
 async function test() {
 }
 
@@ -79,22 +63,13 @@ async function test() {
   <n-modal-provider>
     <div class="flex flex-col">
       <n-button @click="selectMangaDir">1.选择漫画文件夹</n-button>
-      <div v-for="size in mangaSizes" :key="size.count">
+      <div v-for="size in imageSizeCounts" :key="size.count">
         <span>{{ size.height }}x{{ size.width }}: {{ size.count }}</span>
       </div>
-      <n-button @click="showBlackCropper">2.框出黑色背景的水印</n-button>
-      <n-button @click="showWhiteCropper">3.框出白色背景的水印</n-button>
+      <watermark-cropper :manga-dir="mangaDir" :image-size-counts="imageSizeCounts"/>
       <n-button @click="selectOutputDir">4.选择输出文件夹</n-button>
       <n-button @click="removeWatermark">5.开始去水印</n-button>
       <n-button @click="test">测试</n-button>
     </div>
-    <n-modal v-model:show="showCropper" :mask-closable="false">
-      <background-cropper :is-black="isBlackCropper"
-                          :manga-dir="mangaDir"
-                          v-model:show="showCropper"
-                          v-model:black-image="blackImage"
-                          v-model:white-image="whiteImage"
-      />
-    </n-modal>
   </n-modal-provider>
 </template>

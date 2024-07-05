@@ -7,9 +7,9 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
-    BackgroundCropper: typeof import('./src/components/BackgroundCropper.vue')['default']
     NButton: typeof import('naive-ui')['NButton']
-    NModal: typeof import('naive-ui')['NModal']
     NModalProvider: typeof import('naive-ui')['NModalProvider']
+    NSwitch: typeof import('naive-ui')['NSwitch']
+    WatermarkCropper: typeof import('./src/components/WatermarkCropper.vue')['default']
   }
 }

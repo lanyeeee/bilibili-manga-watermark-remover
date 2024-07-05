@@ -10,16 +10,21 @@ pub struct RectData {
 }
 
 #[derive(Debug, Deserialize, Serialize, Type)]
-pub struct JpgImage {
-    pub width: u32,
+pub struct ImageSizeCount {
     pub height: u32,
-    pub src: String,
+    pub width: u32,
+    pub count: u32,
+}
+
+#[derive(Debug, Deserialize, Serialize, Type)]
+pub struct JpgImageInfo {
+    pub height: u32,
+    pub width: u32,
     pub path: String,
 }
 
 #[derive(Debug, Deserialize, Serialize, Type)]
-pub struct MangaSize {
-    pub width: u32,
-    pub height: u32,
-    pub count: u32,
+pub struct JpgImageData {
+    pub info: JpgImageInfo,
+    pub src: String,
 }
