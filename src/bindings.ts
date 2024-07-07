@@ -7,8 +7,8 @@
 async generateBackground(mangaDir: string, rectData: RectData, height: number, width: number) : Promise<[string, string]> {
 return await TAURI_INVOKE("generate_background", { mangaDir, rectData, height, width });
 },
-async removeWatermark(mangaDir: string, outputDir: string) : Promise<void> {
-await TAURI_INVOKE("remove_watermark", { mangaDir, outputDir });
+async removeWatermark(mangaDir: string, outputDir: string) : Promise<string | null> {
+return await TAURI_INVOKE("remove_watermark", { mangaDir, outputDir });
 },
 async backgroundExists(isBlack: boolean) : Promise<boolean> {
 return await TAURI_INVOKE("background_exists", { isBlack });
