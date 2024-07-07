@@ -1,18 +1,27 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-
+#![warn(clippy::unwrap_used)]
 mod types;
+mod utils;
 mod watermark;
 
 #[tauri::command(async)]
 #[specta::specta]
+#[allow(clippy::needless_pass_by_value)]
 fn generate_background(
     manga_dir: &str,
     rect_data: types::RectData,
     height: u32,
     width: u32,
 ) -> (String, String) {
-    watermark::generate_background(manga_dir, &rect_data, height, width)
+    match watermark::generate_background(manga_dir, &rect_data, height, width) {
+        Ok((black_path, white_path)) => (black_path, white_path),
+        // FIXME: 处理异常
+        Err(err) => {
+            println!("{err:?}");
+            (String::new(), String::new())
+        }
+    }
 }
 
 #[tauri::command(async)]
@@ -33,8 +42,8 @@ fn open_image(path: String) -> Option<types::JpgImageData> {
     // 返回JpgImage对象
     Some(types::JpgImageData {
         info: types::JpgImageInfo {
-            width,
             height,
+            width,
             path,
         },
         src,
@@ -43,19 +52,37 @@ fn open_image(path: String) -> Option<types::JpgImageData> {
 
 #[tauri::command(async)]
 #[specta::specta]
-fn remove_watermark(manga_dir: &str, output_dir: &str) {
-    watermark::remove_manga_watermark(manga_dir, output_dir);
+fn remove_watermark(manga_dir: &str, output_dir: &str) -> Option<String> {
+    use std::fmt::Write;
+    match watermark::remove(manga_dir, output_dir) {
+        Ok(()) => None,
+        // FIXME: 处理异常
+        Err(err) => {
+            let msg = err
+                .chain()
+                .enumerate()
+                .fold(String::new(), |mut output, (i, e)| {
+                    let _ = writeln!(output, "{i}: {e}");
+                    output
+                });
+            Some(msg)
+        }
+    }
 }
 
 #[tauri::command(async)]
 #[specta::specta]
 fn background_exists(is_black: bool) -> bool {
-    let path = if is_black { "black.png" } else { "white.png" };
-    std::path::Path::new(path).exists()
+    let Ok(exe_dir_path) = utils::get_exe_dir_path() else {
+        return false;
+    };
+    let filename = if is_black { "black.png" } else { "white.png" };
+    exe_dir_path.join(filename).exists()
 }
 
 #[tauri::command(async)]
 #[specta::specta]
+#[allow(clippy::cast_possible_truncation)]
 fn get_image_size_count(manga_dir: &str) -> Vec<types::ImageSizeCount> {
     // 用于存储不同尺寸的图片的数量
     let mut size_count = std::collections::HashMap::new();
@@ -66,7 +93,9 @@ fn get_image_size_count(manga_dir: &str) -> Vec<types::ImageSizeCount> {
     {
         let path = entry.into_path();
         if path.is_file() && path.extension().map_or(false, |e| e == "jpg") {
-            let size = imagesize::size(&path).unwrap();
+            let Ok(size) = imagesize::size(&path) else {
+                continue;
+            };
             let key = (size.height as u32, size.width as u32);
             let count = size_count.entry(key).or_insert(0);
             *count += 1;
@@ -76,8 +105,8 @@ fn get_image_size_count(manga_dir: &str) -> Vec<types::ImageSizeCount> {
     let mut image_size_count: Vec<types::ImageSizeCount> = size_count
         .into_iter()
         .map(|((height, width), count)| types::ImageSizeCount {
-            width,
             height,
+            width,
             count,
         })
         .collect();
@@ -89,6 +118,7 @@ fn get_image_size_count(manga_dir: &str) -> Vec<types::ImageSizeCount> {
 
 #[tauri::command(async)]
 #[specta::specta]
+#[allow(clippy::cast_possible_truncation)]
 fn get_jpg_image_infos(manga_dir: &str) -> Vec<types::JpgImageInfo> {
     // 用于存储jpg图片的信息
     let mut jpg_image_infos = vec![];
@@ -99,18 +129,20 @@ fn get_jpg_image_infos(manga_dir: &str) -> Vec<types::JpgImageInfo> {
     {
         let path = entry.into_path();
         if path.is_file() && path.extension().map_or(false, |e| e == "jpg") {
-            let size = imagesize::size(&path).unwrap();
+            let Ok(size) = imagesize::size(&path) else {
+                continue;
+            };
             jpg_image_infos.push(types::JpgImageInfo {
                 height: size.height as u32,
                 width: size.width as u32,
-                path: path.to_str().unwrap().to_string(),
+                path: path.display().to_string(),
             });
         }
     }
     jpg_image_infos
 }
 
-fn main() {
+fn main() -> anyhow::Result<()> {
     let invoke_handler = {
         let builder = tauri_specta::ts::builder()
             .commands(tauri_specta::collect_commands![
@@ -126,7 +158,7 @@ fn main() {
         #[cfg(debug_assertions)] // 只有在debug模式下才会生成bindings.ts
         let builder = builder.path("../src/bindings.ts");
 
-        builder.build().unwrap()
+        builder.build()?
     };
 
     tauri::Builder::default()
@@ -135,4 +167,6 @@ fn main() {
         .invoke_handler(invoke_handler)
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+
+    Ok(())
 }
