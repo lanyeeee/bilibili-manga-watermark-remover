@@ -4,7 +4,6 @@ use serde::Serialize;
 use specta::Type;
 use std::collections::HashMap;
 use std::fmt::Write;
-use std::io::Cursor;
 use std::path::Path;
 use tauri::ipc::Invoke;
 use tauri::Wry;
@@ -75,19 +74,14 @@ fn remove_watermark(manga_dir: &str, output_dir: &str) -> CommandResult<()> {
 
 #[tauri::command(async)]
 #[specta::specta]
+#[allow(clippy::cast_possible_truncation)]
 fn open_image(path: String) -> CommandResult<types::JpgImageData> {
-    let img = image::open(&path)
-        .context(format!("打开图片 {path} 失败"))
-        .map_err(anyhow::Error::from)?
-        .to_rgb8();
-    // 获取图片的宽高
-    let (width, height) = img.dimensions();
-    // 创建一个内存缓冲区，用于存储图片数据
-    let mut image_data: Vec<u8> = vec![];
-    let mut cursor = Cursor::new(&mut image_data);
-    // 将图片数据写入内存缓冲区
-    img.write_to(&mut cursor, image::ImageFormat::Jpeg)
-        .context(format!("将图片 {path} 写入内存缓冲区失败"))
+    let size = imagesize::size(&path)
+        .context(format!("获取图片 {path} 的尺寸失败"))
+        .map_err(anyhow::Error::from)?;
+    let (height, width) = (size.height as u32, size.width as u32);
+    let image_data: Vec<u8> = std::fs::read(&path)
+        .context(format!("读取图片 {path} 失败"))
         .map_err(anyhow::Error::from)?;
     // 将图片数据转换为base64编码
     let base64 = base64::Engine::encode(&base64::engine::general_purpose::STANDARD, image_data);
