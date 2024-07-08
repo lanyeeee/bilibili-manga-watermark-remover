@@ -46,10 +46,8 @@ async function selectMangaDir() {
     return;
   }
   // 获取图片尺寸统计
-  console.log(mangaDir.value);
   imageSizeCounts.value = await commands.getImageSizeCount(selectedDirPath);
   mangaDir.value = selectedDirPath;
-  console.log(mangaDir.value);
 }
 
 async function selectOutputDir() {
@@ -74,7 +72,7 @@ async function test() {
       <div v-for="size in imageSizeCounts" :key="size.count">
         <span>{{ size.height }}x{{ size.width }}: {{ size.count }}</span>
       </div>
-      <watermark-cropper :manga-dir="mangaDir" :image-size-counts="imageSizeCounts"/>
+      <watermark-cropper v-show="mangaDir!==undefined" :manga-dir="mangaDir" :image-size-counts="imageSizeCounts"/>
       <n-button @click="selectOutputDir">4.选择输出文件夹</n-button>
       <n-button @click="removeWatermark">5.开始去水印</n-button>
       <n-button @click="test">测试</n-button>
