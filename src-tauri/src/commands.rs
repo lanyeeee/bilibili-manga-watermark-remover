@@ -10,7 +10,7 @@ use tauri::Wry;
 use walkdir::WalkDir;
 
 #[derive(Debug, Type)]
-pub struct CommandError(pub String);
+struct CommandError(pub String);
 impl Serialize for CommandError {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -32,7 +32,7 @@ impl From<anyhow::Error> for CommandError {
     }
 }
 
-pub type CommandResult<T> = Result<T, CommandError>;
+type CommandResult<T> = Result<T, CommandError>;
 
 pub fn invoke_handler() -> anyhow::Result<fn(invoke: Invoke) -> bool> {
     let builder = tauri_specta::ts::builder::<Wry>()
