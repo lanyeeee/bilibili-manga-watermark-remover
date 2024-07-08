@@ -36,13 +36,13 @@ watch(srcImagePath, async () => {
     return;
   }
   // 打开图片
-  const jpgImage = await commands.openImage(srcImagePath.value);
-  if (jpgImage === null) {
-    console.error(`打开图片 ${srcImagePath.value} 失败`);
-    return;
+  const result = await commands.openImage(srcImagePath.value);
+  if (result.status === "ok") {
+    srcImage.src = result.data.src;
+    rectData = null;
+  } else {
+    console.error(result.error);
   }
-  srcImage.src = jpgImage.src;
-  rectData = null;
 });
 // 监听 mangaDir 的变化，当路径变化时，获取对应路径下的所有jpg图片信息，并从中随机选择一张图片，将其路径赋值给srcImagePath
 watch(() => props.mangaDir, async () => {
@@ -164,12 +164,17 @@ async function onConfirm() {
     console.error("请选择漫画文件夹");
     return;
   }
-  //TODO: 生成黑色背景和白色背景的图片
+
   const height = props.imageSizeCounts[0].height;
   const width = props.imageSizeCounts[0].width;
-  const [blackPath, whitePath] = await commands.generateBackground(props.mangaDir, rectData, height, width);
-  console.log(blackPath);
-  console.log(whitePath);
+  const result = await commands.generateBackground(props.mangaDir, rectData, height, width);
+  if (result.status === "ok") {
+    const [blackPath, whitePath] = result.data;
+    console.log(blackPath);
+    console.log(whitePath);
+  } else {
+    console.error(result.error);
+  }
 }
 
 </script>
