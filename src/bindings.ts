@@ -4,17 +4,37 @@
          /** user-defined commands **/
 
          export const commands = {
-async generateBackground(mangaDir: string, rectData: RectData, height: number, width: number) : Promise<[string, string]> {
-return await TAURI_INVOKE("generate_background", { mangaDir, rectData, height, width });
+async generateBackground(mangaDir: string, rectData: RectData, height: number, width: number) : Promise<Result<[string, string], CommandError>> {
+try {
+    return { status: "ok", data: await TAURI_INVOKE("generate_background", { mangaDir, rectData, height, width }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 },
-async removeWatermark(mangaDir: string, outputDir: string) : Promise<string | null> {
-return await TAURI_INVOKE("remove_watermark", { mangaDir, outputDir });
+async removeWatermark(mangaDir: string, outputDir: string) : Promise<Result<null, CommandError>> {
+try {
+    return { status: "ok", data: await TAURI_INVOKE("remove_watermark", { mangaDir, outputDir }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 },
-async backgroundExists(isBlack: boolean) : Promise<boolean> {
-return await TAURI_INVOKE("background_exists", { isBlack });
+async backgroundExists(isBlack: boolean) : Promise<Result<boolean, CommandError>> {
+try {
+    return { status: "ok", data: await TAURI_INVOKE("background_exists", { isBlack }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 },
-async openImage(path: string) : Promise<JpgImageData | null> {
-return await TAURI_INVOKE("open_image", { path });
+async openImage(path: string) : Promise<Result<JpgImageData, CommandError>> {
+try {
+    return { status: "ok", data: await TAURI_INVOKE("open_image", { path }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 },
 async getImageSizeCount(mangaDir: string) : Promise<ImageSizeCount[]> {
 return await TAURI_INVOKE("get_image_size_count", { mangaDir });
@@ -34,6 +54,7 @@ return await TAURI_INVOKE("get_jpg_image_infos", { mangaDir });
 
 /** user-defined types **/
 
+export type CommandError = string
 export type ImageSizeCount = { height: number; width: number; count: number }
 export type JpgImageData = { info: JpgImageInfo; src: string }
 export type JpgImageInfo = { height: number; width: number; path: string }

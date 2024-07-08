@@ -1,4 +1,5 @@
 use crate::{types, utils};
+use anyhow::{anyhow, Context};
 use image::{Rgb, RgbImage};
 use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
 use std::sync::MutexGuard;
@@ -20,6 +21,7 @@ impl<T> IgnoreLockPoison<T> for Mutex<T> {
     }
 }
 
+/// 生成黑色背景和白色背景的水印图片
 #[allow(clippy::cast_possible_truncation)]
 pub fn generate_background(
     manga_dir: &str,
@@ -29,6 +31,7 @@ pub fn generate_background(
 ) -> anyhow::Result<(String, String)> {
     // 遍历manga_dir目录下的所有jpg文件，收集尺寸符合要求的图片的路径
     let image_paths: Vec<PathBuf> = WalkDir::new(Path::new(manga_dir))
+        .max_depth(2) // 一般第一层目录是章节目录，第二层目录是图片文件
         .into_iter()
         .filter_map(Result::ok)
         .filter_map(|entry| {
@@ -55,7 +58,9 @@ pub fn generate_background(
             if black_path.lock_or_panic().is_some() && white_path.lock_or_panic().is_some() {
                 return Ok(());
             }
-            let mut img = image::open(path)?.to_rgb8();
+            let mut img = image::open(path)
+                .context(format!("打开图片 {} 失败", path.display()))?
+                .to_rgb8();
             let (left, top) = (rect_data.left, rect_data.top);
             let (right, bottom) = (rect_data.right, rect_data.bottom);
             // 检查图片是否满足黑色或白色背景的条件
@@ -84,22 +89,87 @@ pub fn generate_background(
                 *background_path = Some(output_path.display().to_string());
                 // 因为save是耗时操作，所以在这里手动释放锁
                 drop(background_path);
-                img.save(&output_path)?;
+                img.save(&output_path)
+                    .context(format!("保存图片 {} 失败", output_path.display()))?;
             }
             Ok(())
         })?;
     // 获取黑色背景和白色背景的图片路径
     let Some(black_path) = black_path.lock_or_panic().take() else {
-        return Err(anyhow::anyhow!("black background not found"));
+        return Err(anyhow!("在漫画目录 {manga_dir} 下找不到合适的黑色背景图",));
     };
     let Some(white_path) = white_path.lock_or_panic().take() else {
-        return Err(anyhow::anyhow!("white background not found"));
+        return Err(anyhow!("在漫画目录 {manga_dir} 下找不到合适的白色背景图",));
     };
     // 返回黑色背景和白色背景的图片路径
     Ok((black_path, white_path))
 }
 
-/// 检查图片是否满足黑色或白色背景的条件，如果为None则表示既不满足黑色背景的条件也不满足白色背景的条件
+/// 移除`manga_dir`目录下所有图片的水印，并保存到`output_dir`目录
+pub fn remove(manga_dir: &str, output_dir: &str) -> anyhow::Result<()> {
+    let manga_dir = Path::new(manga_dir);
+    let manga_dir_without_name = manga_dir
+        .parent()
+        .ok_or(anyhow!("漫画目录 {} 的父目录不存在", manga_dir.display()))?;
+    let output_dir = Path::new(output_dir);
+    let exe_dir_path = utils::get_exe_dir_path()?;
+    let black_path = exe_dir_path.join("black.png");
+    let white_path = exe_dir_path.join("white.png");
+    let black = image::open(&black_path)
+        .context(format!("打开黑色背景图片  {} 失败", black_path.display()))?
+        .to_rgb8();
+    let white = image::open(&white_path)
+        .context(format!("打开白色背景图片 {} 失败:", white_path.display()))?
+        .to_rgb8();
+    // 构建一个HashMap，key是目录的路径，value是该目录下的所有jpg文件的路径
+    let mut directory_map: HashMap<PathBuf, Vec<PathBuf>> = HashMap::new();
+    // 遍历manga_dir目录下的所有文件和子目录
+    for entry in WalkDir::new(manga_dir).into_iter().filter_map(Result::ok) {
+        let entry: DirEntry = entry;
+        let path = entry.into_path();
+        // 如果是文件且是jpg文件则添加到directory_map中
+        if path.is_file() && path.extension().map_or(false, |e| e == "jpg") {
+            if let Some(parent) = path.parent() {
+                directory_map
+                    .entry(parent.to_path_buf())
+                    .or_default()
+                    .push(path);
+            }
+        }
+    }
+    // 遍历directory_map，对每个目录下的所有图片进行去除水印操作
+    for files in directory_map.values() {
+        // 使用rayon的并行迭代器，并行处理每个目录下的所有图片
+        files
+            .into_par_iter()
+            .try_for_each(|img_path| -> anyhow::Result<()> {
+                // 获取相对路径(漫画名/章节名/图片名)
+                let relative_path =
+                    img_path
+                        .strip_prefix(manga_dir_without_name)
+                        .context(format!(
+                            "{} 不是 {} 的父目录",
+                            manga_dir_without_name.display(),
+                            img_path.display()
+                        ))?;
+                // 构建输出图片的路径(输出目录/漫画名/章节名/图片名)
+                let out_image_path = output_dir.join(relative_path);
+                // 打开输入图片
+                let mut img = image::open(img_path)
+                    .context(format!("打开图片 {} 失败", img_path.display()))?
+                    .to_rgb8();
+                // 去除水印
+                remove_image_watermark(&white, &black, &mut img);
+                // 保存去除水印后的图片(无论是否成功去除水印都会保存)
+                save_jpg_image(&img, &out_image_path)
+                    .context(format!("保存图片 {} 失败", out_image_path.display()))?;
+                Ok(())
+            })?;
+    }
+    Ok(())
+}
+
+/// 检查图片`img`是否满足黑色背景的条件，如果返回`None`则表示既不满足黑色背景的条件也不满足白色背景的条件
 fn is_black_background(img: &RgbImage, rect_data: &types::RectData) -> Option<bool> {
     let (left, top) = (rect_data.left, rect_data.top);
     let (right, bottom) = (rect_data.right, rect_data.bottom);
@@ -137,58 +207,7 @@ fn is_black_background(img: &RgbImage, rect_data: &types::RectData) -> Option<bo
     }
 }
 
-/// 移除`manga_dir`目录下所有图片的水印，并保存到`output_dir`目录
-pub fn remove(manga_dir: &str, output_dir: &str) -> anyhow::Result<()> {
-    let manga_dir = Path::new(manga_dir);
-    let output_dir = Path::new(output_dir);
-    let exe_dir_path = utils::get_exe_dir_path()?;
-    let black_path = exe_dir_path.join("black.png");
-    let white_path = exe_dir_path.join("white.png");
-    let black = image::open(black_path)?.to_rgb8();
-    let white = image::open(white_path)?.to_rgb8();
-    // 构建一个HashMap，key是目录的路径，value是该目录下的所有jpg文件的路径
-    let mut directory_map: HashMap<PathBuf, Vec<PathBuf>> = HashMap::new();
-    // 遍历manga_dir目录下的所有文件和子目录
-    for entry in WalkDir::new(manga_dir).into_iter().filter_map(Result::ok) {
-        let entry: DirEntry = entry;
-        let path = entry.into_path();
-        // 如果是文件且是jpg文件则添加到directory_map中
-        if path.is_file() && path.extension().map_or(false, |e| e == "jpg") {
-            if let Some(parent) = path.parent() {
-                directory_map
-                    .entry(parent.to_path_buf())
-                    .or_default()
-                    .push(path);
-            }
-        }
-    }
-    // 遍历directory_map，对每个目录下的所有图片进行去除水印操作
-    for files in directory_map.values() {
-        // 使用rayon的并行迭代器，并行处理每个目录下的所有图片
-        files
-            .into_par_iter()
-            .try_for_each(|img_path| -> anyhow::Result<()> {
-                // 获取不带漫画名的漫画目录路径
-                let manga_dir_without_name = manga_dir
-                    .parent()
-                    .ok_or(anyhow::anyhow!("manga_dir parent not found"))?;
-                // 获取相对路径
-                let relative_path = img_path.strip_prefix(manga_dir_without_name)?;
-                // 构建输出图片的路径
-                let out_image_path = output_dir.join(relative_path);
-                // 打开输入图片
-                let mut img = image::open(img_path)?.to_rgb8();
-                // 去除水印
-                remove_image_watermark(&white, &black, &mut img);
-                // 保存去除水印后的图片(无论是否成功去除水印都会保存)
-                save_jpg_image(&img, &out_image_path)?;
-                Ok(())
-            })?;
-    }
-    Ok(())
-}
-
-/// 去除img的水印
+/// 去除`img`的水印
 #[allow(clippy::cast_possible_truncation)]
 #[allow(clippy::cast_lossless)]
 #[allow(clippy::cast_sign_loss)]
@@ -213,20 +232,22 @@ fn remove_image_watermark(white: &RgbImage, black: &RgbImage, img: &mut RgbImage
     }
 }
 
-/// 保存jpg图片到指定路径
+/// 保存jpg图片`img`到指定路径`path`
 #[allow(clippy::cast_possible_truncation)]
 fn save_jpg_image(img: &RgbImage, path: &Path) -> anyhow::Result<()> {
     // 保证输出目录存在
     if let Some(parent) = path.parent() {
-        std::fs::create_dir_all(parent)?;
+        std::fs::create_dir_all(parent).context(format!("创建目录 {} 失败", parent.display()))?;
     }
     // 保存去除水印后的图片，使用jpeg_encoder库的Encoder，效率更高
     let encoder = jpeg_encoder::Encoder::new_file(path, 97)?;
-    encoder.encode(
-        img.as_raw(),
-        img.width() as u16,
-        img.height() as u16,
-        jpeg_encoder::ColorType::Rgb,
-    )?;
+    encoder
+        .encode(
+            img.as_raw(),
+            img.width() as u16,
+            img.height() as u16,
+            jpeg_encoder::ColorType::Rgb,
+        )
+        .context(format!("编码图片 {} 失败", path.display()))?;
     Ok(())
 }
