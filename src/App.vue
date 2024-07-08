@@ -32,7 +32,12 @@ async function removeWatermark() {
     return;
   }
 
-  await commands.removeWatermark(mangaDir.value, outputDir.value);
+  let result = await commands.removeWatermark(mangaDir.value, outputDir.value);
+  if (result.status === "ok") {
+    console.log("去水印成功");
+  } else {
+    console.error(result.error);
+  }
 }
 
 async function selectMangaDir() {
@@ -41,8 +46,10 @@ async function selectMangaDir() {
     return;
   }
   // 获取图片尺寸统计
+  console.log(mangaDir.value);
   imageSizeCounts.value = await commands.getImageSizeCount(selectedDirPath);
   mangaDir.value = selectedDirPath;
+  console.log(mangaDir.value);
 }
 
 async function selectOutputDir() {
@@ -55,6 +62,7 @@ async function selectOutputDir() {
 }
 
 async function test() {
+  console.log(mangaDir.value)
 }
 
 </script>
