@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {commands, ImageSizeCount, JpgImageInfo, RectData} from "../bindings.ts";
+import {commands, ImageSizeCount, JpgImageData, JpgImageInfo, RectData} from "../bindings.ts";
 import {computed, onMounted, ref, watch} from "vue";
 
 const props = defineProps<{
@@ -7,15 +7,21 @@ const props = defineProps<{
   imageSizeCounts: ImageSizeCount[]
 }>();
 
+const blackBackground = defineModel<JpgImageData | undefined>("blackBackground", {required: true});
+const whiteBackground = defineModel<JpgImageData | undefined>("whiteBackground", {required: true});
+
 const MASKER_OPACITY = 0.7;
 const srcImage: HTMLImageElement = new Image();
 let rectData: RectData | null = null;
 let jpgImageInfos: JpgImageInfo[] = [];
 
+
 const canvasContainer = ref<HTMLDivElement>();
 const canvas = ref<HTMLCanvasElement>();
 const srcImagePath = ref<string>();
 const isDarkMasker = ref<boolean>(true);
+
+
 // 经过筛选后的jpg图片信息，只包含尺寸出现次数最多的图片
 const filteredJpgImageInfos = computed<JpgImageInfo[]>(() => {
   if (props.imageSizeCounts.length === 0) {
@@ -38,7 +44,7 @@ watch(srcImagePath, async () => {
   // 打开图片
   const result = await commands.openImage(srcImagePath.value);
   if (result.status === "ok") {
-    srcImage.src = result.data.src;
+    srcImage.src = `data:image/jpeg;base64,${result.data.base64}`;
     rectData = null;
   } else {
     console.error(result.error);
@@ -167,21 +173,34 @@ async function onConfirm() {
 
   const height = props.imageSizeCounts[0].height;
   const width = props.imageSizeCounts[0].width;
-  const result = await commands.generateBackground(props.mangaDir, rectData, height, width);
-  if (result.status === "ok") {
-    const [blackPath, whitePath] = result.data;
-    console.log(blackPath);
-    console.log(whitePath);
-  } else {
-    console.error(result.error);
+  const generateResult = await commands.generateBackground(props.mangaDir, rectData, height, width);
+  if (generateResult.status === "error") {
+    console.error(generateResult.error);
+    return;
   }
+
+  console.log("生成背景成功");
+  const openBlackResult = await commands.openBackground(true);
+  if (openBlackResult.status === "ok") {
+    blackBackground.value = openBlackResult.data;
+  } else {
+    console.error(openBlackResult.error);
+  }
+  const openWhiteResult = await commands.openBackground(false);
+  if (openWhiteResult.status === "ok") {
+    whiteBackground.value = openWhiteResult.data;
+  } else {
+    console.error(openWhiteResult.error);
+  }
+
 }
+
 
 </script>
 
 <template>
   <div>
-    <n-button type="primary" @click="srcImagePath = getRandomJpgImageInfo()?.path;">换一张</n-button>
+    <n-button type="primary" @click="srcImagePath=getRandomJpgImageInfo()?.path;">换一张</n-button>
     <n-switch v-model:value="isDarkMasker">
       <template #checked>
         深色遮罩
@@ -194,7 +213,7 @@ async function onConfirm() {
       <canvas class="hidden" ref="canvas" @mousedown="handleMouseDown"/>
     </div>
     <div class="flex flex-justify-end">
-      <n-button type="primary" @click="onConfirm">确定</n-button>
+      <n-button type="primary" @click="onConfirm">生成</n-button>
     </div>
   </div>
 </template>
