@@ -47,6 +47,7 @@ pub fn generate_background(
             }
         })
         .collect();
+    // TODO: 没必要再储存黑白背景的路径了
     // 用于存储黑色背景和白色背景的图片路径
     let black_path: Mutex<Option<String>> = Mutex::new(None);
     let white_path: Mutex<Option<String>> = Mutex::new(None);
@@ -106,20 +107,24 @@ pub fn generate_background(
 }
 
 /// 移除`manga_dir`目录下所有图片的水印，并保存到`output_dir`目录
-pub fn remove(manga_dir: &str, output_dir: &str) -> anyhow::Result<()> {
+pub fn remove(
+    manga_dir: &str,
+    output_dir: &str,
+    black_data: &types::JpgImageData,
+    white_data: &types::JpgImageData,
+) -> anyhow::Result<()> {
     let manga_dir = Path::new(manga_dir);
     let manga_dir_without_name = manga_dir
         .parent()
         .ok_or(anyhow!("漫画目录 {} 的父目录不存在", manga_dir.display()))?;
     let output_dir = Path::new(output_dir);
-    let exe_dir_path = utils::get_exe_dir_path()?;
-    let black_path = exe_dir_path.join("black.png");
-    let white_path = exe_dir_path.join("white.png");
-    let black = image::open(&black_path)
-        .context(format!("打开黑色背景图片  {} 失败", black_path.display()))?
+    let black = black_data
+        .to_image()
+        .context(format!("黑色背景图 {} 转换失败", black_data.info.path))?
         .to_rgb8();
-    let white = image::open(&white_path)
-        .context(format!("打开白色背景图片 {} 失败:", white_path.display()))?
+    let white = white_data
+        .to_image()
+        .context(format!("白色背景图 {} 转换失败", white_data.info.path))?
         .to_rgb8();
     // 构建一个HashMap，key是目录的路径，value是该目录下的所有jpg文件的路径
     let mut directory_map: HashMap<PathBuf, Vec<PathBuf>> = HashMap::new();

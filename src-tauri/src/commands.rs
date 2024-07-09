@@ -1,5 +1,7 @@
 use crate::{types, utils, watermark};
 use anyhow::Context;
+use base64::engine::general_purpose;
+use base64::Engine;
 use serde::Serialize;
 use specta::Type;
 use std::collections::HashMap;
@@ -41,8 +43,11 @@ pub fn invoke_handler() -> anyhow::Result<fn(invoke: Invoke) -> bool> {
             remove_watermark,
             background_exists,
             open_image,
+            open_background,
             get_image_size_count,
             get_jpg_image_infos,
+            show_path_in_file_manager,
+            get_user_download_path,
         ])
         .header("// @ts-nocheck"); // 跳过检查，避免__makeEvents__错误
 
@@ -68,8 +73,19 @@ fn generate_background(
 
 #[tauri::command(async)]
 #[specta::specta]
-fn remove_watermark(manga_dir: &str, output_dir: &str) -> CommandResult<()> {
-    Ok(watermark::remove(manga_dir, output_dir)?)
+#[allow(clippy::needless_pass_by_value)]
+fn remove_watermark(
+    manga_dir: &str,
+    output_dir: &str,
+    black_image_data: types::JpgImageData,
+    white_image_data: types::JpgImageData,
+) -> CommandResult<()> {
+    Ok(watermark::remove(
+        manga_dir,
+        output_dir,
+        &black_image_data,
+        &white_image_data,
+    )?)
 }
 
 #[tauri::command(async)]
@@ -84,9 +100,7 @@ fn open_image(path: String) -> CommandResult<types::JpgImageData> {
         .context(format!("读取图片 {path} 失败"))
         .map_err(anyhow::Error::from)?;
     // 将图片数据转换为base64编码
-    let base64 = base64::Engine::encode(&base64::engine::general_purpose::STANDARD, image_data);
-    // 构建图片的src属性
-    let src = format!("data:image/jpeg;base64,{base64}");
+    let base64 = general_purpose::STANDARD.encode(image_data);
     // 返回JpgImage对象
     Ok(types::JpgImageData {
         info: types::JpgImageInfo {
@@ -94,7 +108,7 @@ fn open_image(path: String) -> CommandResult<types::JpgImageData> {
             width,
             path,
         },
-        src,
+        base64,
     })
 }
 
@@ -104,6 +118,15 @@ fn background_exists(is_black: bool) -> CommandResult<bool> {
     let exe_dir_path = utils::get_exe_dir_path()?;
     let filename = if is_black { "black.png" } else { "white.png" };
     Ok(exe_dir_path.join(filename).exists())
+}
+
+#[tauri::command(async)]
+#[specta::specta]
+fn open_background(is_black: bool) -> CommandResult<types::JpgImageData> {
+    let exe_dir_path = utils::get_exe_dir_path()?;
+    let filename = if is_black { "black.png" } else { "white.png" };
+    let path = exe_dir_path.join(filename);
+    open_image(path.display().to_string())
 }
 
 #[tauri::command(async)]
@@ -168,4 +191,16 @@ fn get_jpg_image_infos(manga_dir: &str) -> Vec<types::JpgImageInfo> {
         }
     }
     jpg_image_infos
+}
+
+#[tauri::command(async)]
+#[specta::specta]
+fn show_path_in_file_manager(path: &str) {
+    showfile::show_path_in_file_manager(path);
+}
+
+#[tauri::command(async)]
+#[specta::specta]
+fn get_user_download_path() -> Option<String> {
+    Some(dirs::picture_dir()?.display().to_string())
 }
