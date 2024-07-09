@@ -136,7 +136,7 @@ pub fn remove(
         ));
     }
     // 构建一个HashMap，key是目录的路径，value是该目录下的所有jpg文件的路径
-    let mut directory_map: HashMap<PathBuf, Vec<PathBuf>> = HashMap::new();
+    let mut dir_map: HashMap<PathBuf, Vec<PathBuf>> = HashMap::new();
     // 遍历manga_dir目录下的所有文件和子目录
     for entry in WalkDir::new(manga_dir).into_iter().filter_map(Result::ok) {
         let entry: DirEntry = entry;
@@ -144,43 +144,38 @@ pub fn remove(
         // 如果是文件且是jpg文件则添加到directory_map中
         if path.is_file() && path.extension().map_or(false, |e| e == "jpg") {
             if let Some(parent) = path.parent() {
-                directory_map
-                    .entry(parent.to_path_buf())
-                    .or_default()
-                    .push(path);
+                dir_map.entry(parent.to_path_buf()).or_default().push(path);
             }
         }
     }
-    // FIXME: 代码层级可以减少一层
-    // 遍历directory_map，对每个目录下的所有图片进行去除水印操作
-    for files in directory_map.values() {
-        // 使用rayon的并行迭代器，并行处理每个目录下的所有图片
-        files
-            .into_par_iter()
-            .try_for_each(|img_path| -> anyhow::Result<()> {
-                // 获取相对路径(漫画名/章节名/图片名)
-                let relative_path =
-                    img_path
-                        .strip_prefix(manga_dir_without_name)
-                        .context(format!(
-                            "{} 不是 {} 的父目录",
-                            manga_dir_without_name.display(),
-                            img_path.display()
-                        ))?;
-                // 构建输出图片的路径(输出目录/漫画名/章节名/图片名)
-                let out_image_path = output_dir.join(relative_path);
-                // 打开输入图片
-                let mut img = image::open(img_path)
-                    .context(format!("打开图片 {} 失败", img_path.display()))?
-                    .to_rgb8();
-                // 去除水印
-                remove_image_watermark(&white, &black, &mut img);
-                // 保存去除水印后的图片(无论是否成功去除水印都会保存)
-                save_jpg_image(&img, &out_image_path)
-                    .context(format!("保存图片 {} 失败", out_image_path.display()))?;
-                Ok(())
-            })?;
-    }
+    // 获取所有jpg文件的路径
+    let img_paths: Vec<&PathBuf> = dir_map.values().flatten().collect();
+    // 使用rayon的并行迭代器，并行处理每个jpg文件
+    img_paths
+        .into_par_iter()
+        .try_for_each(|img_path| -> anyhow::Result<()> {
+            // 获取相对路径(漫画名/章节名/图片名)
+            let relative_path = img_path
+                .strip_prefix(manga_dir_without_name)
+                .context(format!(
+                    "{} 不是 {} 的父目录",
+                    manga_dir_without_name.display(),
+                    img_path.display()
+                ))?;
+            // 构建输出图片的路径(输出目录/漫画名/章节名/图片名)
+            let out_image_path = output_dir.join(relative_path);
+            // 打开输入图片
+            let mut img = image::open(img_path)
+                .context(format!("打开图片 {} 失败", img_path.display()))?
+                .to_rgb8();
+            // 去除水印
+            remove_image_watermark(&white, &black, &mut img);
+            // 保存去除水印后的图片(无论是否成功去除水印都会保存)
+            save_jpg_image(&img, &out_image_path)
+                .context(format!("保存图片 {} 失败", out_image_path.display()))?;
+            Ok(())
+        })?;
+
     Ok(())
 }
 
