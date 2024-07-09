@@ -37,17 +37,6 @@ async function removeWatermark() {
     console.error("缺少白色背景图");
     return;
   }
-  const [blackHeight, blackWidth] = [blackBackground.value.info.height, blackBackground.value.info.width];
-  const [whiteHeight, whiteWidth] = [whiteBackground.value.info.height, whiteBackground.value.info.width];
-  const [height, width] = [imageSizeCounts.value[0].height, imageSizeCounts.value[0].width];
-  if (blackHeight !== height || blackWidth !== width) {
-    console.error("漫画图片尺寸和黑色背景图尺寸不一致");
-    return;
-  }
-  if (whiteHeight !== height || whiteWidth !== width) {
-    console.error("漫画图片尺寸和白色背景图尺寸不一致");
-    return;
-  }
 
   let result = await commands.removeWatermark(mangaDir.value, outputDir.value, blackBackground.value, whiteBackground.value);
   if (result.status === "ok") {
