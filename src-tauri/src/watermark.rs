@@ -1,7 +1,7 @@
 use crate::{types, utils};
 use anyhow::{anyhow, Context};
 use image::{Rgb, RgbImage};
-use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use std::sync::MutexGuard;
 use std::{
     collections::HashMap,
@@ -52,49 +52,48 @@ pub fn generate_background(
     let black_path: Mutex<Option<String>> = Mutex::new(None);
     let white_path: Mutex<Option<String>> = Mutex::new(None);
     // 并发遍历image_paths
-    image_paths
-        .par_iter()
-        .try_for_each(|path| -> anyhow::Result<()> {
-            // 如果black_path和white_path都已经找到了，则直接跳过
-            if black_path.lock_or_panic().is_some() && white_path.lock_or_panic().is_some() {
-                return Ok(());
+    let image_paths = image_paths.par_iter();
+    image_paths.try_for_each(|path| -> anyhow::Result<()> {
+        // 如果black_path和white_path都已经找到了，则直接跳过
+        if black_path.lock_or_panic().is_some() && white_path.lock_or_panic().is_some() {
+            return Ok(());
+        }
+        let mut img = image::open(path)
+            .context(format!("打开图片 {} 失败", path.display()))?
+            .to_rgb8();
+        let (left, top) = (rect_data.left, rect_data.top);
+        let (right, bottom) = (rect_data.right, rect_data.bottom);
+        // 检查图片是否满足黑色或白色背景的条件
+        let Some(is_black) = is_black_background(&img, rect_data) else {
+            return Ok(());
+        };
+        // 获取左上角的颜色
+        let color = *img.get_pixel(left, top);
+        // 把截图区域外的像素点设置为左上角的颜色
+        for (x, y, pixel) in img.enumerate_pixels_mut() {
+            if x < left || x > right || y < top || y > bottom {
+                *pixel = color;
             }
-            let mut img = image::open(path)
-                .context(format!("打开图片 {} 失败", path.display()))?
-                .to_rgb8();
-            let (left, top) = (rect_data.left, rect_data.top);
-            let (right, bottom) = (rect_data.right, rect_data.bottom);
-            // 检查图片是否满足黑色或白色背景的条件
-            let Some(is_black) = is_black_background(&img, rect_data) else {
-                return Ok(());
-            };
-            // 获取左上角的颜色
-            let color = *img.get_pixel(left, top);
-            // 把截图区域外的像素点设置为左上角的颜色
-            for (x, y, pixel) in img.enumerate_pixels_mut() {
-                if x < left || x > right || y < top || y > bottom {
-                    *pixel = color;
-                }
-            }
-            let exe_dir_path = utils::get_exe_dir_path()?;
-            let filename = if is_black { "black.png" } else { "white.png" };
-            let output_path = exe_dir_path.join(filename);
-            // 保存黑色背景或白色背景的图片
-            let mut background_path = if is_black {
-                black_path.lock_or_panic()
-            } else {
-                white_path.lock_or_panic()
-            };
-            // 如果background_path是None，则把output_path赋值给background_path，并保存图片
-            if background_path.is_none() {
-                *background_path = Some(output_path.display().to_string());
-                // 因为save是耗时操作，所以在这里手动释放锁
-                drop(background_path);
-                img.save(&output_path)
-                    .context(format!("保存图片 {} 失败", output_path.display()))?;
-            }
-            Ok(())
-        })?;
+        }
+        let exe_dir_path = utils::get_exe_dir_path()?;
+        let filename = if is_black { "black.png" } else { "white.png" };
+        let output_path = exe_dir_path.join(filename);
+        // 保存黑色背景或白色背景的图片
+        let mut background_path = if is_black {
+            black_path.lock_or_panic()
+        } else {
+            white_path.lock_or_panic()
+        };
+        // 如果background_path是None，则把output_path赋值给background_path，并保存图片
+        if background_path.is_none() {
+            *background_path = Some(output_path.display().to_string());
+            // 因为save是耗时操作，所以在这里手动释放锁
+            drop(background_path);
+            img.save(&output_path)
+                .context(format!("保存图片 {} 失败", output_path.display()))?;
+        }
+        Ok(())
+    })?;
     // 获取黑色背景和白色背景的图片路径
     let Some(black_path) = black_path.lock_or_panic().take() else {
         return Err(anyhow!("在漫画目录 {manga_dir} 下找不到合适的黑色背景图",));
@@ -107,6 +106,7 @@ pub fn generate_background(
 }
 
 /// 移除`manga_dir`目录下所有图片的水印，并保存到`output_dir`目录
+#[allow(clippy::cast_possible_truncation)]
 pub fn remove(
     manga_dir: &str,
     output_dir: &str,
@@ -148,12 +148,18 @@ pub fn remove(
             }
         }
     }
-    // 获取所有jpg文件的路径
-    let img_paths: Vec<&PathBuf> = dir_map.values().flatten().collect();
-    // 使用rayon的并行迭代器，并行处理每个jpg文件
-    img_paths
-        .into_par_iter()
-        .try_for_each(|img_path| -> anyhow::Result<()> {
+    let dir_progress: HashMap<&PathBuf, (u32, u32)> = dir_map
+        .keys()
+        .map(|dir| (dir, (0, dir_map[dir].len() as u32)))
+        .collect();
+    let dir_progress = Mutex::new(dir_progress);
+    // 使用rayon的并行迭代器，并行处理每个目录
+    let dir_map = dir_map.par_iter();
+    dir_map.try_for_each(|entry| -> anyhow::Result<()> {
+        let (dir, img_paths) = entry;
+        // 使用rayon的并行迭代器，并行处理每个目录下的图片
+        let img_paths = img_paths.par_iter();
+        img_paths.try_for_each(|img_path| -> anyhow::Result<()> {
             // 获取相对路径(漫画名/章节名/图片名)
             let relative_path = img_path
                 .strip_prefix(manga_dir_without_name)
@@ -173,8 +179,18 @@ pub fn remove(
             // 保存去除水印后的图片(无论是否成功去除水印都会保存)
             save_jpg_image(&img, &out_image_path)
                 .context(format!("保存图片 {} 失败", out_image_path.display()))?;
+            // 更新目录的进度
+            let mut dir_progress = dir_progress.lock_or_panic();
+            let (current, _total) = dir_progress
+                .get_mut(dir)
+                .ok_or(anyhow!("目录 {} 的进度不存在", dir.display()))?;
+            *current += 1;
             Ok(())
         })?;
+        Ok(())
+    })?;
+
+    println!("{dir_progress:#?}");
 
     Ok(())
 }
