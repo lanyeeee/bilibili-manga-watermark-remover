@@ -126,6 +126,15 @@ pub fn remove(
         .to_image()
         .context(format!("白色背景图 {} 转换失败", white_data.info.path))?
         .to_rgb8();
+    if black.dimensions() != white.dimensions() {
+        return Err(anyhow!(
+            "黑色背景图和白色背景图的尺寸不一致，黑色背景图的尺寸是 (高:{}, 宽:{})，白色背景图的尺寸是 (高:{}, 宽:{})",
+            black.height(),
+            black.width(),
+            white.height(),
+            white.width(),
+        ));
+    }
     // 构建一个HashMap，key是目录的路径，value是该目录下的所有jpg文件的路径
     let mut directory_map: HashMap<PathBuf, Vec<PathBuf>> = HashMap::new();
     // 遍历manga_dir目录下的所有文件和子目录
@@ -142,6 +151,7 @@ pub fn remove(
             }
         }
     }
+    // FIXME: 代码层级可以减少一层
     // 遍历directory_map，对每个目录下的所有图片进行去除水印操作
     for files in directory_map.values() {
         // 使用rayon的并行迭代器，并行处理每个目录下的所有图片
