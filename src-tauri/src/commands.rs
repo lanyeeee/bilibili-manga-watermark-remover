@@ -80,12 +80,8 @@ fn remove_watermark(
     black_image_data: types::JpgImageData,
     white_image_data: types::JpgImageData,
 ) -> CommandResult<()> {
-    Ok(watermark::remove(
-        manga_dir,
-        output_dir,
-        &black_image_data,
-        &white_image_data,
-    )?)
+    watermark::remove(manga_dir, output_dir, &black_image_data, &white_image_data)?;
+    Ok(())
 }
 
 #[tauri::command(async)]
