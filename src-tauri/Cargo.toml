@@ -29,6 +29,8 @@ imagesize = "0.13.0"
 rayon = "1.10"
 walkdir = "2"
 anyhow = "1.0"
+showfile = "0.1.1"
+dirs = "5.0"
 
 [profile.release]
 strip = true      # Automatically strip symbols from the binary.

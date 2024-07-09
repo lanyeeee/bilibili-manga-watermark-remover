@@ -12,9 +12,9 @@ try {
     else return { status: "error", error: e  as any };
 }
 },
-async removeWatermark(mangaDir: string, outputDir: string) : Promise<Result<null, CommandError>> {
+async removeWatermark(mangaDir: string, outputDir: string, blackImageData: JpgImageData, whiteImageData: JpgImageData) : Promise<Result<null, CommandError>> {
 try {
-    return { status: "ok", data: await TAURI_INVOKE("remove_watermark", { mangaDir, outputDir }) };
+    return { status: "ok", data: await TAURI_INVOKE("remove_watermark", { mangaDir, outputDir, blackImageData, whiteImageData }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -36,11 +36,25 @@ try {
     else return { status: "error", error: e  as any };
 }
 },
+async openBackground(isBlack: boolean) : Promise<Result<JpgImageData, CommandError>> {
+try {
+    return { status: "ok", data: await TAURI_INVOKE("open_background", { isBlack }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async getImageSizeCount(mangaDir: string) : Promise<ImageSizeCount[]> {
 return await TAURI_INVOKE("get_image_size_count", { mangaDir });
 },
 async getJpgImageInfos(mangaDir: string) : Promise<JpgImageInfo[]> {
 return await TAURI_INVOKE("get_jpg_image_infos", { mangaDir });
+},
+async showPathInFileManager(path: string) : Promise<void> {
+await TAURI_INVOKE("show_path_in_file_manager", { path });
+},
+async getUserDownloadPath() : Promise<string | null> {
+return await TAURI_INVOKE("get_user_download_path");
 }
 }
 
@@ -56,7 +70,7 @@ return await TAURI_INVOKE("get_jpg_image_infos", { mangaDir });
 
 export type CommandError = string
 export type ImageSizeCount = { height: number; width: number; count: number }
-export type JpgImageData = { info: JpgImageInfo; src: string }
+export type JpgImageData = { info: JpgImageInfo; base64: string }
 export type JpgImageInfo = { height: number; width: number; path: string }
 export type RectData = { left: number; top: number; right: number; bottom: number }
 

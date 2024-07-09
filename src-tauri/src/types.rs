@@ -1,3 +1,5 @@
+use base64::engine::general_purpose;
+use base64::Engine;
 use serde::{Deserialize, Serialize};
 use specta::Type;
 
@@ -26,5 +28,12 @@ pub struct JpgImageInfo {
 #[derive(Debug, Deserialize, Serialize, Type)]
 pub struct JpgImageData {
     pub info: JpgImageInfo,
-    pub src: String,
+    pub base64: String,
+}
+impl JpgImageData {
+    pub fn to_image(&self) -> anyhow::Result<image::DynamicImage> {
+        let decode = general_purpose::STANDARD.decode(self.base64.as_bytes())?;
+        let image = image::load_from_memory(&decode)?;
+        Ok(image)
+    }
 }
