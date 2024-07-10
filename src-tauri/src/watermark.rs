@@ -75,6 +75,7 @@ pub fn generate_background(
                 *pixel = color;
             }
         }
+        // TODO: 改成临时文件目录
         let exe_dir_path = utils::get_exe_dir_path()?;
         let filename = if is_black { "black.png" } else { "white.png" };
         let output_path = exe_dir_path.join(filename);
