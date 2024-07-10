@@ -111,6 +111,7 @@ fn open_image(path: String) -> CommandResult<types::JpgImageData> {
 #[tauri::command(async)]
 #[specta::specta]
 fn background_exists(is_black: bool) -> CommandResult<bool> {
+    // TODO: 改成临时文件目录
     let exe_dir_path = utils::get_exe_dir_path()?;
     let filename = if is_black { "black.png" } else { "white.png" };
     Ok(exe_dir_path.join(filename).exists())
@@ -119,6 +120,7 @@ fn background_exists(is_black: bool) -> CommandResult<bool> {
 #[tauri::command(async)]
 #[specta::specta]
 fn open_background(is_black: bool) -> CommandResult<types::JpgImageData> {
+    // TODO: 改成临时文件目录
     let exe_dir_path = utils::get_exe_dir_path()?;
     let filename = if is_black { "black.png" } else { "white.png" };
     let path = exe_dir_path.join(filename);
@@ -198,5 +200,5 @@ fn show_path_in_file_manager(path: &str) {
 #[tauri::command(async)]
 #[specta::specta]
 fn get_user_download_path() -> Option<String> {
-    Some(dirs::picture_dir()?.display().to_string())
+    Some(dirs::picture_dir()?.join("已去水印").display().to_string())
 }
