@@ -22,6 +22,7 @@ const canvasContainer = ref<HTMLDivElement>();
 const canvas = ref<HTMLCanvasElement>();
 const srcImagePath = ref<string>();
 const isDarkMasker = ref<boolean>(true);
+const generating = ref<boolean>(false);
 
 
 // 经过筛选后的jpg图片信息，只包含尺寸出现次数最多的图片
@@ -172,16 +173,17 @@ async function onConfirm() {
     return;
   }
 
-  // TODO: 给生成按钮添加loading状态
+  generating.value = true;
   const height = props.imageSizeCounts[0].height;
   const width = props.imageSizeCounts[0].width;
   const generateResult = await commands.generateBackground(props.mangaDir, rectData.value, height, width);
   if (generateResult.status === "error") {
     console.error(generateResult.error);
+    generating.value = false;
     return;
   }
 
-  console.log("生成背景成功");
+  console.log("生成背景图成功");
   await loadBackground(blackBackground, whiteBackground);
   showing.value = false;
 
@@ -208,7 +210,9 @@ async function onChangeImage() {
       <canvas ref="canvas" @mousedown="handleMouseDown"/>
     </div>
     <div class="flex flex-justify-end">
-      <n-button :disabled="rectData===null" type="primary" @click="onConfirm">生成背景图</n-button>
+      <n-button :loading="generating" :disabled="rectData===null" type="primary" @click="onConfirm">
+        生成背景图
+      </n-button>
     </div>
   </div>
 </template>
