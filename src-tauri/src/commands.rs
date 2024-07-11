@@ -64,7 +64,7 @@ fn generate_background(
     rect_data: types::RectData,
     height: u32,
     width: u32,
-) -> CommandResult<(String, String)> {
+) -> CommandResult<()> {
     let cache_dir = app.path().resource_dir().map_err(anyhow::Error::from)?;
     Ok(watermark::generate_background(
         manga_dir, &rect_data, &cache_dir, height, width,
