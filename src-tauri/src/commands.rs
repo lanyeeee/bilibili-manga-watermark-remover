@@ -1,14 +1,15 @@
-use crate::{types, utils, watermark};
+use crate::{types, watermark};
 use anyhow::Context;
 use base64::engine::general_purpose;
 use base64::Engine;
+use path_slash::PathBufExt;
 use serde::Serialize;
 use specta::Type;
 use std::collections::HashMap;
 use std::fmt::Write;
-use std::path::Path;
+use std::path::PathBuf;
 use tauri::ipc::Invoke;
-use tauri::Wry;
+use tauri::{Manager, Wry};
 use walkdir::WalkDir;
 
 #[derive(Debug, Type)]
@@ -41,13 +42,10 @@ pub fn invoke_handler() -> anyhow::Result<fn(invoke: Invoke) -> bool> {
         .commands(tauri_specta::collect_commands![
             generate_background,
             remove_watermark,
-            background_exists,
             open_image,
-            open_background,
             get_image_size_count,
             get_jpg_image_infos,
             show_path_in_file_manager,
-            get_user_download_path,
         ])
         .header("// @ts-nocheck"); // 跳过检查，避免__makeEvents__错误
 
@@ -61,13 +59,15 @@ pub fn invoke_handler() -> anyhow::Result<fn(invoke: Invoke) -> bool> {
 #[specta::specta]
 #[allow(clippy::needless_pass_by_value)]
 fn generate_background(
+    app: tauri::AppHandle,
     manga_dir: &str,
     rect_data: types::RectData,
     height: u32,
     width: u32,
 ) -> CommandResult<(String, String)> {
+    let cache_dir = app.path().resource_dir().map_err(anyhow::Error::from)?;
     Ok(watermark::generate_background(
-        manga_dir, &rect_data, height, width,
+        manga_dir, &rect_data, &cache_dir, height, width,
     )?)
 }
 
@@ -88,12 +88,13 @@ fn remove_watermark(
 #[specta::specta]
 #[allow(clippy::cast_possible_truncation)]
 fn open_image(path: String) -> CommandResult<types::JpgImageData> {
+    let path = PathBuf::from_slash(path);
     let size = imagesize::size(&path)
-        .context(format!("获取图片 {path} 的尺寸失败"))
+        .context(format!("获取图片 {} 的尺寸失败", path.display()))
         .map_err(anyhow::Error::from)?;
     let (height, width) = (size.height as u32, size.width as u32);
     let image_data: Vec<u8> = std::fs::read(&path)
-        .context(format!("读取图片 {path} 失败"))
+        .context(format!("读取图片 {} 失败", path.display()))
         .map_err(anyhow::Error::from)?;
     // 将图片数据转换为base64编码
     let base64 = general_purpose::STANDARD.encode(image_data);
@@ -102,29 +103,10 @@ fn open_image(path: String) -> CommandResult<types::JpgImageData> {
         info: types::JpgImageInfo {
             height,
             width,
-            path,
+            path: path.display().to_string(),
         },
         base64,
     })
-}
-
-#[tauri::command(async)]
-#[specta::specta]
-fn background_exists(is_black: bool) -> CommandResult<bool> {
-    // TODO: 改成临时文件目录
-    let exe_dir_path = utils::get_exe_dir_path()?;
-    let filename = if is_black { "black.png" } else { "white.png" };
-    Ok(exe_dir_path.join(filename).exists())
-}
-
-#[tauri::command(async)]
-#[specta::specta]
-fn open_background(is_black: bool) -> CommandResult<types::JpgImageData> {
-    // TODO: 改成临时文件目录
-    let exe_dir_path = utils::get_exe_dir_path()?;
-    let filename = if is_black { "black.png" } else { "white.png" };
-    let path = exe_dir_path.join(filename);
-    open_image(path.display().to_string())
 }
 
 #[tauri::command(async)]
@@ -134,7 +116,7 @@ fn get_image_size_count(manga_dir: &str) -> Vec<types::ImageSizeCount> {
     // 用于存储不同尺寸的图片的数量
     let mut size_count: HashMap<(u32, u32), u32> = HashMap::new();
     // 遍历漫画目录下的所有文件，统计不同尺寸的图片的数量
-    for entry in WalkDir::new(Path::new(manga_dir))
+    for entry in WalkDir::new(PathBuf::from_slash(manga_dir))
         .max_depth(2) // 一般第一层目录是章节目录，第二层目录是图片文件
         .into_iter()
         .filter_map(Result::ok)
@@ -171,7 +153,7 @@ fn get_jpg_image_infos(manga_dir: &str) -> Vec<types::JpgImageInfo> {
     // 用于存储jpg图片的信息
     let mut jpg_image_infos = vec![];
     // 遍历漫画目录下的所有文件，获取jpg图片的信息
-    for entry in WalkDir::new(Path::new(manga_dir))
+    for entry in WalkDir::new(PathBuf::from_slash(manga_dir))
         .max_depth(2) //  一般第一层目录是章节目录，第二层目录是图片文件
         .into_iter()
         .filter_map(Result::ok)
@@ -194,11 +176,6 @@ fn get_jpg_image_infos(manga_dir: &str) -> Vec<types::JpgImageInfo> {
 #[tauri::command(async)]
 #[specta::specta]
 fn show_path_in_file_manager(path: &str) {
+    let path = PathBuf::from_slash(path);
     showfile::show_path_in_file_manager(path);
-}
-
-#[tauri::command(async)]
-#[specta::specta]
-fn get_user_download_path() -> Option<String> {
-    Some(dirs::picture_dir()?.join("已去水印").display().to_string())
 }
