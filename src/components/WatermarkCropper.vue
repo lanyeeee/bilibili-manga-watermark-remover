@@ -159,7 +159,7 @@ function drawImageAndMasker() {
   ctx.drawImage(srcImage, 0, 0, srcImage.width, srcImage.height);
 }
 
-async function onConfirm() {
+async function generateBackground() {
   if (srcImagePath.value === undefined) {
     console.error("图片未加载");
     return;
@@ -189,7 +189,7 @@ async function onConfirm() {
 
 }
 
-async function onChangeImage() {
+async function changeImage() {
   srcImagePath.value = getRandomJpgImageInfo()?.path;
 }
 
@@ -197,7 +197,7 @@ async function onChangeImage() {
 
 <template>
   <div>
-    <n-button type="primary" @click="onChangeImage">换一张</n-button>
+    <n-button type="primary" @click="changeImage">换一张</n-button>
     <n-switch v-model:value="isDarkMasker">
       <template #checked>
         深色遮罩
@@ -210,7 +210,7 @@ async function onChangeImage() {
       <canvas ref="canvas" @mousedown="handleMouseDown"/>
     </div>
     <div class="flex flex-justify-end">
-      <n-button :loading="generating" :disabled="rectData===null" type="primary" @click="onConfirm">
+      <n-button :loading="generating" :disabled="rectData===null" type="primary" @click="generateBackground">
         生成背景图
       </n-button>
     </div>

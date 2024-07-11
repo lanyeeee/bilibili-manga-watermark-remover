@@ -14,12 +14,6 @@ const blackBackground = ref<JpgImageData>();
 const whiteBackground = ref<JpgImageData>();
 const showCropper = ref<boolean>(false);
 
-onMounted(async () => {
-  outputDir.value = await path.resourceDir();
-  await loadBackground(blackBackground, whiteBackground);
-});
-
-
 const mangaDirExist = computed<boolean>(() => mangaDir.value !== undefined);
 const outputDirExist = computed<boolean>(() => outputDir.value !== undefined);
 const blackBackgroundExist = computed<boolean>(() => blackBackground.value !== undefined);
@@ -42,6 +36,10 @@ const removeWatermarkButtonDisabled = computed<boolean>(() =>
     !backgroundMatchManga.value
 );
 
+onMounted(async () => {
+  outputDir.value = await path.resourceDir();
+  await loadBackground(blackBackground, whiteBackground);
+});
 
 async function removeWatermark() {
   if (mangaDir.value === undefined) {
@@ -110,6 +108,8 @@ async function test() {
   }
 }
 
+// TODO: 展示去水印进度
+// TODO: 错误弹窗
 </script>
 
 <template>
@@ -154,7 +154,7 @@ async function test() {
         </div>
       </div>
 
-      <n-button :disabled="!mangaDirExist || !imagesExist" @click="showCropper=!showCropper">手动截取水印</n-button>
+      <n-button :disabled="!mangaDirExist || !imagesExist" @click="showCropper=true">手动截取水印</n-button>
 
       <n-button :disabled="removeWatermarkButtonDisabled"
                 type="primary"
@@ -180,7 +180,6 @@ async function test() {
                          v-model:white-background="whiteBackground"
                          v-model:showing="showCropper"/>
     </n-modal>
-
 
   </n-modal-provider>
 </template>
