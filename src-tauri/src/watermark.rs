@@ -1,6 +1,7 @@
-use crate::{types, utils};
+use crate::types;
 use anyhow::{anyhow, Context};
 use image::{Rgb, RgbImage};
+use path_slash::PathBufExt;
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use std::sync::MutexGuard;
 use std::{
@@ -26,11 +27,12 @@ impl<T> IgnoreLockPoison<T> for Mutex<T> {
 pub fn generate_background(
     manga_dir: &str,
     rect_data: &types::RectData,
+    output_dir: &Path,
     height: u32,
     width: u32,
 ) -> anyhow::Result<(String, String)> {
     // 遍历manga_dir目录下的所有jpg文件，收集尺寸符合要求的图片的路径
-    let image_paths: Vec<PathBuf> = WalkDir::new(Path::new(manga_dir))
+    let image_paths: Vec<PathBuf> = WalkDir::new(PathBuf::from_slash(manga_dir))
         .max_depth(2) // 一般第一层目录是章节目录，第二层目录是图片文件
         .into_iter()
         .filter_map(Result::ok)
@@ -75,10 +77,8 @@ pub fn generate_background(
                 *pixel = color;
             }
         }
-        // TODO: 改成临时文件目录
-        let exe_dir_path = utils::get_exe_dir_path()?;
         let filename = if is_black { "black.png" } else { "white.png" };
-        let output_path = exe_dir_path.join(filename);
+        let output_path = output_dir.join(filename);
         // 保存黑色背景或白色背景的图片
         let mut background_path = if is_black {
             black_path.lock_or_panic()
@@ -114,11 +114,11 @@ pub fn remove(
     black_data: &types::JpgImageData,
     white_data: &types::JpgImageData,
 ) -> anyhow::Result<()> {
-    let manga_dir = Path::new(manga_dir);
+    let manga_dir = PathBuf::from_slash(manga_dir);
     let manga_dir_without_name = manga_dir
         .parent()
         .ok_or(anyhow!("漫画目录 {} 的父目录不存在", manga_dir.display()))?;
-    let output_dir = Path::new(output_dir);
+    let output_dir = PathBuf::from_slash(output_dir);
     let black = black_data
         .to_image()
         .context(format!("黑色背景图 {} 转换失败", black_data.info.path))?
@@ -139,7 +139,7 @@ pub fn remove(
     // 构建一个HashMap，key是目录的路径，value是该目录下的所有jpg文件的路径
     let mut dir_map: HashMap<PathBuf, Vec<PathBuf>> = HashMap::new();
     // 遍历manga_dir目录下的所有文件和子目录
-    for entry in WalkDir::new(manga_dir).into_iter().filter_map(Result::ok) {
+    for entry in WalkDir::new(&manga_dir).into_iter().filter_map(Result::ok) {
         let entry: DirEntry = entry;
         let path = entry.into_path();
         // 如果是文件且是jpg文件则添加到directory_map中

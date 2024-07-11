@@ -20,25 +20,9 @@ try {
     else return { status: "error", error: e  as any };
 }
 },
-async backgroundExists(isBlack: boolean) : Promise<Result<boolean, CommandError>> {
-try {
-    return { status: "ok", data: await TAURI_INVOKE("background_exists", { isBlack }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
 async openImage(path: string) : Promise<Result<JpgImageData, CommandError>> {
 try {
     return { status: "ok", data: await TAURI_INVOKE("open_image", { path }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async openBackground(isBlack: boolean) : Promise<Result<JpgImageData, CommandError>> {
-try {
-    return { status: "ok", data: await TAURI_INVOKE("open_background", { isBlack }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -52,9 +36,6 @@ return await TAURI_INVOKE("get_jpg_image_infos", { mangaDir });
 },
 async showPathInFileManager(path: string) : Promise<void> {
 await TAURI_INVOKE("show_path_in_file_manager", { path });
-},
-async getUserDownloadPath() : Promise<string | null> {
-return await TAURI_INVOKE("get_user_download_path");
 }
 }
 
