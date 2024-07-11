@@ -10,7 +10,8 @@ export async function loadBackground(blackBackground: Ref<JpgImageData | undefin
         if (!backgroundExist) {
             return;
         }
-        const backgroundPath = await get_background_path(isBlack);
+        const cacheDir = await path.resourceDir();
+        const backgroundPath = await path.join(cacheDir, filename);
         const result = await commands.openImage(backgroundPath);
         if (result.status === "error") {
             console.error(result.error);
@@ -20,10 +21,4 @@ export async function loadBackground(blackBackground: Ref<JpgImageData | undefin
         background.value = result.data;
     };
     await Promise.all([load(true), load(false)]);
-}
-
-export async function get_background_path(isBlack: boolean) {
-    const cacheDir = await path.resourceDir();
-    const filename = isBlack ? "black.png" : "white.png";
-    return path.join(cacheDir, filename);
 }
