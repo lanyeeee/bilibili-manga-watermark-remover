@@ -30,7 +30,7 @@ pub fn generate_background(
     output_dir: &Path,
     height: u32,
     width: u32,
-) -> anyhow::Result<(String, String)> {
+) -> anyhow::Result<()> {
     // 遍历manga_dir目录下的所有jpg文件，收集尺寸符合要求的图片的路径
     let image_paths: Vec<PathBuf> = WalkDir::new(PathBuf::from_slash(manga_dir))
         .max_depth(2) // 一般第一层目录是章节目录，第二层目录是图片文件
@@ -49,10 +49,9 @@ pub fn generate_background(
             }
         })
         .collect();
-    // TODO: 没必要再储存黑白背景的路径了
-    // 用于存储黑色背景和白色背景的图片路径
-    let black_path: Mutex<Option<String>> = Mutex::new(None);
-    let white_path: Mutex<Option<String>> = Mutex::new(None);
+    // 用于记录是否找到了黑色背景和白色背景的图片
+    let black_path: Mutex<Option<()>> = Mutex::new(None);
+    let white_path: Mutex<Option<()>> = Mutex::new(None);
     // 并发遍历image_paths
     let image_paths = image_paths.par_iter();
     image_paths.try_for_each(|path| -> anyhow::Result<()> {
@@ -87,7 +86,7 @@ pub fn generate_background(
         };
         // 如果background_path是None，则把output_path赋值给background_path，并保存图片
         if background_path.is_none() {
-            *background_path = Some(output_path.display().to_string());
+            *background_path = Some(());
             // 因为save是耗时操作，所以在这里手动释放锁
             drop(background_path);
             img.save(&output_path)
@@ -95,15 +94,15 @@ pub fn generate_background(
         }
         Ok(())
     })?;
-    // 获取黑色背景和白色背景的图片路径
-    let Some(black_path) = black_path.lock_or_panic().take() else {
+    // 检查是否找到了黑色背景和白色背景的图片
+    if black_path.lock_or_panic().is_none() {
         return Err(anyhow!("在漫画目录 {manga_dir} 下找不到合适的黑色背景图",));
-    };
-    let Some(white_path) = white_path.lock_or_panic().take() else {
+    }
+    if white_path.lock_or_panic().is_none() {
         return Err(anyhow!("在漫画目录 {manga_dir} 下找不到合适的白色背景图",));
-    };
-    // 返回黑色背景和白色背景的图片路径
-    Ok((black_path, white_path))
+    }
+
+    Ok(())
 }
 
 /// 移除`manga_dir`目录下所有图片的水印，并保存到`output_dir`目录
