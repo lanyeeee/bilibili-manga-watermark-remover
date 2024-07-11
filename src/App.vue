@@ -5,6 +5,7 @@ import {commands, ImageSizeCount, JpgImageData} from "./bindings.ts";
 import WatermarkCropper from "./components/WatermarkCropper.vue";
 import StatusIndicator from "./components/StatusIndicator.vue";
 import {loadBackground} from "./utils.ts";
+import {path} from "@tauri-apps/api";
 
 const mangaDir = ref<string>();
 const outputDir = ref<string>();
@@ -14,7 +15,7 @@ const whiteBackground = ref<JpgImageData>();
 const showCropper = ref<boolean>(false);
 
 onMounted(async () => {
-  outputDir.value = await commands.getUserDownloadPath() || undefined;
+  outputDir.value = await path.resourceDir();
   await loadBackground(blackBackground, whiteBackground);
 });
 
@@ -97,16 +98,16 @@ async function showPathInFileManager(path: string | undefined) {
   if (path === undefined) {
     return;
   }
+  console.log(path);
   await commands.showPathInFileManager(path);
 }
 
 async function test() {
-  console.log("mangaDirExist", mangaDirExist.value);
-  console.log("outputDirExist", outputDirExist.value);
-  console.log("blackBackgroundExist", blackBackgroundExist.value);
-  console.log("whiteBackgroundExist", whiteBackgroundExist.value);
-  console.log("backgroundMatchManga", backgroundMatchManga.value);
-  console.log("removeWatermarkButtonDisabled", removeWatermarkButtonDisabled.value);
+  try {
+    console.log(await path.resourceDir());
+  } catch (e) {
+    console.error(e);
+  }
 }
 
 </script>
