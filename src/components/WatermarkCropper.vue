@@ -2,11 +2,16 @@
 import {commands, ImageSizeCount, JpgImageData, JpgImageInfo, RectData} from "../bindings.ts";
 import {computed, onMounted, ref, watch} from "vue";
 import {loadBackground} from "../utils.ts";
+import {useMessage, useNotification} from "naive-ui";
+
 
 const props = defineProps<{
   mangaDir: string | undefined;
   imageSizeCounts: ImageSizeCount[]
 }>();
+
+const notification = useNotification();
+const message = useMessage();
 
 const blackBackground = defineModel<JpgImageData | undefined>("blackBackground", {required: true});
 const whiteBackground = defineModel<JpgImageData | undefined>("whiteBackground", {required: true});
@@ -46,7 +51,7 @@ watch(srcImagePath, async () => {
   // 打开图片
   const result = await commands.openImage(srcImagePath.value);
   if (result.status === "error") {
-    console.error(result.error);
+    notification.error({title: "打开图片失败", content: result.error});
     return;
   }
   srcImage.src = `data:image/jpeg;base64,${result.data.base64}`;
@@ -65,7 +70,7 @@ watch(() => props.mangaDir, async () => {
 // 监听 isDarkMasker 的变化，当遮罩颜色变化时，重新绘制canvas
 watch(isDarkMasker, () => {
   if (canvas.value === undefined) {
-    console.error("canvas is undefined");
+    message.error("canvas is undefined");
     return;
   }
   // 重新绘制canvas
@@ -74,13 +79,13 @@ watch(isDarkMasker, () => {
 
 onMounted(() => {
   if (canvas.value === undefined) {
-    console.error("canvas is undefined");
+    message.error("canvas is undefined");
     return;
   }
   // 每张图片加载完成后
   srcImage.onload = async () => {
     if (canvasContainer.value === undefined || canvas.value === undefined) {
-      console.error("canvasContainer or canvas is undefined");
+      message.error("canvasContainer or canvas is undefined");
       return;
     }
     console.log(`图片${srcImage.width}x${srcImage.height}加载完成`);
@@ -161,15 +166,15 @@ function drawImageAndMasker() {
 
 async function generateBackground() {
   if (srcImagePath.value === undefined) {
-    console.error("图片未加载");
+    message.error("图片未加载");
     return;
   }
   if (rectData.value === null) {
-    console.error("请截取图片中的水印");
+    message.error("请截取图片中的水印");
     return;
   }
   if (props.mangaDir === undefined) {
-    console.error("请选择漫画文件夹");
+    message.error("请选择漫画文件夹");
     return;
   }
 
@@ -178,12 +183,12 @@ async function generateBackground() {
   const width = props.imageSizeCounts[0].width;
   const generateResult = await commands.generateBackground(props.mangaDir, rectData.value, height, width);
   if (generateResult.status === "error") {
-    console.error(generateResult.error);
+    notification.error({title: "生成背景图失败", content: generateResult.error});
     generating.value = false;
     return;
   }
 
-  console.log("生成背景图成功");
+  message.success("生成背景图成功");
   await loadBackground(blackBackground, whiteBackground);
   showing.value = false;
 
