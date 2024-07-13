@@ -1,4 +1,4 @@
-use crate::types;
+use crate::{events, types};
 use anyhow::{anyhow, Context};
 use image::{Rgb, RgbImage};
 use path_slash::PathBufExt;
@@ -9,6 +9,7 @@ use std::{
     path::{Path, PathBuf},
     sync::Mutex,
 };
+use tauri_specta::Event;
 use walkdir::{DirEntry, WalkDir};
 
 trait IgnoreLockPoison<T> {
@@ -108,6 +109,7 @@ pub fn generate_background(
 /// 移除`manga_dir`目录下所有图片的水印，并保存到`output_dir`目录
 #[allow(clippy::cast_possible_truncation)]
 pub fn remove(
+    app: &tauri::AppHandle,
     manga_dir: &str,
     output_dir: &str,
     black_data: &types::JpgImageData,
@@ -150,8 +152,20 @@ pub fn remove(
     }
     let dir_progress: HashMap<&PathBuf, (u32, u32)> = dir_map
         .keys()
-        .map(|dir| (dir, (0, dir_map[dir].len() as u32)))
-        .collect();
+        .map(|dir| {
+            let total = dir_map[dir].len() as u32;
+            // 发送RemoveWatermarkStartEvent事件
+            let payload = events::RemoveWatermarkStartEventPayload {
+                dir_path: dir.display().to_string(),
+                total,
+            };
+            let event = events::RemoveWatermarkStartEvent(payload);
+            event.emit(app).map_err(anyhow::Error::from)?;
+
+            Ok((dir, (0, total)))
+        })
+        .collect::<anyhow::Result<HashMap<&PathBuf, (u32, u32)>>>()?;
+
     let dir_progress = Mutex::new(dir_progress);
     // 使用rayon的并行迭代器，并行处理每个目录
     let dir_map = dir_map.par_iter();
@@ -180,17 +194,35 @@ pub fn remove(
             save_jpg_image(&img, &out_image_path)
                 .context(format!("保存图片 {} 失败", out_image_path.display()))?;
             // 更新目录的进度
-            let mut dir_progress = dir_progress.lock_or_panic();
-            let (current, _total) = dir_progress
-                .get_mut(dir)
-                .ok_or(anyhow!("目录 {} 的进度不存在", dir.display()))?;
-            *current += 1;
+            let (current, total) = {
+                let mut dir_progress = dir_progress.lock_or_panic();
+                let (current, total) = dir_progress
+                    .get_mut(dir)
+                    .ok_or(anyhow!("目录 {} 的进度不存在", dir.display()))?;
+                *current += 1;
+                (*current, *total)
+            };
+            // 发送RemoveWatermarkSuccessEvent事件
+            let payload = events::RemoveWatermarkSuccessEventPayload {
+                dir_path: dir.display().to_string(),
+                img_path: out_image_path.display().to_string(),
+                current,
+            };
+            let event = events::RemoveWatermarkSuccessEvent(payload);
+            event.emit(app)?;
+            // 如果当前图片是目录下的最后一张图片，则发送RemoveWatermarkEndEvent事件
+            if current == total {
+                let payload = events::RemoveWatermarkEndEventPayload {
+                    dir_path: dir.display().to_string(),
+                };
+                let event = events::RemoveWatermarkEndEvent(payload);
+                event.emit(app)?;
+            }
+
             Ok(())
         })?;
         Ok(())
     })?;
-
-    println!("{dir_progress:#?}");
 
     Ok(())
 }
