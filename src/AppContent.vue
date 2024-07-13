@@ -2,7 +2,7 @@
 import {computed, onMounted, ref} from "vue";
 import {useMessage, useNotification} from "naive-ui";
 import {open} from "@tauri-apps/plugin-dialog";
-import {commands, ImageSizeCount, JpgImageData} from "./bindings.ts";
+import {commands, events, ImageSizeCount, JpgImageData} from "./bindings.ts";
 import WatermarkCropper from "./components/WatermarkCropper.vue";
 import StatusIndicator from "./components/StatusIndicator.vue";
 import {loadBackground} from "./utils.ts";
@@ -17,6 +17,7 @@ const imageSizeCounts = ref<ImageSizeCount[]>([]);
 const blackBackground = ref<JpgImageData>();
 const whiteBackground = ref<JpgImageData>();
 const showCropper = ref<boolean>(false);
+const removeWatermarkProgress = ref<Map<string, [number, number]>>(new Map());
 
 const mangaDirExist = computed<boolean>(() => mangaDir.value !== undefined);
 const outputDirExist = computed<boolean>(() => outputDir.value !== undefined);
@@ -41,6 +42,25 @@ const removeWatermarkButtonDisabled = computed<boolean>(() =>
 );
 
 onMounted(async () => {
+  await events.removeWatermarkStartEvent.listen((event) => {
+    const {dir_path, total} = event.payload;
+    removeWatermarkProgress.value.set(dir_path, [0, total]);
+  });
+
+  await events.removeWatermarkSuccessEvent.listen((event) => {
+    const {dir_path, current} = event.payload;
+    let entry = removeWatermarkProgress.value.get(dir_path);
+    if (entry === undefined) {
+      return;
+    }
+    entry[0] = current;
+  });
+  await events.removeWatermarkEndEvent.listen((event) => {
+    const {dir_path} = event.payload;
+    removeWatermarkProgress.value.delete(dir_path);
+    message.success(`${dir_path} 去水印成功`);
+  });
+
   outputDir.value = await path.resourceDir();
   await loadBackground(blackBackground, whiteBackground);
 });
@@ -104,9 +124,9 @@ async function showPathInFileManager(path: string | undefined) {
 }
 
 async function test() {
+
 }
 
-// TODO: 展示去水印进度
 </script>
 
 <template>
@@ -168,6 +188,9 @@ async function test() {
     </n-button>
 
     <n-button @click="test">测试用</n-button>
+    <div v-for="(progress, dirPath) in removeWatermarkProgress" :key="dirPath">
+      <span>{{ dirPath }}: {{ progress[0] }} / {{ progress[1] }}</span>
+    </div>
   </div>
   <n-modal v-model:show="showCropper">
     <watermark-cropper :manga-dir="mangaDir"

@@ -4,7 +4,7 @@
          /** user-defined commands **/
 
          export const commands = {
-async generateBackground(mangaDir: string, rectData: RectData, height: number, width: number) : Promise<Result<[string, string], CommandError>> {
+async generateBackground(mangaDir: string, rectData: RectData, height: number, width: number) : Promise<Result<null, CommandError>> {
 try {
     return { status: "ok", data: await TAURI_INVOKE("generate_background", { mangaDir, rectData, height, width }) };
 } catch (e) {
@@ -41,7 +41,17 @@ await TAURI_INVOKE("show_path_in_file_manager", { path });
 
          /** user-defined events **/
 
-
+export const events = __makeEvents__<{
+removeWatermarkStartEvent: RemoveWatermarkStartEvent,
+removeWatermarkSuccessEvent: RemoveWatermarkSuccessEvent,
+removeWatermarkErrorEvent: RemoveWatermarkErrorEvent,
+removeWatermarkEndEvent: RemoveWatermarkEndEvent
+}>({
+removeWatermarkStartEvent: "remove-watermark-start-event",
+removeWatermarkSuccessEvent: "remove-watermark-success-event",
+removeWatermarkErrorEvent: "remove-watermark-error-event",
+removeWatermarkEndEvent: "remove-watermark-end-event"
+})
 
          /** user-defined statics **/
 
@@ -54,6 +64,14 @@ export type ImageSizeCount = { height: number; width: number; count: number }
 export type JpgImageData = { info: JpgImageInfo; base64: string }
 export type JpgImageInfo = { height: number; width: number; path: string }
 export type RectData = { left: number; top: number; right: number; bottom: number }
+export type RemoveWatermarkEndEvent = RemoveWatermarkEndEventPayload
+export type RemoveWatermarkEndEventPayload = { dir_path: string }
+export type RemoveWatermarkErrorEvent = RemoveWatermarkErrorEventPayload
+export type RemoveWatermarkErrorEventPayload = { dir_path: string; img_path: string; err_msg: string }
+export type RemoveWatermarkStartEvent = RemoveWatermarkStartEventPayload
+export type RemoveWatermarkStartEventPayload = { dir_path: string; total: number }
+export type RemoveWatermarkSuccessEvent = RemoveWatermarkSuccessEventPayload
+export type RemoveWatermarkSuccessEventPayload = { dir_path: string; img_path: string; current: number }
 
 /** tauri-specta globals **/
 
