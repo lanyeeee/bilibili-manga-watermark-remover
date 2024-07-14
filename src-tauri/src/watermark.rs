@@ -1,9 +1,9 @@
+use crate::extensions::IgnoreLockPoison;
 use crate::{events, types};
 use anyhow::{anyhow, Context};
 use image::{Rgb, RgbImage};
 use path_slash::PathBufExt;
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
-use std::sync::MutexGuard;
 use std::{
     collections::HashMap,
     path::{Path, PathBuf},
@@ -11,17 +11,6 @@ use std::{
 };
 use tauri_specta::Event;
 use walkdir::{DirEntry, WalkDir};
-
-trait IgnoreLockPoison<T> {
-    fn lock_or_panic(&self) -> MutexGuard<T>;
-}
-impl<T> IgnoreLockPoison<T> for Mutex<T> {
-    /// 如果发生了lock poison，则直接panic
-    #[allow(clippy::unwrap_used)]
-    fn lock_or_panic(&self) -> MutexGuard<T> {
-        self.lock().unwrap()
-    }
-}
 
 /// 生成黑色背景和白色背景的水印图片
 #[allow(clippy::cast_possible_truncation)]
