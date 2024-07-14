@@ -17,6 +17,7 @@ mod errors;
 mod events;
 mod types;
 mod watermark;
+mod extensions;
 
 #[allow(clippy::unwrap_used)]
 fn main() {
