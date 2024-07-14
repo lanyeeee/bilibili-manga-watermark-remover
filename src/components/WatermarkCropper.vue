@@ -51,7 +51,7 @@ watch(srcImagePath, async () => {
   // 打开图片
   const result = await commands.openImage(srcImagePath.value);
   if (result.status === "error") {
-    notification.error({title: "打开图片失败", content: result.error});
+    notification.error({title: "打开图片失败", description: result.error});
     return;
   }
   srcImage.src = `data:image/jpeg;base64,${result.data.base64}`;
@@ -183,7 +183,7 @@ async function generateBackground() {
   const width = props.imageSizeCounts[0].width;
   const generateResult = await commands.generateBackground(props.mangaDir, rectData.value, height, width);
   if (generateResult.status === "error") {
-    notification.error({title: "生成背景图失败", content: generateResult.error});
+    notification.error({title: "生成背景图失败", description: generateResult.error});
     generating.value = false;
     return;
   }
