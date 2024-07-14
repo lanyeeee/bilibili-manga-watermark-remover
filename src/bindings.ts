@@ -4,7 +4,7 @@
          /** user-defined commands **/
 
          export const commands = {
-async generateBackground(mangaDir: string, rectData: RectData, height: number, width: number) : Promise<Result<null, CommandError>> {
+async generateBackground(mangaDir: string, rectData: RectData | null, height: number, width: number) : Promise<Result<null, CommandError>> {
 try {
     return { status: "ok", data: await TAURI_INVOKE("generate_background", { mangaDir, rectData, height, width }) };
 } catch (e) {
