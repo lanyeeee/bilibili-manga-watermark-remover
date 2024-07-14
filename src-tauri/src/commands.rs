@@ -10,18 +10,27 @@ use walkdir::WalkDir;
 
 #[tauri::command(async)]
 #[specta::specta]
+#[allow(clippy::cast_possible_truncation)]
 #[allow(clippy::needless_pass_by_value)]
+#[allow(clippy::cast_sign_loss)]
+#[allow(clippy::cast_precision_loss)]
 pub fn generate_background(
     app: AppHandle,
     manga_dir: &str,
-    rect_data: types::RectData,
+    rect_data: Option<types::RectData>,
     height: u32,
     width: u32,
 ) -> errors::CommandResult<()> {
     let cache_dir = app.path().resource_dir().map_err(anyhow::Error::from)?;
-    Ok(watermark::generate_background(
-        manga_dir, &rect_data, &cache_dir, height, width,
-    )?)
+    let default_rect_data = types::RectData {
+        left: (width as f32 * 0.835) as u32,
+        top: (height as f32 * 0.946) as u32,
+        right: (width as f32 * 0.994) as u32,
+        bottom: (height as f32 * 0.994) as u32,
+    };
+    let rect_data = rect_data.unwrap_or(default_rect_data);
+    watermark::generate_background(manga_dir, &rect_data, &cache_dir, height, width)?;
+    Ok(())
 }
 
 #[tauri::command(async)]
