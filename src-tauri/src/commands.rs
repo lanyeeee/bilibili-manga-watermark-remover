@@ -18,8 +18,8 @@ pub fn generate_background(
     app: AppHandle,
     manga_dir: &str,
     rect_data: Option<types::RectData>,
-    height: u32,
     width: u32,
+    height: u32,
 ) -> errors::CommandResult<()> {
     let cache_dir = app.path().resource_dir().map_err(anyhow::Error::from)?;
     let default_rect_data = types::RectData {
@@ -29,7 +29,7 @@ pub fn generate_background(
         bottom: (height as f32 * 0.994) as u32,
     };
     let rect_data = rect_data.unwrap_or(default_rect_data);
-    watermark::generate_background(manga_dir, &rect_data, &cache_dir, height, width)?;
+    watermark::generate_background(manga_dir, &rect_data, &cache_dir, width, height)?;
     Ok(())
 }
 
@@ -61,7 +61,7 @@ pub fn open_image(path: String) -> errors::CommandResult<types::JpgImageData> {
     let size = imagesize::size(&path)
         .context(format!("获取图片 {} 的尺寸失败", path.display()))
         .map_err(anyhow::Error::from)?;
-    let (height, width) = (size.height as u32, size.width as u32);
+    let (width, height) = (size.width as u32, size.height as u32);
     let image_data: Vec<u8> = std::fs::read(&path)
         .context(format!("读取图片 {} 失败", path.display()))
         .map_err(anyhow::Error::from)?;
@@ -70,8 +70,8 @@ pub fn open_image(path: String) -> errors::CommandResult<types::JpgImageData> {
     // 返回JpgImage对象
     Ok(types::JpgImageData {
         info: types::JpgImageInfo {
-            height,
             width,
+            height,
             path: path.display().to_string(),
         },
         base64,
@@ -95,7 +95,7 @@ pub fn get_image_size_count(manga_dir: &str) -> Vec<types::ImageSizeCount> {
             let Ok(size) = imagesize::size(&path) else {
                 continue;
             };
-            let key = (size.height as u32, size.width as u32);
+            let key = (size.width as u32, size.height as u32);
             let count = size_count.entry(key).or_insert(0);
             *count += 1;
         }
@@ -103,9 +103,9 @@ pub fn get_image_size_count(manga_dir: &str) -> Vec<types::ImageSizeCount> {
     // 将统计结果转换为Vec<ImageSizeCount>
     let mut image_size_count: Vec<types::ImageSizeCount> = size_count
         .into_iter()
-        .map(|((height, width), count)| types::ImageSizeCount {
-            height,
+        .map(|((width, height), count)| types::ImageSizeCount {
             width,
+            height,
             count,
         })
         .collect();
@@ -133,8 +133,8 @@ pub fn get_jpg_image_infos(manga_dir: &str) -> Vec<types::JpgImageInfo> {
                 continue;
             };
             jpg_image_infos.push(types::JpgImageInfo {
-                height: size.height as u32,
                 width: size.width as u32,
+                height: size.height as u32,
                 path: path.display().to_string(),
             });
         }
