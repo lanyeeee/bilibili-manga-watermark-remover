@@ -4,9 +4,9 @@
          /** user-defined commands **/
 
          export const commands = {
-async generateBackground(mangaDir: string, rectData: RectData | null, height: number, width: number) : Promise<Result<null, CommandError>> {
+async generateBackground(mangaDir: string, rectData: RectData | null, width: number, height: number) : Promise<Result<null, CommandError>> {
 try {
-    return { status: "ok", data: await TAURI_INVOKE("generate_background", { mangaDir, rectData, height, width }) };
+    return { status: "ok", data: await TAURI_INVOKE("generate_background", { mangaDir, rectData, width, height }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -60,9 +60,9 @@ removeWatermarkEndEvent: "remove-watermark-end-event"
 /** user-defined types **/
 
 export type CommandError = string
-export type ImageSizeCount = { height: number; width: number; count: number }
+export type ImageSizeCount = { width: number; height: number; count: number }
 export type JpgImageData = { info: JpgImageInfo; base64: string }
-export type JpgImageInfo = { height: number; width: number; path: string }
+export type JpgImageInfo = { width: number; height: number; path: string }
 export type RectData = { left: number; top: number; right: number; bottom: number }
 export type RemoveWatermarkEndEvent = RemoveWatermarkEndEventPayload
 export type RemoveWatermarkEndEventPayload = { dir_path: string }
