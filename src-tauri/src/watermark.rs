@@ -18,8 +18,8 @@ pub fn generate_background(
     manga_dir: &str,
     rect_data: &types::RectData,
     output_dir: &Path,
-    height: u32,
     width: u32,
+    height: u32,
 ) -> anyhow::Result<()> {
     // 遍历manga_dir目录下的所有jpg文件，收集尺寸符合要求的图片的路径
     let image_paths: Vec<PathBuf> = WalkDir::new(PathBuf::from_slash(manga_dir))
@@ -32,7 +32,7 @@ pub fn generate_background(
                 return None;
             }
             let size = imagesize::size(&path).ok()?;
-            if size.height as u32 == height && size.width as u32 == width {
+            if size.width as u32 == width && size.height as u32 == height {
                 Some(path)
             } else {
                 None
@@ -119,11 +119,11 @@ pub fn remove(
         .to_rgb8();
     if black.dimensions() != white.dimensions() {
         return Err(anyhow!(
-            "黑色背景图和白色背景图的尺寸不一致，黑色背景图的尺寸是 (高:{}, 宽:{})，白色背景图的尺寸是 (高:{}, 宽:{})",
-            black.height(),
+            "黑色背景图和白色背景图的尺寸不一致，黑色背景图的尺寸是 ({}x{})，白色背景图的尺寸是 ({}x{})",
             black.width(),
-            white.height(),
+            black.height(),
             white.width(),
+            white.height(),
         ));
     }
     // 构建一个HashMap，key是目录的路径，value是该目录下的所有jpg文件的路径
