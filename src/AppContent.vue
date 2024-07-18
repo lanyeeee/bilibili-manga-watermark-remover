@@ -115,7 +115,7 @@ async function selectMangaDir() {
   const generatingMessage = message.loading("尝试自动生成背景图", {duration: 0});
   const height = imageSizeCounts.value[0].height;
   const width = imageSizeCounts.value[0].width;
-  const generateResult = await commands.generateBackground(mangaDir.value, null, height, width);
+  const generateResult = await commands.generateBackground(mangaDir.value, null, width, height);
   if (generateResult.status === "error") {
     generatingMessage.destroy();
     notification.error({
