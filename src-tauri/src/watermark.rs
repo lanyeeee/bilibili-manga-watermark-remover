@@ -39,7 +39,7 @@ pub fn generate_background(
             }
         })
         .collect();
-    // 用于记录是否找到了黑色背景和白色背景的图片
+    // 用于记录是否找到了黑色背景和白色背景的水印图片
     let black_path: Mutex<Option<()>> = Mutex::new(None);
     let white_path: Mutex<Option<()>> = Mutex::new(None);
     // 并发遍历image_paths
@@ -68,7 +68,7 @@ pub fn generate_background(
         }
         let filename = if is_black { "black.png" } else { "white.png" };
         let output_path = output_dir.join(filename);
-        // 保存黑色背景或白色背景的图片
+        // 保存黑色背景或白色背景的水印图片
         let mut background_path = if is_black {
             black_path.lock_or_panic()
         } else {
@@ -84,12 +84,16 @@ pub fn generate_background(
         }
         Ok(())
     })?;
-    // 检查是否找到了黑色背景和白色背景的图片
+    // 检查是否找到了黑色背景和白色背景的水印图片
     if black_path.lock_or_panic().is_none() {
-        return Err(anyhow!("在漫画目录 {manga_dir} 下找不到合适的黑色背景图",));
+        return Err(anyhow!(
+            "在漫画目录 {manga_dir} 下找不到合适的黑色背景水印图({width}x{height})",
+        ));
     }
     if white_path.lock_or_panic().is_none() {
-        return Err(anyhow!("在漫画目录 {manga_dir} 下找不到合适的白色背景图",));
+        return Err(anyhow!(
+            "在漫画目录 {manga_dir} 下找不到合适的白色背景水印图({width}x{height})",
+        ));
     }
 
     Ok(())
@@ -111,15 +115,15 @@ pub fn remove(
     let output_dir = PathBuf::from_slash(output_dir);
     let black = black_data
         .to_image()
-        .context(format!("黑色背景图 {} 转换失败", black_data.info.path))?
+        .context(format!("黑色背景水印图 {} 转换失败", black_data.info.path))?
         .to_rgb8();
     let white = white_data
         .to_image()
-        .context(format!("白色背景图 {} 转换失败", white_data.info.path))?
+        .context(format!("白色背景水印图 {} 转换失败", white_data.info.path))?
         .to_rgb8();
     if black.dimensions() != white.dimensions() {
         return Err(anyhow!(
-            "黑色背景图和白色背景图的尺寸不一致，黑色背景图的尺寸是 ({}x{})，白色背景图的尺寸是 ({}x{})",
+            "黑色背景和白色背景水印图的尺寸不一致，黑色背景水印图的尺寸是 ({}x{})，白色背景水印图的尺寸是 ({}x{})",
             black.width(),
             black.height(),
             white.width(),

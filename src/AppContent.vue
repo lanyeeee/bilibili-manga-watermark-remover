@@ -79,11 +79,11 @@ async function removeWatermark() {
     return;
   }
   if (blackBackground.value === undefined) {
-    message.error("缺少黑色背景图");
+    message.error("缺少黑色背景水印图");
     return;
   }
   if (whiteBackground.value === undefined) {
-    message.error("缺少白色背景图");
+    message.error("缺少白色背景水印图");
     return;
   }
 
@@ -103,30 +103,30 @@ async function selectMangaDir() {
   // 获取图片尺寸统计
   imageSizeCounts.value = await commands.getImageSizeCount(selectedDirPath);
   mangaDir.value = selectedDirPath;
-  // 如果漫画目录下没有图片，则无法生成背景图
+  // 如果漫画目录下没有图片，则无法生成背景水印图
   if (imageSizeCounts.value.length === 0) {
     return;
   }
-  // 如果黑色背景图和白色背景图都存在，且尺寸与漫画尺寸匹配，则无需生成背景图
+  // 如果黑色背景水印图和白色背景水印图都存在，且尺寸与漫画尺寸匹配，则无需生成背景水印图
   if (blackBackgroundExist.value && whiteBackgroundExist.value && backgroundMatchManga.value) {
     return;
   }
-  // 否则尝试生成背景图
-  const generatingMessage = message.loading("尝试自动生成背景图", {duration: 0});
+  // 否则尝试生成背景水印图
+  const generatingMessage = message.loading("尝试自动生成背景水印图", {duration: 0});
   const height = imageSizeCounts.value[0].height;
   const width = imageSizeCounts.value[0].width;
   const generateResult = await commands.generateBackground(mangaDir.value, null, width, height);
   if (generateResult.status === "error") {
     generatingMessage.destroy();
     notification.error({
-      title: "自动生成背景图失败",
+      title: "自动生成背景水印图失败",
       description: generateResult.error,
       content: "请尝试手动截取水印"
     });
     return;
   }
   generatingMessage.destroy();
-  message.success("自动生成背景图成功");
+  message.success("自动生成背景水印图成功");
 
   await loadBackground(blackBackground, whiteBackground);
 }
@@ -156,8 +156,8 @@ async function test() {
   <div class="flex flex-col">
     <status-indicator content="选择漫画目录" :ok="mangaDirExist"/>
     <status-indicator content="选择输出目录" :ok="outputDirExist"/>
-    <status-indicator content="存在黑色背景图" :ok="blackBackgroundExist"/>
-    <status-indicator content="存在白色背景图" :ok="whiteBackgroundExist"/>
+    <status-indicator content="存在黑色背景水印图" :ok="blackBackgroundExist"/>
+    <status-indicator content="存在白色背景水印图" :ok="whiteBackgroundExist"/>
     <status-indicator v-if="mangaDirExist" content="漫画目录存在图片" :ok="imagesExist"/>
     <status-indicator v-if="mangaDirExist && imagesExist"
                       content="水印图尺寸与漫画尺寸匹配"
@@ -203,11 +203,11 @@ async function test() {
 
     <n-button :disabled="!blackBackgroundExist"
               @click="showPathInFileManager(blackBackground?.info.path)">
-      打开黑色背景图目录
+      打开黑色背景水印图目录
     </n-button>
     <n-button :disabled="!whiteBackgroundExist"
               @click="showPathInFileManager(whiteBackground?.info.path)">
-      打开白色背景图目录
+      打开白色背景水印图目录
     </n-button>
 
     <n-button @click="test">测试用</n-button>
