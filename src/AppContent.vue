@@ -88,11 +88,16 @@ async function removeWatermark() {
   }
 
   let result = await commands.removeWatermark(mangaDir.value, outputDir.value, blackBackground.value, whiteBackground.value);
-  if (result.status === "ok") {
-    message.success("去水印成功");
-  } else {
+  if (result.status === "error") {
     notification.error({title: "去水印失败", description: result.error});
+    return;
   }
+  const response = result.data;
+  if (response.code !== 0) {
+    notification.warning({title: "去水印失败", description: response.msg});
+    return;
+  }
+  message.success("去水印成功");
 }
 
 async function selectMangaDir() {
@@ -100,8 +105,12 @@ async function selectMangaDir() {
   if (selectedDirPath === null) {
     return;
   }
-  // 获取图片尺寸统计
-  imageSizeCounts.value = await commands.getImageSizeCount(selectedDirPath);
+  const response = await commands.getImageSizeCount(selectedDirPath);
+  if (response.code !== 0) {
+    notification.warning({title: "获取图片尺寸统计失败", description: response.msg});
+    return;
+  }
+  imageSizeCounts.value = response.data;
   mangaDir.value = selectedDirPath;
   // 如果漫画目录下没有图片，则无法生成背景水印图
   if (imageSizeCounts.value.length === 0) {
@@ -126,6 +135,11 @@ async function selectMangaDir() {
     return;
   }
   generatingMessage.destroy();
+  const generateResponse = generateResult.data;
+  if (generateResponse.code !== 0) {
+    notification.warning({title: "自动生成背景水印图失败", description: generateResponse.msg});
+    return;
+  }
   message.success("自动生成背景水印图成功");
 
   await loadBackground(blackBackground, whiteBackground);
@@ -143,6 +157,7 @@ async function showPathInFileManager(path: string | undefined) {
   if (path === undefined) {
     return;
   }
+  console.log(path)
   await commands.showPathInFileManager(path);
 }
 
