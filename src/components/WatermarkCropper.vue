@@ -54,7 +54,12 @@ watch(srcImagePath, async () => {
     notification.error({title: "打开图片失败", description: result.error});
     return;
   }
-  srcImage.src = `data:image/jpeg;base64,${result.data.base64}`;
+  const response = result.data;
+  if (response.code !== 0) {
+    notification.warning({title: "打开图片失败", description: response.msg});
+    return;
+  }
+  srcImage.src = `data:image/jpeg;base64,${response.data.base64}`;
   rectData.value = null;
 });
 // 监听 mangaDir 的变化，当路径变化时，获取对应路径下的所有jpg图片信息，并从中随机选择一张图片，将其路径赋值给srcImagePath
@@ -63,7 +68,12 @@ watch(() => props.mangaDir, async () => {
     return;
   }
   // 获取mangaDir下所有jpg图片信息
-  jpgImageInfos = await commands.getJpgImageInfos(props.mangaDir);
+  const response = await commands.getJpgImageInfos(props.mangaDir);
+  if (response.code !== 0) {
+    notification.warning({title: "获取jpg图片信息失败", description: response.msg});
+    return;
+  }
+  jpgImageInfos = response.data;
   // 随机选择一张图片，将其路径赋值给srcImagePath
   srcImagePath.value = getRandomJpgImageInfo()?.path;
 }, {immediate: true});
@@ -181,14 +191,20 @@ async function generateBackground() {
   generating.value = true;
   const height = props.imageSizeCounts[0].height;
   const width = props.imageSizeCounts[0].width;
-  const generateResult = await commands.generateBackground(props.mangaDir, rectData.value, height, width);
+  const generateResult = await commands.generateBackground(props.mangaDir, rectData.value, width, height);
   if (generateResult.status === "error") {
-    notification.error({title: "生成背景图失败", description: generateResult.error});
+    notification.error({title: "生成背景水印图失败", description: generateResult.error});
+    generating.value = false;
+    return;
+  }
+  const response = generateResult.data;
+  if (response.code !== 0) {
+    notification.warning({title: "生成背景水印图失败", description: response.msg});
     generating.value = false;
     return;
   }
 
-  message.success("生成背景图成功");
+  message.success("生成背景水印图成功");
   await loadBackground(blackBackground, whiteBackground);
   showing.value = false;
 
@@ -216,7 +232,7 @@ async function changeImage() {
     </div>
     <div class="flex flex-justify-end">
       <n-button :loading="generating" :disabled="rectData===null" type="primary" @click="generateBackground">
-        生成背景图
+        生成背景水印图
       </n-button>
     </div>
   </div>

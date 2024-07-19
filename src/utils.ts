@@ -17,8 +17,13 @@ export async function loadBackground(blackBackground: Ref<JpgImageData | undefin
             console.error(result.error);
             return;
         }
+        const response = result.data;
+        if (response.code !== 0) {
+            console.error(response.msg);
+            return;
+        }
         const background = isBlack ? blackBackground : whiteBackground;
-        background.value = result.data;
+        background.value = response.data;
     };
     await Promise.all([load(true), load(false)]);
 }
