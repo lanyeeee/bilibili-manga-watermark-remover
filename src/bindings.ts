@@ -4,7 +4,7 @@
          /** user-defined commands **/
 
          export const commands = {
-async generateBackground(mangaDir: string, rectData: RectData | null, width: number, height: number) : Promise<Result<null, CommandError>> {
+async generateBackground(mangaDir: string, rectData: RectData | null, width: number, height: number) : Promise<Result<CommandResponse<null>, CommandError>> {
 try {
     return { status: "ok", data: await TAURI_INVOKE("generate_background", { mangaDir, rectData, width, height }) };
 } catch (e) {
@@ -12,7 +12,7 @@ try {
     else return { status: "error", error: e  as any };
 }
 },
-async removeWatermark(mangaDir: string, outputDir: string, blackImageData: JpgImageData, whiteImageData: JpgImageData) : Promise<Result<null, CommandError>> {
+async removeWatermark(mangaDir: string, outputDir: string, blackImageData: JpgImageData, whiteImageData: JpgImageData) : Promise<Result<CommandResponse<null>, CommandError>> {
 try {
     return { status: "ok", data: await TAURI_INVOKE("remove_watermark", { mangaDir, outputDir, blackImageData, whiteImageData }) };
 } catch (e) {
@@ -20,7 +20,7 @@ try {
     else return { status: "error", error: e  as any };
 }
 },
-async openImage(path: string) : Promise<Result<JpgImageData, CommandError>> {
+async openImage(path: string) : Promise<Result<CommandResponse<JpgImageData>, CommandError>> {
 try {
     return { status: "ok", data: await TAURI_INVOKE("open_image", { path }) };
 } catch (e) {
@@ -28,10 +28,10 @@ try {
     else return { status: "error", error: e  as any };
 }
 },
-async getImageSizeCount(mangaDir: string) : Promise<ImageSizeCount[]> {
+async getImageSizeCount(mangaDir: string) : Promise<CommandResponse<ImageSizeCount[]>> {
 return await TAURI_INVOKE("get_image_size_count", { mangaDir });
 },
-async getJpgImageInfos(mangaDir: string) : Promise<JpgImageInfo[]> {
+async getJpgImageInfos(mangaDir: string) : Promise<CommandResponse<JpgImageInfo[]>> {
 return await TAURI_INVOKE("get_jpg_image_infos", { mangaDir });
 },
 async showPathInFileManager(path: string) : Promise<void> {
@@ -60,6 +60,7 @@ removeWatermarkEndEvent: "remove-watermark-end-event"
 /** user-defined types **/
 
 export type CommandError = string
+export type CommandResponse<T> = { code: number; msg: string; data: T }
 export type ImageSizeCount = { width: number; height: number; count: number }
 export type JpgImageData = { info: JpgImageInfo; base64: string }
 export type JpgImageInfo = { width: number; height: number; path: string }

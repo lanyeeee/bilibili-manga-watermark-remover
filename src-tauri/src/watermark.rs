@@ -1,5 +1,6 @@
+use crate::events;
 use crate::extensions::IgnoreLockPoison;
-use crate::{events, types};
+use crate::types::{CommandResponse, JpgImageData, RectData};
 use anyhow::{anyhow, Context};
 use image::{Rgb, RgbImage};
 use path_slash::PathBufExt;
@@ -16,11 +17,11 @@ use walkdir::{DirEntry, WalkDir};
 #[allow(clippy::cast_possible_truncation)]
 pub fn generate_background(
     manga_dir: &str,
-    rect_data: &types::RectData,
+    rect_data: &RectData,
     output_dir: &Path,
     width: u32,
     height: u32,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<CommandResponse<()>> {
     // 遍历manga_dir目录下的所有jpg文件，收集尺寸符合要求的图片的路径
     let image_paths: Vec<PathBuf> = WalkDir::new(PathBuf::from_slash(manga_dir))
         .max_depth(2) // 一般第一层目录是章节目录，第二层目录是图片文件
@@ -86,17 +87,28 @@ pub fn generate_background(
     })?;
     // 检查是否找到了黑色背景和白色背景的水印图片
     if black_path.lock_or_panic().is_none() {
-        return Err(anyhow!(
-            "在漫画目录 {manga_dir} 下找不到合适的黑色背景水印图({width}x{height})",
-        ));
+        let res = CommandResponse {
+            code: -1,
+            msg: format!("找不到尺寸为({width}x{height})的黑色背景水印图"),
+            data: (),
+        };
+        return Ok(res);
     }
     if white_path.lock_or_panic().is_none() {
-        return Err(anyhow!(
-            "在漫画目录 {manga_dir} 下找不到合适的白色背景水印图({width}x{height})",
-        ));
+        let res = CommandResponse {
+            code: -1,
+            msg: format!("找不到尺寸为({width}x{height})的白色背景水印图"),
+            data: (),
+        };
+        return Ok(res);
     }
 
-    Ok(())
+    let res = CommandResponse {
+        code: 0,
+        msg: String::new(),
+        data: (),
+    };
+    Ok(res)
 }
 
 /// 移除`manga_dir`目录下所有图片的水印，并保存到`output_dir`目录
@@ -105,9 +117,9 @@ pub fn remove(
     app: &tauri::AppHandle,
     manga_dir: &str,
     output_dir: &str,
-    black_data: &types::JpgImageData,
-    white_data: &types::JpgImageData,
-) -> anyhow::Result<()> {
+    black_data: &JpgImageData,
+    white_data: &JpgImageData,
+) -> anyhow::Result<CommandResponse<()>> {
     let manga_dir = PathBuf::from_slash(manga_dir);
     let manga_dir_without_name = manga_dir
         .parent()
@@ -217,11 +229,16 @@ pub fn remove(
         Ok(())
     })?;
 
-    Ok(())
+    let res = CommandResponse {
+        code: 0,
+        msg: String::new(),
+        data: (),
+    };
+    Ok(res)
 }
 
 /// 检查图片`img`是否满足黑色背景的条件，如果返回`None`则表示既不满足黑色背景的条件也不满足白色背景的条件
-fn is_black_background(img: &RgbImage, rect_data: &types::RectData) -> Option<bool> {
+fn is_black_background(img: &RgbImage, rect_data: &RectData) -> Option<bool> {
     let (left, top) = (rect_data.left, rect_data.top);
     let (right, bottom) = (rect_data.right, rect_data.bottom);
     // 获取左上角的颜色
