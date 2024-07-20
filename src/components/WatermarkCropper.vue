@@ -1,26 +1,26 @@
 <script setup lang="ts">
-import {commands, ImageSizeCount, JpgImageData, JpgImageInfo, RectData} from "../bindings.ts";
+import {commands, JpgImageInfo, MangaDirData, RectData} from "../bindings.ts";
 import {computed, onMounted, ref, watch} from "vue";
-import {loadBackground} from "../utils.ts";
 import {useMessage, useNotification} from "naive-ui";
 
 
 const props = defineProps<{
   mangaDir: string | undefined;
-  imageSizeCounts: ImageSizeCount[]
+  mangaDirDataList: MangaDirData[],
+  loadBackground: () => Promise<void>,
+  width: number,
+  height: number,
 }>();
 
 const notification = useNotification();
 const message = useMessage();
 
-const blackBackground = defineModel<JpgImageData | undefined>("blackBackground", {required: true});
-const whiteBackground = defineModel<JpgImageData | undefined>("whiteBackground", {required: true});
 const showing = defineModel<boolean>("showing", {required: true});
 
 const MASKER_OPACITY = 0.7;
 const srcImage: HTMLImageElement = new Image();
-let jpgImageInfos: JpgImageInfo[] = [];
 
+let jpgImageInfos: JpgImageInfo[] = [];
 
 const rectData = ref<RectData | null>(null);
 const canvasContainer = ref<HTMLDivElement>();
@@ -30,18 +30,9 @@ const isDarkMasker = ref<boolean>(true);
 const generating = ref<boolean>(false);
 
 
-// 经过筛选后的jpg图片信息，只包含尺寸出现次数最多的图片
-const filteredJpgImageInfos = computed<JpgImageInfo[]>(() => {
-  if (props.imageSizeCounts.length === 0) {
-    return [];
-  }
-  // 获取尺寸出现次数最多的图片的尺寸
-  const height = props.imageSizeCounts[0].height;
-  const width = props.imageSizeCounts[0].width;
-  return jpgImageInfos.filter(info => info.height === height && info.width === width);
-});
 // masker的值，深色遮罩为0，浅色遮罩为255
 const maskerValue = computed<number>(() => isDarkMasker.value ? 0 : 255);
+const matchingJpgImageInfos = computed<JpgImageInfo[]>(() => jpgImageInfos.filter(info => info.width == props.width && info.height == props.height));
 
 // 监听 srcImagePath 的变化，当路径变化时，加载对应的图片
 watch(srcImagePath, async () => {
@@ -112,10 +103,10 @@ onMounted(() => {
 
 // 随机从筛选后的jpg图片信息中选择一张图片
 function getRandomJpgImageInfo(): JpgImageInfo | null {
-  if (filteredJpgImageInfos.value.length === 0) {
+  if (matchingJpgImageInfos.value.length === 0) {
     return null;
   }
-  return filteredJpgImageInfos.value[Math.floor(Math.random() * filteredJpgImageInfos.value.length)];
+  return matchingJpgImageInfos.value[Math.floor(Math.random() * matchingJpgImageInfos.value.length)];
 }
 
 function handleMouseDown(event: MouseEvent) {
@@ -189,9 +180,10 @@ async function generateBackground() {
   }
 
   generating.value = true;
-  const height = props.imageSizeCounts[0].height;
-  const width = props.imageSizeCounts[0].width;
+  const width = props.width;
+  const height = props.height;
   const generateResult = await commands.generateBackground(props.mangaDir, rectData.value, width, height);
+  await props.loadBackground();
   if (generateResult.status === "error") {
     notification.error({title: "生成背景水印图失败", description: generateResult.error});
     generating.value = false;
@@ -205,7 +197,6 @@ async function generateBackground() {
   }
 
   message.success("生成背景水印图成功");
-  await loadBackground(blackBackground, whiteBackground);
   showing.value = false;
 
 }

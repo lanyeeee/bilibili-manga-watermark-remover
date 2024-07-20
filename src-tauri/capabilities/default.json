@@ -21,7 +21,7 @@
       "identifier": "fs:scope",
       "allow": [
         {
-          "path": "$RESOURCE/*"
+          "path": "$RESOURCE/**"
         }
       ]
     }
