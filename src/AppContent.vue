@@ -221,8 +221,16 @@ async function test() {
       <div v-else v-for="dirData in mangaDirDataList" :key="dirData.count">
         <span>
           尺寸({{ dirData.width }}x{{ dirData.height }})共有{{ dirData.count }} 张
-          <n-button size="tiny" :disabled="dirData.blackBackground===null">黑色</n-button>
-          <n-button size="tiny" :disabled="dirData.whiteBackground===null">白色</n-button>
+          <n-button size="tiny"
+                    :disabled="dirData.blackBackground===null"
+                    @click="showPathInFileManager(dirData.blackBackground?.info.path)">
+            黑色
+          </n-button>
+          <n-button size="tiny"
+                    :disabled="dirData.whiteBackground===null"
+                    @click="showPathInFileManager(dirData.whiteBackground?.info.path)">
+            白色
+          </n-button>
           <n-button size="tiny" @click="showCropper(dirData.width, dirData.height)">手动截取水印</n-button>
           <span v-if="dirData.blackBackground!==null&&dirData.whiteBackground!==null">✅将被去除水印</span>
           <span v-else-if="dirData.blackBackground===null&&dirData.whiteBackground===null">
