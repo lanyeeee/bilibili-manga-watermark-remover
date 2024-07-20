@@ -19,10 +19,14 @@ pub struct RectData {
 }
 
 #[derive(Debug, Deserialize, Serialize, Type)]
-pub struct ImageSizeCount {
+pub struct MangaDirData {
     pub width: u32,
     pub height: u32,
     pub count: u32,
+    #[serde(rename = "blackBackground")]
+    pub black_background: Option<JpgImageData>,
+    #[serde(rename = "whiteBackground")]
+    pub white_background: Option<JpgImageData>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Type)]

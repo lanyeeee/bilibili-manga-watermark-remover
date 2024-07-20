@@ -1,5 +1,5 @@
 use crate::errors::CommandResult;
-use crate::types::{CommandResponse, ImageSizeCount, JpgImageData, JpgImageInfo, RectData};
+use crate::types::{CommandResponse, JpgImageData, JpgImageInfo, MangaDirData, RectData};
 use crate::watermark;
 use anyhow::Context;
 use base64::engine::general_purpose;
@@ -23,7 +23,8 @@ pub fn generate_background(
     width: u32,
     height: u32,
 ) -> CommandResult<CommandResponse<()>> {
-    let cache_dir = app.path().resource_dir().map_err(anyhow::Error::from)?;
+    let resource_dir = app.path().resource_dir().map_err(anyhow::Error::from)?;
+    let output_dir = resource_dir.join(format!("背景水印图/{width}x{height}"));
     let default_rect_data = RectData {
         left: (width as f32 * 0.835) as u32,
         top: (height as f32 * 0.946) as u32,
@@ -31,7 +32,7 @@ pub fn generate_background(
         bottom: (height as f32 * 0.994) as u32,
     };
     let rect_data = rect_data.unwrap_or(default_rect_data);
-    let res = watermark::generate_background(manga_dir, &rect_data, &cache_dir, width, height)?;
+    let res = watermark::generate_background(manga_dir, &rect_data, &output_dir, width, height)?;
     Ok(res)
 }
 
@@ -42,16 +43,9 @@ pub fn remove_watermark(
     app: AppHandle,
     manga_dir: &str,
     output_dir: &str,
-    black_image_data: JpgImageData,
-    white_image_data: JpgImageData,
+    backgrounds_data: Vec<(JpgImageData, JpgImageData)>,
 ) -> CommandResult<CommandResponse<()>> {
-    let res = watermark::remove(
-        &app,
-        manga_dir,
-        output_dir,
-        &black_image_data,
-        &white_image_data,
-    )?;
+    let res = watermark::remove(&app, manga_dir, output_dir, &backgrounds_data)?;
     Ok(res)
 }
 
@@ -89,7 +83,11 @@ pub fn open_image(path: String) -> CommandResult<CommandResponse<JpgImageData>> 
 #[tauri::command(async)]
 #[specta::specta]
 #[allow(clippy::cast_possible_truncation)]
-pub fn get_image_size_count(manga_dir: &str) -> CommandResponse<Vec<ImageSizeCount>> {
+#[allow(clippy::needless_pass_by_value)]
+pub fn get_manga_dir_data(
+    app: AppHandle,
+    manga_dir: &str,
+) -> CommandResult<CommandResponse<Vec<MangaDirData>>> {
     // 用于存储不同尺寸的图片的数量
     let mut size_count: HashMap<(u32, u32), u32> = HashMap::new();
     // 遍历漫画目录下的所有文件，统计不同尺寸的图片的数量
@@ -108,23 +106,46 @@ pub fn get_image_size_count(manga_dir: &str) -> CommandResponse<Vec<ImageSizeCou
             *count += 1;
         }
     }
-    // 将统计结果转换为Vec<ImageSizeCount>
-    let mut image_size_count: Vec<ImageSizeCount> = size_count
+    // 将统计结果转换为Vec<MangaDirData>
+    let mut manga_dir_data: Vec<MangaDirData> = size_count
         .into_iter()
-        .map(|((width, height), count)| ImageSizeCount {
+        .map(|((width, height), count)| MangaDirData {
             width,
             height,
             count,
+            black_background: None,
+            white_background: None,
         })
         .collect();
     // 以count降序排序
-    image_size_count.sort_by(|a, b| b.count.cmp(&a.count));
+    manga_dir_data.sort_by(|a, b| b.count.cmp(&a.count));
+    // 获取背景水印图的数据
+    let resource_dir = app.path().resource_dir().map_err(anyhow::Error::from)?;
+    for dir_data in &mut manga_dir_data {
+        let width = dir_data.width;
+        let height = dir_data.height;
+        let background_dir = resource_dir.join(format!("背景水印图/{width}x{height}"));
+        let black_background_path = background_dir.join("black.png");
+        let white_background_path = background_dir.join("white.png");
+        if black_background_path.exists() {
+            let black_background_path = black_background_path.display().to_string();
+            let black_background = open_image(black_background_path).map(|res| Some(res.data))?;
+            dir_data.black_background = black_background;
+        }
+        if white_background_path.exists() {
+            let white_background_path = white_background_path.display().to_string();
+            let white_background = open_image(white_background_path).map(|res| Some(res.data))?;
+            dir_data.white_background = white_background;
+        }
+    }
     // 返回结果
-    CommandResponse {
+    let res = CommandResponse {
         code: 0,
         msg: String::new(),
-        data: image_size_count,
-    }
+        data: manga_dir_data,
+    };
+
+    Ok(res)
 }
 
 #[tauri::command(async)]

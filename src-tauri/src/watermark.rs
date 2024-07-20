@@ -10,11 +10,11 @@ use std::{
     path::{Path, PathBuf},
     sync::Mutex,
 };
+use tauri::AppHandle;
 use tauri_specta::Event;
 use walkdir::{DirEntry, WalkDir};
 
 /// 生成黑色背景和白色背景的水印图片
-#[allow(clippy::cast_possible_truncation)]
 pub fn generate_background(
     manga_dir: &str,
     rect_data: &RectData,
@@ -22,32 +22,17 @@ pub fn generate_background(
     width: u32,
     height: u32,
 ) -> anyhow::Result<CommandResponse<()>> {
-    // 遍历manga_dir目录下的所有jpg文件，收集尺寸符合要求的图片的路径
-    let image_paths: Vec<PathBuf> = WalkDir::new(PathBuf::from_slash(manga_dir))
-        .max_depth(2) // 一般第一层目录是章节目录，第二层目录是图片文件
-        .into_iter()
-        .filter_map(Result::ok)
-        .filter_map(|entry| {
-            let path = entry.into_path();
-            if !path.is_file() || path.extension()? != "jpg" {
-                return None;
-            }
-            let size = imagesize::size(&path).ok()?;
-            if size.width as u32 == width && size.height as u32 == height {
-                Some(path)
-            } else {
-                None
-            }
-        })
-        .collect();
+    let image_paths = create_image_paths(manga_dir, width, height);
     // 用于记录是否找到了黑色背景和白色背景的水印图片
-    let black_path: Mutex<Option<()>> = Mutex::new(None);
-    let white_path: Mutex<Option<()>> = Mutex::new(None);
+    let black_status: Mutex<Option<()>> = Mutex::new(None);
+    let white_status: Mutex<Option<()>> = Mutex::new(None);
+    let black_found = || black_status.lock_or_panic().is_some();
+    let white_found = || white_status.lock_or_panic().is_some();
     // 并发遍历image_paths
     let image_paths = image_paths.par_iter();
     image_paths.try_for_each(|path| -> anyhow::Result<()> {
         // 如果black_path和white_path都已经找到了，则直接跳过
-        if black_path.lock_or_panic().is_some() && white_path.lock_or_panic().is_some() {
+        if black_found() && white_found() {
             return Ok(());
         }
         let mut img = image::open(path)
@@ -67,13 +52,15 @@ pub fn generate_background(
                 *pixel = color;
             }
         }
+        std::fs::create_dir_all(output_dir)
+            .context(format!("创建目录 {} 失败", output_dir.display()))?;
         let filename = if is_black { "black.png" } else { "white.png" };
         let output_path = output_dir.join(filename);
         // 保存黑色背景或白色背景的水印图片
         let mut background_path = if is_black {
-            black_path.lock_or_panic()
+            black_status.lock_or_panic()
         } else {
-            white_path.lock_or_panic()
+            white_status.lock_or_panic()
         };
         // 如果background_path是None，则把output_path赋值给background_path，并保存图片
         if background_path.is_none() {
@@ -85,92 +72,64 @@ pub fn generate_background(
         }
         Ok(())
     })?;
-    // 检查是否找到了黑色背景和白色背景的水印图片
-    if black_path.lock_or_panic().is_none() {
-        let res = CommandResponse {
-            code: -1,
-            msg: format!("找不到尺寸为({width}x{height})的黑色背景水印图"),
-            data: (),
-        };
-        return Ok(res);
-    }
-    if white_path.lock_or_panic().is_none() {
-        let res = CommandResponse {
-            code: -1,
-            msg: format!("找不到尺寸为({width}x{height})的白色背景水印图"),
-            data: (),
-        };
-        return Ok(res);
-    }
-
-    let res = CommandResponse {
+    let mut res = CommandResponse {
         code: 0,
         msg: String::new(),
         data: (),
     };
+    if !black_found() {
+        res.code = -1;
+        res.msg += format!("找不到尺寸为({width}x{height})的黑色背景水印图\n").as_str();
+    };
+    if !white_found() {
+        res.code = -1;
+        res.msg += format!("找不到尺寸为({width}x{height})的白色背景水印图\n").as_str();
+    };
     Ok(res)
 }
 
-/// 移除`manga_dir`目录下所有图片的水印，并保存到`output_dir`目录
+/// 遍历`manga_dir`目录下的所有jpg文件，收集尺寸符合`width`和`height`的图片的路径
 #[allow(clippy::cast_possible_truncation)]
+fn create_image_paths(manga_dir: &str, width: u32, height: u32) -> Vec<PathBuf> {
+    let image_paths: Vec<PathBuf> = WalkDir::new(PathBuf::from_slash(manga_dir))
+        .max_depth(2) // 一般第一层目录是章节目录，第二层目录是图片文件
+        .into_iter()
+        .filter_map(Result::ok)
+        .filter_map(|entry| {
+            let path = entry.into_path();
+            if !path.is_file() || path.extension()? != "jpg" {
+                return None;
+            }
+            let size = imagesize::size(&path).ok()?;
+            if size.width as u32 == width && size.height as u32 == height {
+                Some(path)
+            } else {
+                None
+            }
+        })
+        .collect();
+    image_paths
+}
+
+/// 移除`manga_dir`目录下所有图片的水印，并保存到`output_dir`目录
 pub fn remove(
-    app: &tauri::AppHandle,
+    app: &AppHandle,
     manga_dir: &str,
     output_dir: &str,
-    black_data: &JpgImageData,
-    white_data: &JpgImageData,
+    backgrounds_data: &[(JpgImageData, JpgImageData)],
 ) -> anyhow::Result<CommandResponse<()>> {
     let manga_dir = PathBuf::from_slash(manga_dir);
     let manga_dir_without_name = manga_dir
         .parent()
         .ok_or(anyhow!("漫画目录 {} 的父目录不存在", manga_dir.display()))?;
     let output_dir = PathBuf::from_slash(output_dir);
-    let black = black_data
-        .to_image()
-        .context(format!("黑色背景水印图 {} 转换失败", black_data.info.path))?
-        .to_rgb8();
-    let white = white_data
-        .to_image()
-        .context(format!("白色背景水印图 {} 转换失败", white_data.info.path))?
-        .to_rgb8();
-    if black.dimensions() != white.dimensions() {
-        return Err(anyhow!(
-            "黑色背景和白色背景水印图的尺寸不一致，黑色背景水印图的尺寸是 ({}x{})，白色背景水印图的尺寸是 ({}x{})",
-            black.width(),
-            black.height(),
-            white.width(),
-            white.height(),
-        ));
-    }
-    // 构建一个HashMap，key是目录的路径，value是该目录下的所有jpg文件的路径
-    let mut dir_map: HashMap<PathBuf, Vec<PathBuf>> = HashMap::new();
-    // 遍历manga_dir目录下的所有文件和子目录
-    for entry in WalkDir::new(&manga_dir).into_iter().filter_map(Result::ok) {
-        let entry: DirEntry = entry;
-        let path = entry.into_path();
-        // 如果是文件且是jpg文件则添加到directory_map中
-        if path.is_file() && path.extension().map_or(false, |e| e == "jpg") {
-            if let Some(parent) = path.parent() {
-                dir_map.entry(parent.to_path_buf()).or_default().push(path);
-            }
-        }
-    }
-    let dir_progress: HashMap<&PathBuf, (u32, u32)> = dir_map
-        .keys()
-        .map(|dir| {
-            let total = dir_map[dir].len() as u32;
-            // 发送RemoveWatermarkStartEvent事件
-            let payload = events::RemoveWatermarkStartEventPayload {
-                dir_path: dir.display().to_string(),
-                total,
-            };
-            let event = events::RemoveWatermarkStartEvent(payload);
-            event.emit(app).map_err(anyhow::Error::from)?;
-
-            Ok((dir, (0, total)))
-        })
-        .collect::<anyhow::Result<HashMap<&PathBuf, (u32, u32)>>>()?;
-
+    // (width, height) => (black, white)
+    let backgrounds = create_backgrounds(backgrounds_data)?;
+    // dir => [img_path1, img_path2, ...]
+    let dir_map = create_dir_map(&manga_dir);
+    // dir => (current, total)
+    let dir_progress = create_dir_progress(app, &dir_map)?;
+    // 使用Mutex包装dir_progress，用于并发更新目录的进度
     let dir_progress = Mutex::new(dir_progress);
     // 使用rayon的并行迭代器，并行处理每个目录
     let dir_map = dir_map.par_iter();
@@ -193,8 +152,11 @@ pub fn remove(
             let mut img = image::open(img_path)
                 .context(format!("打开图片 {} 失败", img_path.display()))?
                 .to_rgb8();
-            // 去除水印
-            remove_image_watermark(&white, &black, &mut img);
+            let (width, height) = (img.width(), img.height());
+            if let Some((black, white)) = backgrounds.get(&(width, height)) {
+                // 只有在backgrounds中找到了黑色背景和白色背景的水印图片才会去除水印
+                remove_image_watermark(black, white, &mut img);
+            }
             // 保存去除水印后的图片(无论是否成功去除水印都会保存)
             save_jpg_image(&img, &out_image_path)
                 .context(format!("保存图片 {} 失败", out_image_path.display()))?;
@@ -235,6 +197,77 @@ pub fn remove(
         data: (),
     };
     Ok(res)
+}
+
+/// 构建一个`HashMap`，`key`是目录的路径，`value`是该目录下的所有jpg文件的路径
+#[allow(clippy::cast_possible_truncation)]
+fn create_dir_progress<'a>(
+    app: &AppHandle,
+    dir_map: &'a HashMap<PathBuf, Vec<PathBuf>>,
+) -> anyhow::Result<HashMap<&'a PathBuf, (u32, u32)>> {
+    let dir_progress: HashMap<&PathBuf, (u32, u32)> = dir_map
+        .keys()
+        .map(|dir| {
+            let total = dir_map[dir].len() as u32;
+            // 发送RemoveWatermarkStartEvent事件
+            let payload = events::RemoveWatermarkStartEventPayload {
+                dir_path: dir.display().to_string(),
+                total,
+            };
+            let event = events::RemoveWatermarkStartEvent(payload);
+            event.emit(app).map_err(anyhow::Error::from)?;
+
+            Ok((dir, (0, total)))
+        })
+        .collect::<anyhow::Result<HashMap<&PathBuf, (u32, u32)>>>()?;
+    Ok(dir_progress)
+}
+
+/// 构建一个`HashMap`，`key`是目录的路径，`value`是该目录下的所有jpg文件的路径
+fn create_dir_map(manga_dir: &PathBuf) -> HashMap<PathBuf, Vec<PathBuf>> {
+    let mut dir_map: HashMap<PathBuf, Vec<PathBuf>> = HashMap::new();
+    // 遍历manga_dir目录下的所有文件和子目录
+    for entry in WalkDir::new(manga_dir).into_iter().filter_map(Result::ok) {
+        let entry: DirEntry = entry;
+        let path = entry.into_path();
+        // 如果是文件且是jpg文件则添加到directory_map中
+        if path.is_file() && path.extension().map_or(false, |e| e == "jpg") {
+            if let Some(parent) = path.parent() {
+                dir_map.entry(parent.to_path_buf()).or_default().push(path);
+            }
+        }
+    }
+    dir_map
+}
+
+/// 构建一个`HashMap`，`key`是背景水印图的尺寸，`value`是黑色背景和白色背景水印图
+fn create_backgrounds(
+    backgrounds_data: &[(JpgImageData, JpgImageData)],
+) -> anyhow::Result<HashMap<(u32, u32), (RgbImage, RgbImage)>> {
+    let backgrounds = backgrounds_data
+        .iter()
+        .map(|(black_data, white_data)| {
+            let black = black_data
+                .to_image()
+                .context(format!("黑色背景水印图 {} 转换失败", black_data.info.path))?
+                .to_rgb8();
+            let white = white_data
+                .to_image()
+                .context(format!("白色背景水印图 {} 转换失败", white_data.info.path))?
+                .to_rgb8();
+            if black.dimensions() != white.dimensions() {
+                return Err(anyhow!(
+                    "黑色背景和白色背景水印图的尺寸不一致，黑色背景水印图的尺寸是 ({}x{})，白色背景水印图的尺寸是 ({}x{})",
+                    black.width(),
+                    black.height(),
+                    white.width(),
+                    white.height(),
+                ));
+            }
+            Ok(((black.width(), black.height()), (black, white)))
+        })
+        .collect::<anyhow::Result<HashMap<(u32, u32), (RgbImage, RgbImage)>>>()?;
+    Ok(backgrounds)
 }
 
 /// 检查图片`img`是否满足黑色背景的条件，如果返回`None`则表示既不满足黑色背景的条件也不满足白色背景的条件
@@ -279,7 +312,7 @@ fn is_black_background(img: &RgbImage, rect_data: &RectData) -> Option<bool> {
 #[allow(clippy::cast_possible_truncation)]
 #[allow(clippy::cast_lossless)]
 #[allow(clippy::cast_sign_loss)]
-fn remove_image_watermark(white: &RgbImage, black: &RgbImage, img: &mut RgbImage) {
+fn remove_image_watermark(black: &RgbImage, white: &RgbImage, img: &mut RgbImage) {
     // TODO: 处理图片大小不一致的情况
     if img.width() != white.width() || img.height() != white.height() {
         return;
