@@ -241,8 +241,8 @@ async function test() {
     </n-button>
 
     <n-button @click="test">测试用</n-button>
-    <div v-for="(progress, dirPath) in removeWatermarkProgress" :key="dirPath">
-      <span>{{ dirPath }}: {{ progress[0] }} / {{ progress[1] }}</span>
+    <div v-for="(progress, index) in removeWatermarkProgress" :key="index">
+      <span>{{ index }}: {{ progress[0] }} {{ progress[1] }}</span>
     </div>
   </div>
   <n-modal v-model:show="cropperShowing">
