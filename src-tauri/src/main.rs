@@ -3,7 +3,7 @@
 #![warn(clippy::unwrap_used)]
 
 use crate::commands::{
-    generate_background, get_image_size_count, get_jpg_image_infos, open_image, remove_watermark,
+    generate_background, get_jpg_image_infos, get_manga_dir_data, open_image, remove_watermark,
     show_path_in_file_manager,
 };
 use crate::events::{
@@ -15,9 +15,9 @@ use tauri::Wry;
 mod commands;
 mod errors;
 mod events;
+mod extensions;
 mod types;
 mod watermark;
-mod extensions;
 
 #[allow(clippy::unwrap_used)]
 fn main() {
@@ -27,7 +27,7 @@ fn main() {
                 generate_background,
                 remove_watermark,
                 open_image,
-                get_image_size_count,
+                get_manga_dir_data,
                 get_jpg_image_infos,
                 show_path_in_file_manager,
             ])
