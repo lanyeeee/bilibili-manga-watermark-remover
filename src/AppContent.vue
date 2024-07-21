@@ -114,7 +114,8 @@ async function selectMangaDir() {
     if (response.code !== 0) {
       notification.warning({
         title: `自动生成背景水印图(${mangaDirData.width}x${mangaDirData.height})失败`,
-        description: response.msg
+        description: response.msg,
+        content: "请尝试手动截取水印",
       });
       continue;
     }
