@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {computed, onMounted, ref} from "vue";
+import {computed, nextTick, onMounted, ref} from "vue";
 import {useMessage, useNotification} from "naive-ui";
 import {open} from "@tauri-apps/plugin-dialog";
 import {commands, events, JpgImageData, MangaDirData} from "./bindings.ts";
@@ -23,7 +23,7 @@ const cropperHeight = ref<number>(0);
 const mangaDirExist = computed<boolean>(() => mangaDir.value !== undefined);
 const outputDirExist = computed<boolean>(() => outputDir.value !== undefined);
 const imagesExist = computed<boolean>(() => mangaDirDataList.value.length > 0);
-const removeWatermarkButtonDisabled = computed<boolean>(() => !mangaDirExist.value || !outputDirExist.value);
+const removeWatermarkButtonDisabled = computed<boolean>(() => !mangaDirExist.value || !outputDirExist.value || !imagesExist.value);
 
 
 onMounted(async () => {
@@ -121,7 +121,8 @@ async function selectMangaDir() {
     }
     message.success(`自动生成背景水印图(${mangaDirData.width}x${mangaDirData.height})成功`);
   }
-  generatingMessage.destroy();
+  // 使用 nextTick 保证生成消息能够被销毁
+  await nextTick(generatingMessage.destroy);
   await loadBackground();
 }
 
