@@ -13,7 +13,9 @@ declare module 'vue' {
     NModal: typeof import('naive-ui')['NModal']
     NModalProvider: typeof import('naive-ui')['NModalProvider']
     NNotificationProvider: typeof import('naive-ui')['NNotificationProvider']
+    NProgress: typeof import('naive-ui')['NProgress']
     NSwitch: typeof import('naive-ui')['NSwitch']
+    RemoveProgress: typeof import('./src/components/RemoveProgress.vue')['default']
     StatusIndicator: typeof import('./src/components/StatusIndicator.vue')['default']
     WatermarkCropper: typeof import('./src/components/WatermarkCropper.vue')['default']
   }
