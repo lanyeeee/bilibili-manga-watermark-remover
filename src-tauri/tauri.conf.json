@@ -1,7 +1,7 @@
 {
-  "productName": "bili-manga-watermark-remover",
+  "productName": "bilibili-manga-watermark-remover",
   "version": "0.0.0",
-  "identifier": "com.lanyeeee.bili-manga-watermark-remover",
+  "identifier": "com.lanyeeee.bilibili-manga-watermark-remover",
   "build": {
     "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:1420",
@@ -11,7 +11,7 @@
   "app": {
     "windows": [
       {
-        "title": "bili-manga-watermark-remover",
+        "title": "bilibili-manga-watermark-remover",
         "width": 800,
         "height": 600
       }

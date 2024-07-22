@@ -1,5 +1,5 @@
 [package]
-name = "bili-manga-watermark-remover"
+name = "bilibili-manga-watermark-remover"
 version = "0.0.0"
 description = "A Tauri App"
 authors = ["you"]
