@@ -16,7 +16,7 @@ const tasksProgress = computed(() =>
 
 <template>
   <div>
-    <div v-for="(status, index) in tasksProgress" :key="index">
+    <div v-for="status in tasksProgress" :key="status.dirPath">
       <n-progress :percentage="status.percentage">{{ status.percentage }}% {{ status.dirPath }}</n-progress>
     </div>
   </div>
