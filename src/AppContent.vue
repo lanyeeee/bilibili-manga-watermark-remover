@@ -7,6 +7,7 @@ import WatermarkCropper from "./components/WatermarkCropper.vue";
 import StatusIndicator from "./components/StatusIndicator.vue";
 import {path} from "@tauri-apps/api";
 import {BaseDirectory, exists} from "@tauri-apps/plugin-fs";
+import RemoveProgress from "./components/RemoveProgress.vue";
 
 const notification = useNotification();
 const message = useMessage();
@@ -14,7 +15,7 @@ const message = useMessage();
 const mangaDir = ref<string>();
 const outputDir = ref<string>();
 const mangaDirDataList = ref<MangaDirData[]>([]);
-const removeWatermarkProgress = ref<Map<string, [number, number]>>(new Map());
+const removeWatermarkTasks = ref<Map<string, [number, number]>>(new Map());
 
 const cropperShowing = ref<boolean>(false);
 const cropperWidth = ref<number>(0);
@@ -25,14 +26,15 @@ const outputDirExist = computed<boolean>(() => outputDir.value !== undefined);
 const imagesExist = computed<boolean>(() => mangaDirDataList.value.length > 0);
 const removeWatermarkButtonDisabled = computed<boolean>(() => !mangaDirExist.value || !outputDirExist.value);
 
+
 onMounted(async () => {
   await events.removeWatermarkStartEvent.listen((event) => {
     const {dir_path, total} = event.payload;
-    removeWatermarkProgress.value.set(dir_path, [0, total]);
+    removeWatermarkTasks.value.set(dir_path, [0, total]);
   });
   await events.removeWatermarkSuccessEvent.listen((event) => {
     const {dir_path, current} = event.payload;
-    const entry = removeWatermarkProgress.value.get(dir_path) as [number, number] | undefined;
+    const entry = removeWatermarkTasks.value.get(dir_path) as [number, number] | undefined;
     if (entry === undefined) {
       return;
     }
@@ -40,8 +42,7 @@ onMounted(async () => {
   });
   await events.removeWatermarkEndEvent.listen((event) => {
     const {dir_path} = event.payload;
-    removeWatermarkProgress.value.delete(dir_path);
-    message.success(`${dir_path} 去水印成功`);
+    removeWatermarkTasks.value.delete(dir_path);
   });
 
   outputDir.value = await path.resourceDir();
@@ -248,11 +249,9 @@ async function test() {
               @click="removeWatermark">
       开始去水印
     </n-button>
-
     <n-button @click="test">测试用</n-button>
-    <div v-for="(progress, index) in removeWatermarkProgress" :key="index">
-      <span>{{ index }}: {{ progress[0] }} {{ progress[1] }}</span>
-    </div>
+
+    <RemoveProgress :remove-watermark-tasks="removeWatermarkTasks"/>
   </div>
   <n-modal v-model:show="cropperShowing">
     <watermark-cropper :manga-dir="mangaDir"
