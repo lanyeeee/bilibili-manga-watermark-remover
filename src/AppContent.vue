@@ -4,7 +4,6 @@ import {useMessage, useNotification} from "naive-ui";
 import {open} from "@tauri-apps/plugin-dialog";
 import {commands, events, JpgImageData, MangaDirData} from "./bindings.ts";
 import WatermarkCropper from "./components/WatermarkCropper.vue";
-import StatusIndicator from "./components/StatusIndicator.vue";
 import {path} from "@tauri-apps/api";
 import {BaseDirectory, exists} from "@tauri-apps/plugin-fs";
 import RemoveProgress from "./components/RemoveProgress.vue";
@@ -138,7 +137,6 @@ async function showPathInFileManager(path: string | undefined) {
   if (path === undefined) {
     return;
   }
-  console.log(path);
   await commands.showPathInFileManager(path);
 }
 
@@ -191,9 +189,9 @@ async function test() {
 
 <template>
   <div class="flex flex-col">
-    <status-indicator content="选择漫画目录" :ok="mangaDirExist"/>
-    <status-indicator content="选择输出目录" :ok="outputDirExist"/>
-    <status-indicator v-if="mangaDirExist" content="漫画目录存在图片" :ok="imagesExist"/>
+    <span>{{ mangaDirExist ? "✅" : "❌" }}选择漫画目录</span>
+    <span>{{ outputDirExist ? "✅" : "❌" }}选择输出目录</span>
+    <span>{{ imagesExist ? "✅" : "❌" }}漫画目录存在图片</span>
 
     <div class="flex">
       <n-input v-model:value="mangaDir"
