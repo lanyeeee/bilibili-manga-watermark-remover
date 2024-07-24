@@ -38,7 +38,7 @@ body:
     id: version
     attributes:
       label: 工具版本号
-      placeholder: 0.1
+      placeholder: v0.1
     validations:
       required: true
   - type: textarea
