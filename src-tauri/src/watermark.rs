@@ -271,9 +271,11 @@ fn create_backgrounds(
 }
 
 /// 检查图片`img`是否满足黑色背景的条件，如果返回`None`则表示既不满足黑色背景的条件也不满足白色背景的条件
+#[allow(clippy::cast_precision_loss)]
 fn is_black_background(img: &RgbImage, rect_data: &RectData) -> Option<bool> {
     let (left, top) = (rect_data.left, rect_data.top);
     let (right, bottom) = (rect_data.right, rect_data.bottom);
+    let inside_rect = |x: u32, y: u32| x >= left && x <= right && y >= top && y <= bottom;
     // 获取左上角的颜色
     let color = *img.get_pixel(left, top);
     let [r, g, b] = color.0;
@@ -293,13 +295,22 @@ fn is_black_background(img: &RgbImage, rect_data: &RectData) -> Option<bool> {
             return None;
         }
     }
-    // 如果所有通道的值都小于25，则认为是黑色背景
+    // 统计rect_data区域内color颜色的像素点数量
+    let color_count = img
+        .enumerate_pixels()
+        .filter(|(x, y, &pixel)| inside_rect(*x, *y) && pixel == color)
+        .count();
+    // 如果rect_data区域内的像素点数量大于总数的90%，则返回None
+    if color_count as f32 / ((right - left + 1) * (bottom - top + 1)) as f32 > 0.9 {
+        return None;
+    }
+    // 如果color所有通道的值都小于25，则认为是黑色背景
     let is_black = r <= 25;
-    // 如果所有通道的值都大于230，并且截图区域内的通道值都大于100(小于100一般是页码)，则认为是白色背景
+    // 如果color所有通道的值都大于230，并且截图区域内的通道值都大于100(小于100一般是页码)，则认为是白色背景
     let is_white = r >= 230
         && img
             .enumerate_pixels()
-            .filter(|(x, y, _)| x >= &left && x <= &right && y >= &top && y <= &bottom) //矩形区域内的像素
+            .filter(|(x, y, _)| inside_rect(*x, *y)) //矩形区域内的像素
             .all(|(_, _, pixel)| pixel.0[0] > 100); // 通道值大于100
     match (is_black, is_white) {
         (true, false) => Some(true),
