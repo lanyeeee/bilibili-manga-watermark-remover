@@ -352,7 +352,8 @@ fn save_jpg_image(img: &RgbImage, path: &Path) -> anyhow::Result<()> {
         std::fs::create_dir_all(parent).context(format!("创建目录 {} 失败", parent.display()))?;
     }
     // 保存去除水印后的图片，使用jpeg_encoder库的Encoder，效率更高
-    let encoder = jpeg_encoder::Encoder::new_file(path, 97)?;
+    let encoder = jpeg_encoder::Encoder::new_file(path, 95)?;
+    // 如果要使用420的采样率 encoder.set_sampling_factor(jpeg_encoder::SamplingFactor::F_2_2);
     encoder
         .encode(
             img.as_raw(),
