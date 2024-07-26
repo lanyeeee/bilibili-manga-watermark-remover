@@ -7,6 +7,8 @@ import WatermarkCropper from "./components/WatermarkCropper.vue";
 import {path} from "@tauri-apps/api";
 import {BaseDirectory, exists} from "@tauri-apps/plugin-fs";
 import RemoveProgress from "./components/RemoveProgress.vue";
+import {showPathInFileManager} from "./utils.ts";
+import MangaDirIndicator from "./components/MangaDirIndicator.vue";
 
 const notification = useNotification();
 const message = useMessage();
@@ -134,15 +136,8 @@ async function selectOutputDir() {
   outputDir.value = dirPath;
 }
 
-async function showPathInFileManager(path: string | undefined) {
-  if (path === undefined) {
-    return;
-  }
-  await commands.showPathInFileManager(path);
-}
-
 async function loadBackground() {
-  const tasks = [];
+  const tasks: Promise<void>[] = [];
   for (const mangaDirData of mangaDirDataList.value) {
     const load = async (isBlack: boolean) => {
       const filename = isBlack ? "black.png" : "white.png";
@@ -174,12 +169,6 @@ async function loadBackground() {
     tasks.push(load(true), load(false));
   }
   await Promise.all(tasks);
-}
-
-function showCropper(width: number, height: number) {
-  cropperShowing.value = true;
-  cropperWidth.value = width;
-  cropperHeight.value = height;
 }
 
 async function test() {
@@ -214,34 +203,14 @@ async function test() {
       <n-button :disabled="!outputDirExist" @click="showPathInFileManager(outputDir)">打开目录</n-button>
     </div>
 
-    <div v-if="mangaDirExist">
-      漫画目录的图片:
-      <div v-if="!imagesExist">
-        <span>没有图片</span>
-      </div>
-      <div v-else v-for="dirData in mangaDirDataList" :key="dirData.count">
-        <span>
-          尺寸({{ dirData.width }}x{{ dirData.height }})共有{{ dirData.count }} 张
-          <n-button size="tiny"
-                    :disabled="dirData.blackBackground===null"
-                    @click="showPathInFileManager(dirData.blackBackground?.info.path)">
-            黑色
-          </n-button>
-          <n-button size="tiny"
-                    :disabled="dirData.whiteBackground===null"
-                    @click="showPathInFileManager(dirData.whiteBackground?.info.path)">
-            白色
-          </n-button>
-          <n-button size="tiny" @click="showCropper(dirData.width, dirData.height)">手动截取水印</n-button>
-          <span v-if="dirData.blackBackground!==null&&dirData.whiteBackground!==null">✅将被去除水印</span>
-          <span v-else-if="dirData.blackBackground===null&&dirData.whiteBackground===null">
-            ❌将被复制，因为缺少黑色和白色背景水印图
-          </span>
-          <span v-else-if="dirData.blackBackground===null">❌将被复制，因为缺少黑色背景水印图</span>
-          <span v-else-if="dirData.whiteBackground===null">❌将被复制，因为缺少白色背景水印图</span>
-        </span>
-      </div>
-    </div>
+    <manga-dir-indicator :load-background="loadBackground"
+                         :manga-dir-data-list="mangaDirDataList"
+                         :output-dir-exist="outputDirExist"
+                         :manga-dir-exist="mangaDirExist"
+                         :images-exist="imagesExist"
+                         v-model:cropper-showing="cropperShowing"
+                         v-model:cropper-width="cropperWidth"
+                         v-model:cropper-height="cropperHeight"/>
 
     <n-button :disabled="removeWatermarkButtonDisabled"
               type="primary"
