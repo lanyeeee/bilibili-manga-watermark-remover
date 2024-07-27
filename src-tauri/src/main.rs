@@ -3,7 +3,8 @@
 #![warn(clippy::unwrap_used)]
 
 use crate::commands::{
-    generate_background, get_jpg_image_infos, get_manga_dir_data, open_image, remove_watermark,
+    generate_background, get_background_dir_abs_path, get_background_dir_relative_path,
+    get_jpg_image_infos, get_manga_dir_data, open_image, remove_watermark,
     show_path_in_file_manager,
 };
 use crate::events::{
@@ -17,6 +18,7 @@ mod errors;
 mod events;
 mod extensions;
 mod types;
+mod utils;
 mod watermark;
 
 #[allow(clippy::unwrap_used)]
@@ -30,6 +32,8 @@ fn main() {
                 get_manga_dir_data,
                 get_jpg_image_infos,
                 show_path_in_file_manager,
+                get_background_dir_relative_path,
+                get_background_dir_abs_path,
             ])
             .events(tauri_specta::collect_events![
                 RemoveWatermarkStartEvent,

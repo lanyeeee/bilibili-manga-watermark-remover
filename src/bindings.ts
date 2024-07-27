@@ -41,6 +41,22 @@ return await TAURI_INVOKE("get_jpg_image_infos", { mangaDir });
 },
 async showPathInFileManager(path: string) : Promise<void> {
 await TAURI_INVOKE("show_path_in_file_manager", { path });
+},
+async getBackgroundDirRelativePath(mangaDir: string, width: number, height: number) : Promise<Result<CommandResponse<string>, CommandError>> {
+try {
+    return { status: "ok", data: await TAURI_INVOKE("get_background_dir_relative_path", { mangaDir, width, height }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getBackgroundDirAbsPath(mangaDir: string, width: number, height: number) : Promise<Result<CommandResponse<string>, CommandError>> {
+try {
+    return { status: "ok", data: await TAURI_INVOKE("get_background_dir_abs_path", { mangaDir, width, height }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
