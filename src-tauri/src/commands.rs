@@ -67,7 +67,7 @@ pub fn open_image(path: String) -> CommandResult<CommandResponse<JpgImageData>> 
         info: JpgImageInfo {
             width,
             height,
-            path: path.display().to_string(),
+            path,
         },
         base64,
     };
@@ -166,7 +166,7 @@ pub fn get_jpg_image_infos(manga_dir: &str) -> CommandResponse<Vec<JpgImageInfo>
             jpg_image_infos.push(JpgImageInfo {
                 width: size.width as u32,
                 height: size.height as u32,
-                path: path.display().to_string(),
+                path,
             });
         }
     }
