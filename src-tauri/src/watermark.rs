@@ -173,8 +173,8 @@ pub fn remove(
             };
             // 发送RemoveWatermarkSuccessEvent事件
             let payload = events::RemoveWatermarkSuccessEventPayload {
-                dir_path: dir.display().to_string(),
-                img_path: out_image_path.display().to_string(),
+                dir_path: dir.clone(),
+                img_path: out_image_path.clone(),
                 current,
             };
             let event = events::RemoveWatermarkSuccessEvent(payload);
@@ -182,7 +182,7 @@ pub fn remove(
             // 如果当前图片是目录下的最后一张图片，则发送RemoveWatermarkEndEvent事件
             if current == total {
                 let payload = events::RemoveWatermarkEndEventPayload {
-                    dir_path: dir.display().to_string(),
+                    dir_path: dir.clone(),
                 };
                 let event = events::RemoveWatermarkEndEvent(payload);
                 event.emit(app)?;
@@ -213,7 +213,7 @@ fn create_dir_progress<'a>(
             let total = dir_map[dir].len() as u32;
             // 发送RemoveWatermarkStartEvent事件
             let payload = events::RemoveWatermarkStartEventPayload {
-                dir_path: dir.display().to_string(),
+                dir_path: dir.clone(),
                 total,
             };
             let event = events::RemoveWatermarkStartEvent(payload);
@@ -251,11 +251,11 @@ fn create_backgrounds(
         .map(|(black_data, white_data)| {
             let black = black_data
                 .to_image()
-                .context(format!("黑色背景水印图 {} 转换失败", black_data.info.path))?
+                .context(format!("黑色背景水印图 {} 转换失败", black_data.info.path.display()))?
                 .to_rgb8();
             let white = white_data
                 .to_image()
-                .context(format!("白色背景水印图 {} 转换失败", white_data.info.path))?
+                .context(format!("白色背景水印图 {} 转换失败", white_data.info.path.display()))?
                 .to_rgb8();
             if black.dimensions() != white.dimensions() {
                 return Err(anyhow!(
