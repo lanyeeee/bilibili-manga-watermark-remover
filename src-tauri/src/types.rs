@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use base64::engine::general_purpose;
 use base64::Engine;
 use serde::{Deserialize, Serialize};
@@ -33,7 +34,7 @@ pub struct MangaDirData {
 pub struct JpgImageInfo {
     pub width: u32,
     pub height: u32,
-    pub path: String,
+    pub path: PathBuf,
 }
 
 #[derive(Debug, Deserialize, Serialize, Type)]
