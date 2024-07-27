@@ -20,6 +20,8 @@ bilibili漫画 哔哩哔哩漫画 B漫 去水印工具，带图形界面，图�
 
 # 常见问题
 - [生成背景水印图失败](https://github.com/lanyeeee/bilibili-manga-watermark-remover/discussions/1)
+- [极个别图片去除水印失败](https://github.com/lanyeeee/bilibili-manga-watermark-remover/discussions/5)
+- [同一本漫画，正文尺寸相同，但是水印不同](https://github.com/lanyeeee/bilibili-manga-watermark-remover/discussions/8)
 
 # 效果预览
 
