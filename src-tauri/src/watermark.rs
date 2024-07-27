@@ -22,6 +22,10 @@ pub fn generate_background(
     width: u32,
     height: u32,
 ) -> anyhow::Result<CommandResponse<()>> {
+    // 保证输出目录存在
+    std::fs::create_dir_all(output_dir)
+        .context(format!("创建目录 {} 失败", output_dir.display()))?;
+    // 收集尺寸符合width和height的图片的路径
     let image_paths = create_image_paths(manga_dir, width, height);
     // 用于记录是否找到了黑色背景和白色背景的水印图片
     let black_status: Mutex<Option<()>> = Mutex::new(None);
@@ -52,8 +56,6 @@ pub fn generate_background(
                 *pixel = color;
             }
         }
-        std::fs::create_dir_all(output_dir)
-            .context(format!("创建目录 {} 失败", output_dir.display()))?;
         let filename = if is_black { "black.png" } else { "white.png" };
         let output_path = output_dir.join(filename);
         // 保存黑色背景或白色背景的水印图片
@@ -271,9 +273,11 @@ fn create_backgrounds(
 }
 
 /// 检查图片`img`是否满足黑色背景的条件，如果返回`None`则表示既不满足黑色背景的条件也不满足白色背景的条件
+#[allow(clippy::cast_precision_loss)]
 fn is_black_background(img: &RgbImage, rect_data: &RectData) -> Option<bool> {
     let (left, top) = (rect_data.left, rect_data.top);
     let (right, bottom) = (rect_data.right, rect_data.bottom);
+    let inside_rect = |x: u32, y: u32| x >= left && x <= right && y >= top && y <= bottom;
     // 获取左上角的颜色
     let color = *img.get_pixel(left, top);
     let [r, g, b] = color.0;
@@ -293,13 +297,22 @@ fn is_black_background(img: &RgbImage, rect_data: &RectData) -> Option<bool> {
             return None;
         }
     }
-    // 如果所有通道的值都小于25，则认为是黑色背景
+    // 统计rect_data区域内color颜色的像素点数量
+    let color_count = img
+        .enumerate_pixels()
+        .filter(|(x, y, &pixel)| inside_rect(*x, *y) && pixel == color)
+        .count();
+    // 如果rect_data区域内的像素点数量大于总数的90%，则返回None
+    if color_count as f32 / ((right - left + 1) * (bottom - top + 1)) as f32 > 0.9 {
+        return None;
+    }
+    // 如果color所有通道的值都小于25，则认为是黑色背景
     let is_black = r <= 25;
-    // 如果所有通道的值都大于230，并且截图区域内的通道值都大于100(小于100一般是页码)，则认为是白色背景
+    // 如果color所有通道的值都大于230，并且截图区域内的通道值都大于100(小于100一般是页码)，则认为是白色背景
     let is_white = r >= 230
         && img
             .enumerate_pixels()
-            .filter(|(x, y, _)| x >= &left && x <= &right && y >= &top && y <= &bottom) //矩形区域内的像素
+            .filter(|(x, y, _)| inside_rect(*x, *y)) //矩形区域内的像素
             .all(|(_, _, pixel)| pixel.0[0] > 100); // 通道值大于100
     match (is_black, is_white) {
         (true, false) => Some(true),
@@ -313,7 +326,6 @@ fn is_black_background(img: &RgbImage, rect_data: &RectData) -> Option<bool> {
 #[allow(clippy::cast_lossless)]
 #[allow(clippy::cast_sign_loss)]
 fn remove_image_watermark(black: &RgbImage, white: &RgbImage, img: &mut RgbImage) {
-    // TODO: 处理图片大小不一致的情况
     if img.width() != white.width() || img.height() != white.height() {
         return;
     }
@@ -341,7 +353,8 @@ fn save_jpg_image(img: &RgbImage, path: &Path) -> anyhow::Result<()> {
         std::fs::create_dir_all(parent).context(format!("创建目录 {} 失败", parent.display()))?;
     }
     // 保存去除水印后的图片，使用jpeg_encoder库的Encoder，效率更高
-    let encoder = jpeg_encoder::Encoder::new_file(path, 97)?;
+    let encoder = jpeg_encoder::Encoder::new_file(path, 95)?;
+    // 如果要使用420的采样率 encoder.set_sampling_factor(jpeg_encoder::SamplingFactor::F_2_2);
     encoder
         .encode(
             img.as_raw(),

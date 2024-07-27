@@ -1,13 +1,13 @@
 use crate::errors::CommandResult;
 use crate::types::{CommandResponse, JpgImageData, JpgImageInfo, MangaDirData, RectData};
-use crate::watermark;
+use crate::{utils, watermark};
 use anyhow::Context;
 use base64::engine::general_purpose;
 use base64::Engine;
 use path_slash::PathBufExt;
 use std::collections::HashMap;
 use std::path::PathBuf;
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
 use walkdir::WalkDir;
 
 #[tauri::command(async)]
@@ -23,8 +23,7 @@ pub fn generate_background(
     width: u32,
     height: u32,
 ) -> CommandResult<CommandResponse<()>> {
-    let resource_dir = app.path().resource_dir().map_err(anyhow::Error::from)?;
-    let output_dir = resource_dir.join(format!("背景水印图/{width}x{height}"));
+    let output_dir = utils::get_background_dir_abs_path(&app, manga_dir, width, height)?;
     let default_rect_data = RectData {
         left: (width as f32 * 0.835) as u32,
         top: (height as f32 * 0.946) as u32,
@@ -120,11 +119,10 @@ pub fn get_manga_dir_data(
     // 以count降序排序
     manga_dir_data.sort_by(|a, b| b.count.cmp(&a.count));
     // 获取背景水印图的数据
-    let resource_dir = app.path().resource_dir().map_err(anyhow::Error::from)?;
     for dir_data in &mut manga_dir_data {
         let width = dir_data.width;
         let height = dir_data.height;
-        let background_dir = resource_dir.join(format!("背景水印图/{width}x{height}"));
+        let background_dir = utils::get_background_dir_abs_path(&app, manga_dir, width, height)?;
         let black_background_path = background_dir.join("black.png");
         let white_background_path = background_dir.join("white.png");
         if black_background_path.exists() {
@@ -184,4 +182,36 @@ pub fn get_jpg_image_infos(manga_dir: &str) -> CommandResponse<Vec<JpgImageInfo>
 pub fn show_path_in_file_manager(path: &str) {
     let path = PathBuf::from_slash(path);
     showfile::show_path_in_file_manager(path);
+}
+
+#[tauri::command(async)]
+#[specta::specta]
+pub fn get_background_dir_relative_path(
+    manga_dir: &str,
+    width: u32,
+    height: u32,
+) -> CommandResult<CommandResponse<PathBuf>> {
+    let relative_path = utils::get_background_dir_relative_path(manga_dir, width, height)?;
+    Ok(CommandResponse {
+        code: 0,
+        msg: String::new(),
+        data: relative_path,
+    })
+}
+
+#[tauri::command(async)]
+#[specta::specta]
+#[allow(clippy::needless_pass_by_value)]
+pub fn get_background_dir_abs_path(
+    app: AppHandle,
+    manga_dir: &str,
+    width: u32,
+    height: u32,
+) -> CommandResult<CommandResponse<PathBuf>> {
+    let abs_path = utils::get_background_dir_abs_path(&app, manga_dir, width, height)?;
+    Ok(CommandResponse {
+        code: 0,
+        msg: String::new(),
+        data: abs_path,
+    })
 }
