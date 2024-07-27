@@ -22,6 +22,10 @@ pub fn generate_background(
     width: u32,
     height: u32,
 ) -> anyhow::Result<CommandResponse<()>> {
+    // 保证输出目录存在
+    std::fs::create_dir_all(output_dir)
+        .context(format!("创建目录 {} 失败", output_dir.display()))?;
+    // 收集尺寸符合width和height的图片的路径
     let image_paths = create_image_paths(manga_dir, width, height);
     // 用于记录是否找到了黑色背景和白色背景的水印图片
     let black_status: Mutex<Option<()>> = Mutex::new(None);
@@ -52,8 +56,6 @@ pub fn generate_background(
                 *pixel = color;
             }
         }
-        std::fs::create_dir_all(output_dir)
-            .context(format!("创建目录 {} 失败", output_dir.display()))?;
         let filename = if is_black { "black.png" } else { "white.png" };
         let output_path = output_dir.join(filename);
         // 保存黑色背景或白色背景的水印图片
@@ -324,7 +326,6 @@ fn is_black_background(img: &RgbImage, rect_data: &RectData) -> Option<bool> {
 #[allow(clippy::cast_lossless)]
 #[allow(clippy::cast_sign_loss)]
 fn remove_image_watermark(black: &RgbImage, white: &RgbImage, img: &mut RgbImage) {
-    // TODO: 处理图片大小不一致的情况
     if img.width() != white.width() || img.height() != white.height() {
         return;
     }
