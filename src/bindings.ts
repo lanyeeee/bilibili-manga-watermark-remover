@@ -57,6 +57,17 @@ try {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async getConfig() : Promise<CommandResponse<Config>> {
+return await TAURI_INVOKE("get_config");
+},
+async saveConfig(config: Config) : Promise<Result<CommandResponse<null>, CommandError>> {
+try {
+    return { status: "ok", data: await TAURI_INVOKE("save_config", { config }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -82,6 +93,7 @@ removeWatermarkEndEvent: "remove-watermark-end-event"
 
 export type CommandError = string
 export type CommandResponse<T> = { code: number; msg: string; data: T }
+export type Config = { outputDir: string }
 export type JpgImageData = { info: JpgImageInfo; base64: string }
 export type JpgImageInfo = { width: number; height: number; path: string }
 export type MangaDirData = { width: number; height: number; count: number; blackBackground: JpgImageData | null; whiteBackground: JpgImageData | null }
