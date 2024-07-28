@@ -1,3 +1,4 @@
+use crate::config::Config;
 use crate::errors::CommandResult;
 use crate::types::{CommandResponse, JpgImageData, JpgImageInfo, MangaDirData, RectData};
 use crate::{utils, watermark};
@@ -7,7 +8,7 @@ use base64::Engine;
 use path_slash::PathBufExt;
 use std::collections::HashMap;
 use std::path::PathBuf;
-use tauri::AppHandle;
+use tauri::{AppHandle, State};
 use walkdir::WalkDir;
 
 #[tauri::command(async)]
@@ -213,5 +214,28 @@ pub fn get_background_dir_abs_path(
         code: 0,
         msg: String::new(),
         data: abs_path,
+    })
+}
+
+#[tauri::command(async)]
+#[specta::specta]
+#[allow(clippy::needless_pass_by_value)]
+pub fn get_config(config_state: State<Config>) -> CommandResponse<Config> {
+    CommandResponse {
+        code: 0,
+        msg: String::new(),
+        data: config_state.inner().clone(),
+    }
+}
+
+#[tauri::command(async)]
+#[specta::specta]
+#[allow(clippy::needless_pass_by_value)]
+pub fn save_config(app: AppHandle, config: Config) -> CommandResult<CommandResponse<()>> {
+    config.save(&app)?;
+    Ok(CommandResponse {
+        code: 0,
+        msg: String::new(),
+        data: (),
     })
 }

@@ -2,7 +2,7 @@
 import {computed, nextTick, onMounted, ref} from "vue";
 import {useMessage, useNotification} from "naive-ui";
 import {open} from "@tauri-apps/plugin-dialog";
-import {commands, events, JpgImageData, MangaDirData} from "./bindings.ts";
+import {commands, Config, events, JpgImageData, MangaDirData} from "./bindings.ts";
 import WatermarkCropper from "./components/WatermarkCropper.vue";
 import {path} from "@tauri-apps/api";
 import {BaseDirectory, exists} from "@tauri-apps/plugin-fs";
@@ -19,7 +19,7 @@ const notification = useNotification();
 const message = useMessage();
 
 const mangaDir = ref<string>();
-const outputDir = ref<string>();
+const config = ref<Config>({outputDir: ""});
 const mangaDirDataList = ref<MangaDirData[]>([]);
 const removeWatermarkTasks = ref<Map<string, [number, number]>>(new Map());
 
@@ -28,9 +28,8 @@ const cropperWidth = ref<number>(0);
 const cropperHeight = ref<number>(0);
 
 const mangaDirExist = computed<boolean>(() => mangaDir.value !== undefined);
-const outputDirExist = computed<boolean>(() => outputDir.value !== undefined);
 const imagesExist = computed<boolean>(() => mangaDirDataList.value.length > 0);
-const removeWatermarkButtonDisabled = computed<boolean>(() => !mangaDirExist.value || !outputDirExist.value || !imagesExist.value);
+const removeWatermarkButtonDisabled = computed<boolean>(() => !mangaDirExist.value || !imagesExist.value);
 
 
 onMounted(async () => {
@@ -50,8 +49,13 @@ onMounted(async () => {
     const {dir_path} = event.payload;
     removeWatermarkTasks.value.delete(dir_path);
   });
-
-  outputDir.value = await path.resourceDir();
+  const response = await commands.getConfig();
+  if (response.code !== 0) {
+    notification.warning({title: "获取配置失败", description: response.msg});
+    return;
+  }
+  const cfg = response.data;
+  config.value.outputDir = cfg.outputDir;
 });
 
 async function removeWatermark() {
@@ -63,15 +67,11 @@ async function removeWatermark() {
     message.error("没有图片尺寸统计信息");
     return;
   }
-  if (outputDir.value === undefined) {
-    message.error("请选择输出文件夹");
-    return;
-  }
 
   const backgrounds_data: [JpgImageData, JpgImageData][] = mangaDirDataList.value
       .filter(data => data.blackBackground !== null && data.whiteBackground !== null)
       .map(data => [data.blackBackground as JpgImageData, data.whiteBackground as JpgImageData]);
-  let result = await commands.removeWatermark(mangaDir.value, outputDir.value, backgrounds_data);
+  let result = await commands.removeWatermark(mangaDir.value, config.value.outputDir, backgrounds_data);
   if (result.status === "error") {
     notification.error({title: "去水印失败", description: result.error});
     return;
@@ -127,11 +127,22 @@ async function selectMangaDir() {
 }
 
 async function selectOutputDir() {
-  const dirPath = await open({directory: true, defaultPath: outputDir.value});
+  const dirPath = await open({directory: true, defaultPath: config.value.outputDir});
   if (dirPath === null) {
     return;
   }
-  outputDir.value = dirPath;
+  config.value.outputDir = dirPath;
+  const result = await commands.saveConfig(config.value);
+  if (result.status === "error") {
+    notification.error({title: "保存配置失败", description: result.error});
+    return;
+  }
+  const response = result.data;
+  if (response.code !== 0) {
+    notification.warning({title: "保存配置失败", description: response.msg});
+    return;
+  }
+  message.success("保存配置成功");
 }
 
 async function loadBackground() {
@@ -182,7 +193,8 @@ async function loadBackground() {
 }
 
 async function test() {
-  console.log("hello");
+  const cfg = await commands.getConfig();
+  console.log(cfg);
 }
 
 </script>
@@ -190,7 +202,6 @@ async function test() {
 <template>
   <div class="flex flex-col">
     <span>{{ mangaDirExist ? "✅" : "❌" }}选择漫画目录</span>
-    <span>{{ outputDirExist ? "✅" : "❌" }}选择输出目录</span>
     <span>{{ imagesExist ? "✅" : "❌" }}漫画目录存在图片</span>
 
     <div class="flex">
@@ -204,18 +215,17 @@ async function test() {
     </div>
 
     <div class="flex">
-      <n-input v-model:value="outputDir"
+      <n-input v-model:value="config.outputDir"
                readonly
                placeholder="请选择漫画目录"
                @click="selectOutputDir">
         <template #prefix>输出目录：</template>
       </n-input>
-      <n-button :disabled="!outputDirExist" @click="showPathInFileManager(outputDir)">打开目录</n-button>
+      <n-button @click="showPathInFileManager(config.outputDir)">打开目录</n-button>
     </div>
 
     <manga-dir-indicator :manga-dir="mangaDir"
                          :manga-dir-exist="mangaDirExist"
-                         :output-dir-exist="outputDirExist"
                          :images-exist="imagesExist"
                          :manga-dir-data-list="mangaDirDataList"
                          :load-background="loadBackground"
