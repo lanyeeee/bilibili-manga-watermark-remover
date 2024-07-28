@@ -3,17 +3,18 @@
 #![warn(clippy::unwrap_used)]
 
 use crate::commands::{
-    generate_background, get_background_dir_abs_path, get_background_dir_relative_path,
-    get_jpg_image_infos, get_manga_dir_data, open_image, remove_watermark,
+    generate_background, get_background_dir_abs_path, get_background_dir_relative_path, get_config,
+    get_jpg_image_infos, get_manga_dir_data, open_image, remove_watermark, save_config,
     show_path_in_file_manager,
 };
 use crate::events::{
     RemoveWatermarkEndEvent, RemoveWatermarkErrorEvent, RemoveWatermarkStartEvent,
     RemoveWatermarkSuccessEvent,
 };
-use tauri::Wry;
+use tauri::{Manager, Wry};
 
 mod commands;
+mod config;
 mod errors;
 mod events;
 mod extensions;
@@ -34,6 +35,8 @@ fn main() {
                 show_path_in_file_manager,
                 get_background_dir_relative_path,
                 get_background_dir_abs_path,
+                get_config,
+                save_config,
             ])
             .events(tauri_specta::collect_events![
                 RemoveWatermarkStartEvent,
@@ -56,6 +59,8 @@ fn main() {
         .invoke_handler(invoke_handler)
         .setup(|app| {
             register_events(app);
+            let cfg = config::Config::load(app.handle()).expect("failed to load config");
+            app.manage(cfg);
             Ok(())
         })
         .run(tauri::generate_context!())
