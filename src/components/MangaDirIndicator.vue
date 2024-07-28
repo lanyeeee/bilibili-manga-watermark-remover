@@ -10,7 +10,6 @@ const message = useMessage();
 const prop = defineProps<{
   mangaDir: string | undefined,
   mangaDirExist: boolean,
-  outputDirExist: boolean,
   imagesExist: boolean,
   mangaDirDataList: MangaDirData[],
   loadBackground: () => Promise<void>,
