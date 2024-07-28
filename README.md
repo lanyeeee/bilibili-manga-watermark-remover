@@ -65,14 +65,20 @@ bilibili漫画 哔哩哔哩漫画 B漫 去水印工具，带图形界面，图�
 
 #### 1. 克隆本仓库
 
-```powershell
+```
 git clone https://github.com/lanyeeee/bilibili-manga-watermark-remover.git
 ```
 
-#### 2.构建(build)
+#### 2.安装依赖
 
-```powershell
+```
 cd bilibili-manga-watermark-remover
+pnpm install
+```
+
+#### 3.构建(build)
+
+```
 pnpm tauri build
 ```
 # 免责声明
