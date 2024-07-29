@@ -46,7 +46,7 @@ fn main() {
                 RemoveWatermarkStartEvent,
                 RemoveWatermarkSuccessEvent,
                 RemoveWatermarkErrorEvent,
-                RemoveWatermarkEndEvent
+                RemoveWatermarkEndEvent,
             ])
             .header("// @ts-nocheck"); // 跳过检查
 
