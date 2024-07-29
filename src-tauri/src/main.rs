@@ -11,7 +11,7 @@ use crate::events::{
     RemoveWatermarkEndEvent, RemoveWatermarkErrorEvent, RemoveWatermarkStartEvent,
     RemoveWatermarkSuccessEvent,
 };
-use tauri::{Manager, Wry};
+use tauri::{Context, Manager, Wry};
 
 mod commands;
 mod config;
@@ -21,6 +21,10 @@ mod extensions;
 mod types;
 mod utils;
 mod watermark;
+
+fn generate_context() -> Context<Wry> {
+    tauri::generate_context!()
+}
 
 #[allow(clippy::unwrap_used)]
 fn main() {
@@ -63,6 +67,6 @@ fn main() {
             app.manage(cfg);
             Ok(())
         })
-        .run(tauri::generate_context!())
+        .run(generate_context())
         .expect("error while running tauri application");
 }
