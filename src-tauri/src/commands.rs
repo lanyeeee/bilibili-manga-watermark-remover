@@ -1,5 +1,8 @@
+use crate::config::Config;
 use crate::errors::CommandResult;
-use crate::types::{CommandResponse, JpgImageData, JpgImageInfo, MangaDirData, RectData};
+use crate::types::{
+    CommandResponse, ImageFormat, JpgImageData, JpgImageInfo, MangaDirData, RectData,
+};
 use crate::{utils, watermark};
 use anyhow::Context;
 use base64::engine::general_purpose;
@@ -42,9 +45,18 @@ pub fn remove_watermark(
     app: AppHandle,
     manga_dir: &str,
     output_dir: &str,
+    format: ImageFormat,
+    optimize: bool,
     backgrounds_data: Vec<(JpgImageData, JpgImageData)>,
 ) -> CommandResult<CommandResponse<()>> {
-    let res = watermark::remove(&app, manga_dir, output_dir, &backgrounds_data)?;
+    let res = watermark::remove(
+        &app,
+        manga_dir,
+        output_dir,
+        &format,
+        optimize,
+        &backgrounds_data,
+    )?;
     Ok(res)
 }
 
@@ -67,7 +79,7 @@ pub fn open_image(path: String) -> CommandResult<CommandResponse<JpgImageData>> 
         info: JpgImageInfo {
             width,
             height,
-            path: path.display().to_string(),
+            path,
         },
         base64,
     };
@@ -166,7 +178,7 @@ pub fn get_jpg_image_infos(manga_dir: &str) -> CommandResponse<Vec<JpgImageInfo>
             jpg_image_infos.push(JpgImageInfo {
                 width: size.width as u32,
                 height: size.height as u32,
-                path: path.display().to_string(),
+                path,
             });
         }
     }
@@ -213,5 +225,29 @@ pub fn get_background_dir_abs_path(
         code: 0,
         msg: String::new(),
         data: abs_path,
+    })
+}
+
+#[tauri::command(async)]
+#[specta::specta]
+#[allow(clippy::needless_pass_by_value)]
+pub fn get_config(app: AppHandle) -> CommandResult<CommandResponse<Config>> {
+    let config = Config::load(&app).map_err(anyhow::Error::from)?;
+    Ok(CommandResponse {
+        code: 0,
+        msg: String::new(),
+        data: config,
+    })
+}
+
+#[tauri::command(async)]
+#[specta::specta]
+#[allow(clippy::needless_pass_by_value)]
+pub fn save_config(app: AppHandle, config: Config) -> CommandResult<CommandResponse<()>> {
+    config.save(&app)?;
+    Ok(CommandResponse {
+        code: 0,
+        msg: String::new(),
+        data: (),
     })
 }
