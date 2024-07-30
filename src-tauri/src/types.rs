@@ -1,8 +1,8 @@
-use std::path::PathBuf;
 use base64::engine::general_purpose;
 use base64::Engine;
 use serde::{Deserialize, Serialize};
 use specta::Type;
+use std::path::PathBuf;
 
 #[derive(Debug, Deserialize, Serialize, Type)]
 pub struct CommandResponse<T> {
@@ -48,4 +48,10 @@ impl JpgImageData {
         let image = image::load_from_memory(&decode)?;
         Ok(image)
     }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize, Type)]
+pub enum ImageFormat {
+    Jpeg,
+    Png,
 }
