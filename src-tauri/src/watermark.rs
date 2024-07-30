@@ -1,10 +1,12 @@
 use crate::events;
 use crate::extensions::IgnoreLockPoison;
-use crate::types::{CommandResponse, JpgImageData, RectData};
+use crate::types::{CommandResponse, ImageFormat, JpgImageData, RectData};
 use anyhow::{anyhow, Context};
+use image::codecs::png::PngEncoder;
 use image::{Rgb, RgbImage};
 use path_slash::PathBufExt;
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+use std::io::BufWriter;
 use std::{
     collections::HashMap,
     path::{Path, PathBuf},
@@ -118,6 +120,8 @@ pub fn remove(
     app: &AppHandle,
     manga_dir: &str,
     output_dir: &str,
+    format: &ImageFormat,
+    optimize: bool,
     backgrounds_data: &[(JpgImageData, JpgImageData)],
 ) -> anyhow::Result<CommandResponse<()>> {
     let manga_dir = PathBuf::from_slash(manga_dir);
@@ -160,7 +164,7 @@ pub fn remove(
                 remove_image_watermark(black, white, &mut img);
             }
             // 保存去除水印后的图片(无论是否成功去除水印都会保存)
-            save_jpg_image(&img, &out_image_path)
+            save_image(&img, &out_image_path, format, optimize)
                 .context(format!("保存图片 {} 失败", out_image_path.display()))?;
             // 更新目录的进度
             let (current, total) = {
@@ -345,23 +349,73 @@ fn remove_image_watermark(black: &RgbImage, white: &RgbImage, img: &mut RgbImage
     }
 }
 
-/// 保存jpg图片`img`到指定路径`path`
+/// 保存图片`img`到指定路径`path`，`format`为图片格式，`optimize`为true时会检查图片是否为灰度图像，如果是则保存为luma8图片
 #[allow(clippy::cast_possible_truncation)]
-fn save_jpg_image(img: &RgbImage, path: &Path) -> anyhow::Result<()> {
+fn save_image(
+    img: &RgbImage,
+    path: &Path,
+    format: &ImageFormat,
+    optimize: bool,
+) -> anyhow::Result<()> {
     // 保证输出目录存在
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent).context(format!("创建目录 {} 失败", parent.display()))?;
     }
-    // 保存去除水印后的图片，使用jpeg_encoder库的Encoder，效率更高
-    let encoder = jpeg_encoder::Encoder::new_file(path, 95)?;
-    // 如果要使用420的采样率 encoder.set_sampling_factor(jpeg_encoder::SamplingFactor::F_2_2);
-    encoder
-        .encode(
-            img.as_raw(),
-            img.width() as u16,
-            img.height() as u16,
-            jpeg_encoder::ColorType::Rgb,
-        )
-        .context(format!("编码图片 {} 失败", path.display()))?;
+
+    match format {
+        ImageFormat::Jpeg => {
+            save_jpg_image(img, path, optimize)?;
+        }
+        ImageFormat::Png => {
+            save_png_image(img, path, optimize)?;
+        }
+    }
     Ok(())
+}
+
+/// 保存jpg图片`img`到指定路径`path`, `optimize`为true时会检查图片是否为灰度图像，如果是则保存为luma8图片
+#[allow(clippy::cast_possible_truncation)]
+fn save_jpg_image(img: &RgbImage, path: &Path, optimize: bool) -> anyhow::Result<()> {
+    let (width, height) = (img.width() as u16, img.height() as u16);
+    // 保证后缀为jpg
+    let path = path.with_extension("jpg");
+    // 保存去除水印后的图片，使用jpeg_encoder库的Encoder处理jpg效率更高
+    let encoder = jpeg_encoder::Encoder::new_file(&path, 95)?;
+    if optimize && is_grey_image(img) {
+        let luma = image::DynamicImage::ImageRgb8(img.clone()).into_luma8();
+        encoder
+            .encode(luma.as_raw(), width, height, jpeg_encoder::ColorType::Luma)
+            .context(format!("编码luma8图片 {} 失败", path.display()))?;
+    } else {
+        encoder
+            .encode(img.as_raw(), width, height, jpeg_encoder::ColorType::Rgb)
+            .context(format!("编码rgb图片 {} 失败", path.display()))?;
+    }
+    Ok(())
+}
+
+/// 保存png图片`img`到指定路径`path`, `optimize`为true时会检查图片是否为灰度图像，如果是则保存为luma8图片
+#[allow(clippy::cast_possible_truncation)]
+fn save_png_image(img: &RgbImage, path: &Path, optimize: bool) -> anyhow::Result<()> {
+    // 保证后缀为png
+    let path = path.with_extension("png");
+    let png_file = std::fs::File::create(&path)?;
+    let buffered_file_writer = BufWriter::new(png_file);
+    let encoder = PngEncoder::new(buffered_file_writer);
+    if optimize && is_grey_image(img) {
+        let luma = image::DynamicImage::ImageRgb8(img.clone()).into_luma8();
+        luma.write_with_encoder(encoder)
+            .context(format!("编码luma8图片 {} 失败", path.display()))?;
+    } else {
+        img.write_with_encoder(encoder)
+            .context(format!("编码rgb图片 {} 失败", path.display()))?;
+    }
+    Ok(())
+}
+
+fn is_grey_image(img: &RgbImage) -> bool {
+    img.pixels().all(|pixel| {
+        let [r, g, b] = pixel.0;
+        r == g && g == b
+    })
 }
