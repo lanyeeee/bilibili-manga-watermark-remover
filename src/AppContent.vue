@@ -256,15 +256,30 @@ async function test() {
     <n-radio-group v-if="config" v-model:value="config.outputFormat">
       <n-space>
         输出格式：
-        <n-radio value="Jpeg">Jpg(默认)</n-radio>
-        <n-radio value="Png">Png</n-radio>
+        <n-radio value="Jpeg">jpg(默认)</n-radio>
+        <n-tooltip placement="right-start" trigger="hover">
+          <template #trigger>
+            <n-radio value="Png">png</n-radio>
+          </template>
+          1. 以png格式输出并<span class="text-red">不能</span>提高清晰度，还会增加体积<br/>
+          2. 除非你有特殊需求，否则<span class="text-red">不建议</span>使用<br/>
+          3. 如果以png输出，建议开启体积优化<br/>
+        </n-tooltip>
       </n-space>
     </n-radio-group>
     <n-radio-group v-if="config" v-model:value="config.outputOptimize">
       <n-space>
         体积优化：
         <n-radio :value="false">关闭(默认)</n-radio>
-        <n-radio :value="true">开启</n-radio>
+        <n-tooltip placement="right-start" trigger="hover">
+          <template #trigger>
+            <n-radio :value="true">开启</n-radio>
+          </template>
+          1. 体积优化<span class="text-red">不会</span>影响清晰度<br/>
+          <span class="text-red">2. 显著减小png体积</span><br/>
+          3. 对jpg影响不大，所以没有特殊需求不建议开启<br/>
+          4. 仅对黑白图片有效，彩色图片不会受影响<br/>
+        </n-tooltip>
       </n-space>
     </n-radio-group>
 
