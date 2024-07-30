@@ -10,7 +10,7 @@ use base64::Engine;
 use path_slash::PathBufExt;
 use std::collections::HashMap;
 use std::path::PathBuf;
-use tauri::{AppHandle, State};
+use tauri::AppHandle;
 use walkdir::WalkDir;
 
 #[tauri::command(async)]
@@ -231,12 +231,13 @@ pub fn get_background_dir_abs_path(
 #[tauri::command(async)]
 #[specta::specta]
 #[allow(clippy::needless_pass_by_value)]
-pub fn get_config(config_state: State<Config>) -> CommandResponse<Config> {
-    CommandResponse {
+pub fn get_config(app: AppHandle) -> CommandResult<CommandResponse<Config>> {
+    let config = Config::load(&app).map_err(anyhow::Error::from)?;
+    Ok(CommandResponse {
         code: 0,
         msg: String::new(),
-        data: config_state.inner().clone(),
-    }
+        data: config,
+    })
 }
 
 #[tauri::command(async)]

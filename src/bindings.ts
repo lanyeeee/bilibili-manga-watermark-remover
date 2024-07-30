@@ -58,8 +58,13 @@ try {
     else return { status: "error", error: e  as any };
 }
 },
-async getConfig() : Promise<CommandResponse<Config>> {
-return await TAURI_INVOKE("get_config");
+async getConfig() : Promise<Result<CommandResponse<Config>, CommandError>> {
+try {
+    return { status: "ok", data: await TAURI_INVOKE("get_config") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 },
 async saveConfig(config: Config) : Promise<Result<CommandResponse<null>, CommandError>> {
 try {

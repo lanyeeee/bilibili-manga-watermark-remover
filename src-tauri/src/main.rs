@@ -11,7 +11,7 @@ use crate::events::{
     RemoveWatermarkEndEvent, RemoveWatermarkErrorEvent, RemoveWatermarkStartEvent,
     RemoveWatermarkSuccessEvent,
 };
-use tauri::{Context, Manager, Wry};
+use tauri::{Context, Wry};
 
 mod commands;
 mod config;
@@ -63,8 +63,6 @@ fn main() {
         .invoke_handler(invoke_handler)
         .setup(|app| {
             register_events(app);
-            let cfg = config::Config::load(app.handle()).expect("failed to load config");
-            app.manage(cfg);
             Ok(())
         })
         .run(generate_context())
