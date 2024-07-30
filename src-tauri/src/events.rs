@@ -3,35 +3,41 @@ use specta::Type;
 use std::path::PathBuf;
 use tauri_specta::Event;
 
-//FIXME: 统一风格
 #[derive(Serialize, Deserialize, Clone, Type)]
 pub struct RemoveWatermarkStartEventPayload {
+    #[serde(rename = "dirPath")]
     pub dir_path: PathBuf,
     pub total: u32,
 }
 #[derive(Serialize, Deserialize, Clone, Type, Event)]
 pub struct RemoveWatermarkStartEvent(pub RemoveWatermarkStartEventPayload);
-//FIXME: 统一风格
+
 #[derive(Serialize, Deserialize, Clone, Type)]
 pub struct RemoveWatermarkSuccessEventPayload {
+    #[serde(rename = "dirPath")]
     pub dir_path: PathBuf,
+    #[serde(rename = "imgPath")]
     pub img_path: PathBuf,
     pub current: u32,
 }
 #[derive(Serialize, Deserialize, Clone, Type, Event)]
 pub struct RemoveWatermarkSuccessEvent(pub RemoveWatermarkSuccessEventPayload);
-//FIXME: 统一风格
+
 #[derive(Serialize, Deserialize, Clone, Type)]
 pub struct RemoveWatermarkErrorEventPayload {
+    #[serde(rename = "dirPath")]
     pub dir_path: PathBuf,
+    #[serde(rename = "imgPath")]
     pub img_path: PathBuf,
+    #[serde(rename = "errMsg")]
     pub err_msg: String,
 }
 #[derive(Serialize, Deserialize, Clone, Type, Event)]
 pub struct RemoveWatermarkErrorEvent(pub RemoveWatermarkErrorEventPayload);
-//FIXME: 统一风格
+
 #[derive(Serialize, Deserialize, Clone, Type)]
 pub struct RemoveWatermarkEndEventPayload {
+    #[serde(rename = "dirPath")]
     pub dir_path: PathBuf,
 }
 #[derive(Serialize, Deserialize, Clone, Type, Event)]
