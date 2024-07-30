@@ -50,20 +50,20 @@ watch(config, async () => {
 
 onMounted(async () => {
   await events.removeWatermarkStartEvent.listen((event) => {
-    const {dir_path, total} = event.payload;
-    removeWatermarkTasks.value.set(dir_path, [0, total]);
+    const {dirPath, total} = event.payload;
+    removeWatermarkTasks.value.set(dirPath, [0, total]);
   });
   await events.removeWatermarkSuccessEvent.listen((event) => {
-    const {dir_path, current} = event.payload;
-    const entry = removeWatermarkTasks.value.get(dir_path) as [number, number] | undefined;
+    const {dirPath, current} = event.payload;
+    const entry = removeWatermarkTasks.value.get(dirPath) as [number, number] | undefined;
     if (entry === undefined) {
       return;
     }
     entry[0] = current;
   });
   await events.removeWatermarkEndEvent.listen((event) => {
-    const {dir_path} = event.payload;
-    removeWatermarkTasks.value.delete(dir_path);
+    const {dirPath} = event.payload;
+    removeWatermarkTasks.value.delete(dirPath);
   });
   const response = await commands.getConfig();
   if (response.code !== 0) {

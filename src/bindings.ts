@@ -100,13 +100,13 @@ export type JpgImageInfo = { width: number; height: number; path: string }
 export type MangaDirData = { width: number; height: number; count: number; blackBackground: JpgImageData | null; whiteBackground: JpgImageData | null }
 export type RectData = { left: number; top: number; right: number; bottom: number }
 export type RemoveWatermarkEndEvent = RemoveWatermarkEndEventPayload
-export type RemoveWatermarkEndEventPayload = { dir_path: string }
+export type RemoveWatermarkEndEventPayload = { dirPath: string }
 export type RemoveWatermarkErrorEvent = RemoveWatermarkErrorEventPayload
-export type RemoveWatermarkErrorEventPayload = { dir_path: string; img_path: string; err_msg: string }
+export type RemoveWatermarkErrorEventPayload = { dirPath: string; imgPath: string; errMsg: string }
 export type RemoveWatermarkStartEvent = RemoveWatermarkStartEventPayload
-export type RemoveWatermarkStartEventPayload = { dir_path: string; total: number }
+export type RemoveWatermarkStartEventPayload = { dirPath: string; total: number }
 export type RemoveWatermarkSuccessEvent = RemoveWatermarkSuccessEventPayload
-export type RemoveWatermarkSuccessEventPayload = { dir_path: string; img_path: string; current: number }
+export type RemoveWatermarkSuccessEventPayload = { dirPath: string; imgPath: string; current: number }
 
 /** tauri-specta globals **/
 
