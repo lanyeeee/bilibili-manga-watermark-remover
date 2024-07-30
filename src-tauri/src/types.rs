@@ -50,7 +50,7 @@ impl JpgImageData {
     }
 }
 
-#[derive(Debug, Deserialize, Serialize, Type)]
+#[derive(Debug, Clone, Deserialize, Serialize, Type)]
 pub enum ImageFormat {
     Jpeg,
     Png,

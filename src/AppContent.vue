@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {computed, nextTick, onMounted, ref} from "vue";
+import {computed, nextTick, onMounted, ref, watch} from "vue";
 import {useMessage, useNotification} from "naive-ui";
 import {open} from "@tauri-apps/plugin-dialog";
 import {commands, Config, events, JpgImageData, MangaDirData} from "./bindings.ts";
@@ -19,7 +19,7 @@ const notification = useNotification();
 const message = useMessage();
 
 const mangaDir = ref<string>();
-const config = ref<Config>({outputDir: ""});
+const config = ref<Config>();
 const mangaDirDataList = ref<MangaDirData[]>([]);
 const removeWatermarkTasks = ref<Map<string, [number, number]>>(new Map());
 
@@ -31,6 +31,22 @@ const mangaDirExist = computed<boolean>(() => mangaDir.value !== undefined);
 const imagesExist = computed<boolean>(() => mangaDirDataList.value.length > 0);
 const removeWatermarkButtonDisabled = computed<boolean>(() => !mangaDirExist.value || !imagesExist.value);
 
+watch(config, async () => {
+  if (config.value === undefined) {
+    return;
+  }
+  const result = await commands.saveConfig(config.value);
+  if (result.status === "error") {
+    notification.error({title: "保存配置失败", description: result.error});
+    return;
+  }
+  const response = result.data;
+  if (response.code !== 0) {
+    notification.warning({title: "保存配置失败", description: response.msg});
+    return;
+  }
+  message.success("保存配置成功");
+}, {deep: true});
 
 onMounted(async () => {
   await events.removeWatermarkStartEvent.listen((event) => {
@@ -54,11 +70,14 @@ onMounted(async () => {
     notification.warning({title: "获取配置失败", description: response.msg});
     return;
   }
-  const cfg = response.data;
-  config.value.outputDir = cfg.outputDir;
+  config.value = response.data;
 });
 
 async function removeWatermark() {
+  if (config.value === undefined) {
+    message.error("配置未加载");
+    return;
+  }
   if (mangaDir.value === undefined) {
     message.error("请选择漫画文件夹");
     return;
@@ -68,10 +87,11 @@ async function removeWatermark() {
     return;
   }
 
-  const backgrounds_data: [JpgImageData, JpgImageData][] = mangaDirDataList.value
+  const backgroundsData: [JpgImageData, JpgImageData][] = mangaDirDataList.value
       .filter(data => data.blackBackground !== null && data.whiteBackground !== null)
       .map(data => [data.blackBackground as JpgImageData, data.whiteBackground as JpgImageData]);
-  let result = await commands.removeWatermark(mangaDir.value, config.value.outputDir, "Jpeg", true, backgrounds_data);
+  const cfg = config.value;
+  let result = await commands.removeWatermark(mangaDir.value, cfg.outputDir, cfg.outputFormat, cfg.outputOptimize, backgroundsData);
   if (result.status === "error") {
     notification.error({title: "去水印失败", description: result.error});
     return;
@@ -127,22 +147,15 @@ async function selectMangaDir() {
 }
 
 async function selectOutputDir() {
+  if (config.value === undefined) {
+    message.error("配置未加载");
+    return;
+  }
   const dirPath = await open({directory: true, defaultPath: config.value.outputDir});
   if (dirPath === null) {
     return;
   }
   config.value.outputDir = dirPath;
-  const result = await commands.saveConfig(config.value);
-  if (result.status === "error") {
-    notification.error({title: "保存配置失败", description: result.error});
-    return;
-  }
-  const response = result.data;
-  if (response.code !== 0) {
-    notification.warning({title: "保存配置失败", description: response.msg});
-    return;
-  }
-  message.success("保存配置成功");
 }
 
 async function loadBackground() {
@@ -214,11 +227,12 @@ async function test() {
       <n-button :disabled="!mangaDirExist" @click="showPathInFileManager(mangaDir)">打开目录</n-button>
     </div>
 
-    <div class="flex">
-      <n-input v-model:value="config.outputDir"
-               readonly
-               placeholder="请选择漫画目录"
-               @click="selectOutputDir">
+    <div v-if="config" class="flex">
+      <n-input
+          v-model:value="config.outputDir"
+          readonly
+          placeholder="请选择漫画目录"
+          @click="selectOutputDir">
         <template #prefix>输出目录：</template>
       </n-input>
       <n-button @click="showPathInFileManager(config.outputDir)">打开目录</n-button>
@@ -233,6 +247,21 @@ async function test() {
                          v-model:cropper-showing="cropperShowing"
                          v-model:cropper-width="cropperWidth"
                          v-model:cropper-height="cropperHeight"/>
+
+    <n-radio-group v-if="config" v-model:value="config.outputFormat">
+      <n-space>
+        输出格式：
+        <n-radio value="Jpeg">Jpg(默认)</n-radio>
+        <n-radio value="Png">Png</n-radio>
+      </n-space>
+    </n-radio-group>
+    <n-radio-group v-if="config" v-model:value="config.outputOptimize">
+      <n-space>
+        体积优化：
+        <n-radio :value="false">关闭(默认)</n-radio>
+        <n-radio :value="true">开启</n-radio>
+      </n-space>
+    </n-radio-group>
 
     <n-button :disabled="removeWatermarkButtonDisabled"
               type="primary"

@@ -93,7 +93,7 @@ removeWatermarkEndEvent: "remove-watermark-end-event"
 
 export type CommandError = string
 export type CommandResponse<T> = { code: number; msg: string; data: T }
-export type Config = { outputDir: string }
+export type Config = { outputDir: string; outputFormat: ImageFormat; outputOptimize: boolean }
 export type ImageFormat = "Jpeg" | "Png"
 export type JpgImageData = { info: JpgImageInfo; base64: string }
 export type JpgImageInfo = { width: number; height: number; path: string }
