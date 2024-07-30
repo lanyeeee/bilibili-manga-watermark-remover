@@ -12,9 +12,9 @@ try {
     else return { status: "error", error: e  as any };
 }
 },
-async removeWatermark(mangaDir: string, outputDir: string, backgroundsData: ([JpgImageData, JpgImageData])[]) : Promise<Result<CommandResponse<null>, CommandError>> {
+async removeWatermark(mangaDir: string, outputDir: string, format: ImageFormat, optimize: boolean, backgroundsData: ([JpgImageData, JpgImageData])[]) : Promise<Result<CommandResponse<null>, CommandError>> {
 try {
-    return { status: "ok", data: await TAURI_INVOKE("remove_watermark", { mangaDir, outputDir, backgroundsData }) };
+    return { status: "ok", data: await TAURI_INVOKE("remove_watermark", { mangaDir, outputDir, format, optimize, backgroundsData }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -57,6 +57,22 @@ try {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async getConfig() : Promise<Result<CommandResponse<Config>, CommandError>> {
+try {
+    return { status: "ok", data: await TAURI_INVOKE("get_config") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async saveConfig(config: Config) : Promise<Result<CommandResponse<null>, CommandError>> {
+try {
+    return { status: "ok", data: await TAURI_INVOKE("save_config", { config }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -82,18 +98,20 @@ removeWatermarkEndEvent: "remove-watermark-end-event"
 
 export type CommandError = string
 export type CommandResponse<T> = { code: number; msg: string; data: T }
+export type Config = { outputDir: string; outputFormat: ImageFormat; outputOptimize: boolean }
+export type ImageFormat = "Jpeg" | "Png"
 export type JpgImageData = { info: JpgImageInfo; base64: string }
 export type JpgImageInfo = { width: number; height: number; path: string }
 export type MangaDirData = { width: number; height: number; count: number; blackBackground: JpgImageData | null; whiteBackground: JpgImageData | null }
 export type RectData = { left: number; top: number; right: number; bottom: number }
 export type RemoveWatermarkEndEvent = RemoveWatermarkEndEventPayload
-export type RemoveWatermarkEndEventPayload = { dir_path: string }
+export type RemoveWatermarkEndEventPayload = { dirPath: string }
 export type RemoveWatermarkErrorEvent = RemoveWatermarkErrorEventPayload
-export type RemoveWatermarkErrorEventPayload = { dir_path: string; img_path: string; err_msg: string }
+export type RemoveWatermarkErrorEventPayload = { dirPath: string; imgPath: string; errMsg: string }
 export type RemoveWatermarkStartEvent = RemoveWatermarkStartEventPayload
-export type RemoveWatermarkStartEventPayload = { dir_path: string; total: number }
+export type RemoveWatermarkStartEventPayload = { dirPath: string; total: number }
 export type RemoveWatermarkSuccessEvent = RemoveWatermarkSuccessEventPayload
-export type RemoveWatermarkSuccessEventPayload = { dir_path: string; img_path: string; current: number }
+export type RemoveWatermarkSuccessEventPayload = { dirPath: string; imgPath: string; current: number }
 
 /** tauri-specta globals **/
 

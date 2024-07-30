@@ -3,23 +3,28 @@
 #![warn(clippy::unwrap_used)]
 
 use crate::commands::{
-    generate_background, get_background_dir_abs_path, get_background_dir_relative_path,
-    get_jpg_image_infos, get_manga_dir_data, open_image, remove_watermark,
+    generate_background, get_background_dir_abs_path, get_background_dir_relative_path, get_config,
+    get_jpg_image_infos, get_manga_dir_data, open_image, remove_watermark, save_config,
     show_path_in_file_manager,
 };
 use crate::events::{
     RemoveWatermarkEndEvent, RemoveWatermarkErrorEvent, RemoveWatermarkStartEvent,
     RemoveWatermarkSuccessEvent,
 };
-use tauri::Wry;
+use tauri::{Context, Wry};
 
 mod commands;
+mod config;
 mod errors;
 mod events;
 mod extensions;
 mod types;
 mod utils;
 mod watermark;
+
+fn generate_context() -> Context<Wry> {
+    tauri::generate_context!()
+}
 
 #[allow(clippy::unwrap_used)]
 fn main() {
@@ -34,12 +39,14 @@ fn main() {
                 show_path_in_file_manager,
                 get_background_dir_relative_path,
                 get_background_dir_abs_path,
+                get_config,
+                save_config,
             ])
             .events(tauri_specta::collect_events![
                 RemoveWatermarkStartEvent,
                 RemoveWatermarkSuccessEvent,
                 RemoveWatermarkErrorEvent,
-                RemoveWatermarkEndEvent
+                RemoveWatermarkEndEvent,
             ])
             .header("// @ts-nocheck"); // 跳过检查
 
@@ -58,6 +65,6 @@ fn main() {
             register_events(app);
             Ok(())
         })
-        .run(tauri::generate_context!())
+        .run(generate_context())
         .expect("error while running tauri application");
 }
