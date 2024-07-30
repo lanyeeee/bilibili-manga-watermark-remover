@@ -35,7 +35,7 @@ impl Config {
 
         Ok(config)
     }
-    // FIXME: config_state需要被修改
+
     pub fn save(&self, app: &AppHandle) -> anyhow::Result<()> {
         let resource_dir = app.path().resource_dir()?;
         let config_path = resource_dir.join("config.json");
