@@ -71,7 +71,7 @@ async function removeWatermark() {
   const backgrounds_data: [JpgImageData, JpgImageData][] = mangaDirDataList.value
       .filter(data => data.blackBackground !== null && data.whiteBackground !== null)
       .map(data => [data.blackBackground as JpgImageData, data.whiteBackground as JpgImageData]);
-  let result = await commands.removeWatermark(mangaDir.value, config.value.outputDir, backgrounds_data);
+  let result = await commands.removeWatermark(mangaDir.value, config.value.outputDir, "Jpeg", true, backgrounds_data);
   if (result.status === "error") {
     notification.error({title: "去水印失败", description: result.error});
     return;

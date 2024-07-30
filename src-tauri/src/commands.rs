@@ -1,6 +1,8 @@
 use crate::config::Config;
 use crate::errors::CommandResult;
-use crate::types::{CommandResponse, JpgImageData, JpgImageInfo, MangaDirData, RectData};
+use crate::types::{
+    CommandResponse, ImageFormat, JpgImageData, JpgImageInfo, MangaDirData, RectData,
+};
 use crate::{utils, watermark};
 use anyhow::Context;
 use base64::engine::general_purpose;
@@ -43,9 +45,18 @@ pub fn remove_watermark(
     app: AppHandle,
     manga_dir: &str,
     output_dir: &str,
+    format: ImageFormat,
+    optimize: bool,
     backgrounds_data: Vec<(JpgImageData, JpgImageData)>,
 ) -> CommandResult<CommandResponse<()>> {
-    let res = watermark::remove(&app, manga_dir, output_dir, &backgrounds_data)?;
+    let res = watermark::remove(
+        &app,
+        manga_dir,
+        output_dir,
+        &format,
+        optimize,
+        &backgrounds_data,
+    )?;
     Ok(res)
 }
 

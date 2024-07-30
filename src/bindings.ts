@@ -12,9 +12,9 @@ try {
     else return { status: "error", error: e  as any };
 }
 },
-async removeWatermark(mangaDir: string, outputDir: string, backgroundsData: ([JpgImageData, JpgImageData])[]) : Promise<Result<CommandResponse<null>, CommandError>> {
+async removeWatermark(mangaDir: string, outputDir: string, format: ImageFormat, optimize: boolean, backgroundsData: ([JpgImageData, JpgImageData])[]) : Promise<Result<CommandResponse<null>, CommandError>> {
 try {
-    return { status: "ok", data: await TAURI_INVOKE("remove_watermark", { mangaDir, outputDir, backgroundsData }) };
+    return { status: "ok", data: await TAURI_INVOKE("remove_watermark", { mangaDir, outputDir, format, optimize, backgroundsData }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -94,6 +94,7 @@ removeWatermarkEndEvent: "remove-watermark-end-event"
 export type CommandError = string
 export type CommandResponse<T> = { code: number; msg: string; data: T }
 export type Config = { outputDir: string }
+export type ImageFormat = "Jpeg" | "Png"
 export type JpgImageData = { info: JpgImageInfo; base64: string }
 export type JpgImageInfo = { width: number; height: number; path: string }
 export type MangaDirData = { width: number; height: number; count: number; blackBackground: JpgImageData | null; whiteBackground: JpgImageData | null }
