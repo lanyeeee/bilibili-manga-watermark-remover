@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import {computed, nextTick, onMounted, ref} from "vue";
+import {computed, nextTick, onMounted, ref, watch} from "vue";
 import {useMessage, useNotification} from "naive-ui";
 import {open} from "@tauri-apps/plugin-dialog";
-import {commands, events, JpgImageData, MangaDirData} from "./bindings.ts";
+import {commands, Config, events, JpgImageData, MangaDirData} from "./bindings.ts";
 import WatermarkCropper from "./components/WatermarkCropper.vue";
 import {path} from "@tauri-apps/api";
 import {BaseDirectory, exists} from "@tauri-apps/plugin-fs";
@@ -19,7 +19,7 @@ const notification = useNotification();
 const message = useMessage();
 
 const mangaDir = ref<string>();
-const outputDir = ref<string>();
+const config = ref<Config>();
 const mangaDirDataList = ref<MangaDirData[]>([]);
 const removeWatermarkTasks = ref<Map<string, [number, number]>>(new Map());
 
@@ -28,33 +28,61 @@ const cropperWidth = ref<number>(0);
 const cropperHeight = ref<number>(0);
 
 const mangaDirExist = computed<boolean>(() => mangaDir.value !== undefined);
-const outputDirExist = computed<boolean>(() => outputDir.value !== undefined);
 const imagesExist = computed<boolean>(() => mangaDirDataList.value.length > 0);
-const removeWatermarkButtonDisabled = computed<boolean>(() => !mangaDirExist.value || !outputDirExist.value || !imagesExist.value);
+const removeWatermarkButtonDisabled = computed<boolean>(() => !mangaDirExist.value || !imagesExist.value);
 
+watch(config, async () => {
+  if (config.value === undefined) {
+    return;
+  }
+  const result = await commands.saveConfig(config.value);
+  if (result.status === "error") {
+    notification.error({title: "保存配置失败", description: result.error});
+    return;
+  }
+  const response = result.data;
+  if (response.code !== 0) {
+    notification.warning({title: "保存配置失败", description: response.msg});
+    return;
+  }
+  message.success("保存配置成功");
+}, {deep: true});
 
 onMounted(async () => {
   await events.removeWatermarkStartEvent.listen((event) => {
-    const {dir_path, total} = event.payload;
-    removeWatermarkTasks.value.set(dir_path, [0, total]);
+    const {dirPath, total} = event.payload;
+    removeWatermarkTasks.value.set(dirPath, [0, total]);
   });
   await events.removeWatermarkSuccessEvent.listen((event) => {
-    const {dir_path, current} = event.payload;
-    const entry = removeWatermarkTasks.value.get(dir_path) as [number, number] | undefined;
+    const {dirPath, current} = event.payload;
+    const entry = removeWatermarkTasks.value.get(dirPath) as [number, number] | undefined;
     if (entry === undefined) {
       return;
     }
     entry[0] = current;
   });
   await events.removeWatermarkEndEvent.listen((event) => {
-    const {dir_path} = event.payload;
-    removeWatermarkTasks.value.delete(dir_path);
+    const {dirPath} = event.payload;
+    removeWatermarkTasks.value.delete(dirPath);
   });
-
-  outputDir.value = await path.resourceDir();
+  const result = await commands.getConfig();
+  if (result.status === "error") {
+    notification.error({title: "获取配置失败", description: result.error});
+    return;
+  }
+  const response = result.data;
+  if (response.code !== 0) {
+    notification.warning({title: "获取配置失败", description: response.msg});
+    return;
+  }
+  config.value = response.data;
 });
 
 async function removeWatermark() {
+  if (config.value === undefined) {
+    message.error("配置未加载");
+    return;
+  }
   if (mangaDir.value === undefined) {
     message.error("请选择漫画文件夹");
     return;
@@ -63,15 +91,12 @@ async function removeWatermark() {
     message.error("没有图片尺寸统计信息");
     return;
   }
-  if (outputDir.value === undefined) {
-    message.error("请选择输出文件夹");
-    return;
-  }
 
-  const backgrounds_data: [JpgImageData, JpgImageData][] = mangaDirDataList.value
+  const backgroundsData: [JpgImageData, JpgImageData][] = mangaDirDataList.value
       .filter(data => data.blackBackground !== null && data.whiteBackground !== null)
       .map(data => [data.blackBackground as JpgImageData, data.whiteBackground as JpgImageData]);
-  let result = await commands.removeWatermark(mangaDir.value, outputDir.value, backgrounds_data);
+  const cfg = config.value;
+  let result = await commands.removeWatermark(mangaDir.value, cfg.outputDir, cfg.outputFormat, cfg.outputOptimize, backgroundsData);
   if (result.status === "error") {
     notification.error({title: "去水印失败", description: result.error});
     return;
@@ -127,11 +152,15 @@ async function selectMangaDir() {
 }
 
 async function selectOutputDir() {
-  const dirPath = await open({directory: true, defaultPath: outputDir.value});
+  if (config.value === undefined) {
+    message.error("配置未加载");
+    return;
+  }
+  const dirPath = await open({directory: true, defaultPath: config.value.outputDir});
   if (dirPath === null) {
     return;
   }
-  outputDir.value = dirPath;
+  config.value.outputDir = dirPath;
 }
 
 async function loadBackground() {
@@ -182,7 +211,8 @@ async function loadBackground() {
 }
 
 async function test() {
-  console.log("hello");
+  const cfg = await commands.getConfig();
+  console.log(cfg);
 }
 
 </script>
@@ -190,7 +220,6 @@ async function test() {
 <template>
   <div class="flex flex-col">
     <span>{{ mangaDirExist ? "✅" : "❌" }}选择漫画目录</span>
-    <span>{{ outputDirExist ? "✅" : "❌" }}选择输出目录</span>
     <span>{{ imagesExist ? "✅" : "❌" }}漫画目录存在图片</span>
 
     <div class="flex">
@@ -203,19 +232,19 @@ async function test() {
       <n-button :disabled="!mangaDirExist" @click="showPathInFileManager(mangaDir)">打开目录</n-button>
     </div>
 
-    <div class="flex">
-      <n-input v-model:value="outputDir"
-               readonly
-               placeholder="请选择漫画目录"
-               @click="selectOutputDir">
+    <div v-if="config" class="flex">
+      <n-input
+          v-model:value="config.outputDir"
+          readonly
+          placeholder="请选择漫画目录"
+          @click="selectOutputDir">
         <template #prefix>输出目录：</template>
       </n-input>
-      <n-button :disabled="!outputDirExist" @click="showPathInFileManager(outputDir)">打开目录</n-button>
+      <n-button @click="showPathInFileManager(config.outputDir)">打开目录</n-button>
     </div>
 
     <manga-dir-indicator :manga-dir="mangaDir"
                          :manga-dir-exist="mangaDirExist"
-                         :output-dir-exist="outputDirExist"
                          :images-exist="imagesExist"
                          :manga-dir-data-list="mangaDirDataList"
                          :load-background="loadBackground"
@@ -223,6 +252,36 @@ async function test() {
                          v-model:cropper-showing="cropperShowing"
                          v-model:cropper-width="cropperWidth"
                          v-model:cropper-height="cropperHeight"/>
+
+    <n-radio-group v-if="config" v-model:value="config.outputFormat">
+      <n-space>
+        输出格式：
+        <n-radio value="Jpeg">jpg(默认)</n-radio>
+        <n-tooltip placement="right-start" trigger="hover">
+          <template #trigger>
+            <n-radio value="Png">png</n-radio>
+          </template>
+          1. 以png格式输出并<span class="text-red">不能</span>提高清晰度，还会增加体积<br/>
+          2. 除非你有特殊需求，否则<span class="text-red">不建议</span>使用<br/>
+          3. 如果以png输出，建议开启体积优化<br/>
+        </n-tooltip>
+      </n-space>
+    </n-radio-group>
+    <n-radio-group v-if="config" v-model:value="config.outputOptimize">
+      <n-space>
+        体积优化：
+        <n-radio :value="false">关闭(默认)</n-radio>
+        <n-tooltip placement="right-start" trigger="hover">
+          <template #trigger>
+            <n-radio :value="true">开启</n-radio>
+          </template>
+          1. 体积优化<span class="text-red">不会</span>影响清晰度<br/>
+          <span class="text-red">2. 显著减小png体积</span><br/>
+          3. 对jpg影响不大，所以没有特殊需求不建议开启<br/>
+          4. 仅对黑白图片有效，彩色图片不会受影响<br/>
+        </n-tooltip>
+      </n-space>
+    </n-radio-group>
 
     <n-button :disabled="removeWatermarkButtonDisabled"
               type="primary"
