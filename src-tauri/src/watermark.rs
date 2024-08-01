@@ -14,7 +14,7 @@ use std::{
 };
 use tauri::AppHandle;
 use tauri_specta::Event;
-use walkdir::{DirEntry, WalkDir};
+use walkdir::WalkDir;
 
 /// 生成黑色背景和白色背景的水印图片
 pub fn generate_background(
@@ -101,7 +101,11 @@ fn create_image_paths(manga_dir: &str, width: u32, height: u32) -> Vec<PathBuf> 
         .filter_map(Result::ok)
         .filter_map(|entry| {
             let path = entry.into_path();
-            if !path.is_file() || path.extension()? != "jpg" {
+            if !path.is_file() {
+                return None;
+            }
+            let ext = path.extension()?;
+            if ext != "jpg" && ext != "jpeg" {
                 return None;
             }
             let size = imagesize::size(&path).ok()?;
@@ -233,16 +237,22 @@ fn create_dir_progress<'a>(
 fn create_dir_map(manga_dir: &PathBuf) -> HashMap<PathBuf, Vec<PathBuf>> {
     let mut dir_map: HashMap<PathBuf, Vec<PathBuf>> = HashMap::new();
     // 遍历manga_dir目录下的所有文件和子目录
-    for entry in WalkDir::new(manga_dir).into_iter().filter_map(Result::ok) {
-        let entry: DirEntry = entry;
-        let path = entry.into_path();
-        // 如果是文件且是jpg文件则添加到directory_map中
-        if path.is_file() && path.extension().map_or(false, |e| e == "jpg") {
-            if let Some(parent) = path.parent() {
-                dir_map.entry(parent.to_path_buf()).or_default().push(path);
+    WalkDir::new(manga_dir)
+        .into_iter()
+        .filter_map(Result::ok)
+        .filter_map(|entry| {
+            let path = entry.into_path();
+            if !path.is_file() {
+                return None;
             }
-        }
-    }
+            let ext = path.extension()?;
+            if ext != "jpg" && ext != "jpeg" {
+                return None;
+            }
+            let parent = path.parent()?.to_path_buf();
+            Some((path, parent))
+        })
+        .for_each(|(path, parent)| dir_map.entry(parent).or_default().push(path));
     dir_map
 }
 
