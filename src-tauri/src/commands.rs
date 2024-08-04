@@ -102,21 +102,26 @@ pub fn get_manga_dir_data(
     // 用于存储不同尺寸的图片的数量
     let mut size_count: HashMap<(u32, u32), u32> = HashMap::new();
     // 遍历漫画目录下的所有文件，统计不同尺寸的图片的数量
-    for entry in WalkDir::new(PathBuf::from_slash(manga_dir))
+    WalkDir::new(PathBuf::from_slash(manga_dir))
         .max_depth(2) // 一般第一层目录是章节目录，第二层目录是图片文件
         .into_iter()
         .filter_map(Result::ok)
-    {
-        let path = entry.into_path();
-        if path.is_file() && path.extension().map_or(false, |e| e == "jpg") {
-            let Ok(size) = imagesize::size(&path) else {
-                continue;
-            };
+        .filter_map(|entry| {
+            let path = entry.into_path();
+            if !path.is_file() {
+                return None;
+            }
+            let ext = path.extension()?;
+            if ext != "jpg" && ext != "jpeg" {
+                return None;
+            }
+            imagesize::size(&path).ok()
+        })
+        .for_each(|size| {
             let key = (size.width as u32, size.height as u32);
             let count = size_count.entry(key).or_insert(0);
             *count += 1;
-        }
-    }
+        });
     // 将统计结果转换为Vec<MangaDirData>
     let mut manga_dir_data: Vec<MangaDirData> = size_count
         .into_iter()
@@ -165,23 +170,29 @@ pub fn get_jpg_image_infos(manga_dir: &str) -> CommandResponse<Vec<JpgImageInfo>
     // 用于存储jpg图片的信息
     let mut jpg_image_infos = vec![];
     // 遍历漫画目录下的所有文件，获取jpg图片的信息
-    for entry in WalkDir::new(PathBuf::from_slash(manga_dir))
+    WalkDir::new(PathBuf::from_slash(manga_dir))
         .max_depth(2) //  一般第一层目录是章节目录，第二层目录是图片文件
         .into_iter()
         .filter_map(Result::ok)
-    {
-        let path = entry.into_path();
-        if path.is_file() && path.extension().map_or(false, |e| e == "jpg") {
-            let Ok(size) = imagesize::size(&path) else {
-                continue;
-            };
+        .filter_map(|entry| {
+            let path = entry.into_path();
+            if !path.is_file() {
+                return None;
+            }
+            let ext = path.extension()?;
+            if ext != "jpg" && ext != "jpeg" {
+                return None;
+            }
+            let size = imagesize::size(&path).ok()?;
+            Some((path, size))
+        })
+        .for_each(|(path, size)| {
             jpg_image_infos.push(JpgImageInfo {
                 width: size.width as u32,
                 height: size.height as u32,
                 path,
             });
-        }
-    }
+        });
     CommandResponse {
         code: 0,
         msg: String::new(),
