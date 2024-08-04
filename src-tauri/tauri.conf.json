@@ -1,6 +1,6 @@
 {
   "productName": "bilibili-manga-watermark-remover",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "identifier": "com.lanyeeee.bilibili-manga-watermark-remover",
   "build": {
     "beforeDevCommand": "pnpm dev",
