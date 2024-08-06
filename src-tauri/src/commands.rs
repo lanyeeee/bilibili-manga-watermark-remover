@@ -1,17 +1,19 @@
+use std::collections::HashMap;
+use std::path::PathBuf;
+
+use anyhow::Context;
+use base64::Engine;
+use base64::engine::general_purpose;
+use path_slash::PathBufExt;
+use tauri::AppHandle;
+use walkdir::WalkDir;
+
+use crate::{utils, watermark};
 use crate::config::Config;
 use crate::errors::CommandResult;
 use crate::types::{
     CommandResponse, ImageFormat, JpgImageData, JpgImageInfo, MangaDirData, RectData,
 };
-use crate::{utils, watermark};
-use anyhow::Context;
-use base64::engine::general_purpose;
-use base64::Engine;
-use path_slash::PathBufExt;
-use std::collections::HashMap;
-use std::path::PathBuf;
-use tauri::AppHandle;
-use walkdir::WalkDir;
 
 #[tauri::command(async)]
 #[specta::specta]
@@ -111,7 +113,7 @@ pub fn get_manga_dir_data(
             if !path.is_file() {
                 return None;
             }
-            let ext = path.extension()?;
+            let ext = path.extension()?.to_str()?.to_lowercase();
             if ext != "jpg" && ext != "jpeg" {
                 return None;
             }
@@ -179,7 +181,7 @@ pub fn get_jpg_image_infos(manga_dir: &str) -> CommandResponse<Vec<JpgImageInfo>
             if !path.is_file() {
                 return None;
             }
-            let ext = path.extension()?;
+            let ext = path.extension()?.to_str()?.to_lowercase();
             if ext != "jpg" && ext != "jpeg" {
                 return None;
             }
