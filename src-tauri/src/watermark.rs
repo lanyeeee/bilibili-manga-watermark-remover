@@ -104,7 +104,7 @@ fn create_image_paths(manga_dir: &str, width: u32, height: u32) -> Vec<PathBuf> 
             if !path.is_file() {
                 return None;
             }
-            let ext = path.extension()?;
+            let ext = path.extension()?.to_str()?.to_lowercase();
             if ext != "jpg" && ext != "jpeg" {
                 return None;
             }
@@ -245,7 +245,7 @@ fn create_dir_map(manga_dir: &PathBuf) -> HashMap<PathBuf, Vec<PathBuf>> {
             if !path.is_file() {
                 return None;
             }
-            let ext = path.extension()?;
+            let ext = path.extension()?.to_str()?.to_lowercase();
             if ext != "jpg" && ext != "jpeg" {
                 return None;
             }
