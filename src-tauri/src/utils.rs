@@ -1,4 +1,5 @@
 use std::path::{Path, PathBuf};
+
 use tauri::{AppHandle, Manager};
 
 pub fn get_background_dir_relative_path(

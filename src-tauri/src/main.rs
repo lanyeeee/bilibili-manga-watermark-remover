@@ -2,6 +2,8 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 #![warn(clippy::unwrap_used)]
 
+use tauri::{Context, Wry};
+
 use crate::commands::{
     generate_background, get_background_dir_abs_path, get_background_dir_relative_path, get_config,
     get_jpg_image_infos, get_manga_dir_data, open_image, remove_watermark, save_config,
@@ -11,7 +13,6 @@ use crate::events::{
     RemoveWatermarkEndEvent, RemoveWatermarkErrorEvent, RemoveWatermarkStartEvent,
     RemoveWatermarkSuccessEvent,
 };
-use tauri::{Context, Wry};
 
 mod commands;
 mod config;
