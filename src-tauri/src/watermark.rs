@@ -1,20 +1,22 @@
-use crate::events;
-use crate::extensions::IgnoreLockPoison;
-use crate::types::{CommandResponse, ImageFormat, JpgImageData, RectData};
-use anyhow::{anyhow, Context};
-use image::codecs::png::PngEncoder;
-use image::{Rgb, RgbImage};
-use path_slash::PathBufExt;
-use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
-use std::io::BufWriter;
 use std::{
     collections::HashMap,
     path::{Path, PathBuf},
     sync::Mutex,
 };
+use std::io::BufWriter;
+
+use anyhow::{anyhow, Context};
+use image::{Rgb, RgbImage};
+use image::codecs::png::PngEncoder;
+use path_slash::PathBufExt;
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use tauri::AppHandle;
 use tauri_specta::Event;
 use walkdir::WalkDir;
+
+use crate::events;
+use crate::extensions::IgnoreLockPoison;
+use crate::types::{CommandResponse, ImageFormat, JpgImageData, RectData};
 
 /// 生成黑色背景和白色背景的水印图片
 pub fn generate_background(

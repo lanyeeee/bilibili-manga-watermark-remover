@@ -1,6 +1,7 @@
+use std::path::PathBuf;
+
 use serde::{Deserialize, Serialize};
 use specta::Type;
-use std::path::PathBuf;
 use tauri_specta::Event;
 
 #[derive(Serialize, Deserialize, Clone, Type)]
