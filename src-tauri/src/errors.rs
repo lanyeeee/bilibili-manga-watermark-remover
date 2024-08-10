@@ -1,6 +1,8 @@
+use std::fmt::Write;
+
 use serde::Serialize;
 use specta::Type;
-use std::fmt::Write;
+
 pub type CommandResult<T> = Result<T, CommandError>;
 
 #[derive(Debug, Type)]

@@ -1,8 +1,10 @@
-use crate::types::ImageFormat;
+use std::path::PathBuf;
+
 use serde::{Deserialize, Serialize};
 use specta::Type;
-use std::path::PathBuf;
 use tauri::{AppHandle, Manager};
+
+use crate::types::ImageFormat;
 
 #[allow(clippy::struct_field_names)]
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]

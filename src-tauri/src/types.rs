@@ -1,8 +1,9 @@
-use base64::engine::general_purpose;
+use std::path::PathBuf;
+
 use base64::Engine;
+use base64::engine::general_purpose;
 use serde::{Deserialize, Serialize};
 use specta::Type;
-use std::path::PathBuf;
 
 #[derive(Debug, Deserialize, Serialize, Type)]
 pub struct CommandResponse<T> {
