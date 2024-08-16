@@ -6,14 +6,7 @@
     "main"
   ],
   "permissions": [
-    "path:default",
-    "event:default",
-    "window:default",
-    "app:default",
-    "image:default",
-    "resources:default",
-    "menu:default",
-    "tray:default",
+    "core:default",
     "shell:allow-open",
     "dialog:allow-open",
     "fs:default",
