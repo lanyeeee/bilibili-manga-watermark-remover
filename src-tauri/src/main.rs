@@ -21,7 +21,6 @@ mod events;
 mod extensions;
 mod types;
 mod utils;
-mod watermark;
 
 fn generate_context() -> Context<Wry> {
     tauri::generate_context!()
