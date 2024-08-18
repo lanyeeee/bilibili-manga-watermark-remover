@@ -7,7 +7,8 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
-    MangaDirIndicator: typeof import('./src/components/MangaDirIndicator.vue')['default']
+    DownloadPane: typeof import('./src/components/DownloadPane.vue')['default']
+    MangaDirIndicator: typeof import('./src/components/WatermarkComponents/MangaDirIndicator.vue')['default']
     NButton: typeof import('naive-ui')['NButton']
     NInput: typeof import('naive-ui')['NInput']
     NMessageProvider: typeof import('naive-ui')['NMessageProvider']
@@ -19,8 +20,11 @@ declare module 'vue' {
     NRadioGroup: typeof import('naive-ui')['NRadioGroup']
     NSpace: typeof import('naive-ui')['NSpace']
     NSwitch: typeof import('naive-ui')['NSwitch']
+    NTabPane: typeof import('naive-ui')['NTabPane']
+    NTabs: typeof import('naive-ui')['NTabs']
     NTooltip: typeof import('naive-ui')['NTooltip']
-    RemoveProgress: typeof import('./src/components/RemoveProgress.vue')['default']
-    WatermarkCropper: typeof import('./src/components/WatermarkCropper.vue')['default']
+    RemoveProgress: typeof import('./src/components/WatermarkComponents/RemoveProgress.vue')['default']
+    WatermarkCropper: typeof import('./src/components/WatermarkComponents/WatermarkCropper.vue')['default']
+    WatermarkPane: typeof import('./src/components/WatermarkPane.vue')['default']
   }
 }
