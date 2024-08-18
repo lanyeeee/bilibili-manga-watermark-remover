@@ -3,6 +3,13 @@
 
 import WatermarkPane from "./components/WatermarkPane.vue";
 import DownloadPane from "./components/DownloadPane.vue";
+import {onMounted} from "vue";
+
+onMounted(() => {
+  document.oncontextmenu = (event) => {
+    event.preventDefault();
+  };
+});
 </script>
 
 <template>
