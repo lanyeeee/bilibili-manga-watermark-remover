@@ -10,6 +10,7 @@ declare module 'vue' {
     DownloadPane: typeof import('./src/components/DownloadPane.vue')['default']
     MangaDirIndicator: typeof import('./src/components/WatermarkComponents/MangaDirIndicator.vue')['default']
     NButton: typeof import('naive-ui')['NButton']
+    NDropdown: typeof import('naive-ui')['NDropdown']
     NInput: typeof import('naive-ui')['NInput']
     NMessageProvider: typeof import('naive-ui')['NMessageProvider']
     NModal: typeof import('naive-ui')['NModal']
