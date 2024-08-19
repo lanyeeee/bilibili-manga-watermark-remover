@@ -1,117 +1,16 @@
 <script setup lang="ts">
-import {SelectionArea, SelectionEvent, SelectionOptions} from "@viselect/vue";
-import {nextTick, ref, watch} from "vue";
-import {useMessage} from "naive-ui";
-import {commands} from "../bindings.ts";
+import {MangaData, SearchData} from "../bindings.ts";
+import {ref} from "vue";
+import SearchPane from "./DownloadComponents/SearchPane.vue";
+import EpisodePane from "./DownloadComponents/EpisodePane.vue";
+import DownloadingList from "./DownloadComponents/DownloadingList.vue";
 
-
-const message = useMessage();
-
-const dropdownX = ref(0);
-const dropdownY = ref(0);
-const showDropdown = ref(false);
-const dropdownOptions = [
-  {label: "勾选", key: "check"},
-  {label: "取消勾选", key: "uncheck"},
-  {label: "全选", key: "check all"},
-  {label: "取消全选", key: "uncheck all"},
-];
-
-function onDropdownSelect(key: "check" | "uncheck" | "check all" | "uncheck all") {
-  showDropdown.value = false;
-  switch (key) {
-    case "check":
-      selected.value.forEach(id => message.success(`勾选 ${id}`));
-      break;
-    case "uncheck":
-      selected.value.forEach(id => message.success(`取消勾选 ${id}`));
-      break;
-    case "check all":
-      message.success("全选");
-      break;
-    case "uncheck all":
-      message.success("取消全选");
-      break;
-  }
-}
-
-async function onContextMenu(e: MouseEvent) {
-  showDropdown.value = false;
-  await nextTick();
-  showDropdown.value = true;
-  dropdownX.value = e.clientX;
-  dropdownY.value = e.clientY;
-}
-
-const selected = ref<Set<number>>(new Set());
-// 创建一个变量，记录这次框选是否改动了选中的元素
-const selectedChanged = ref(false);
-
-watch(selected.value, () => {
-  selectedChanged.value = true;
-});
-
-function extractIds(elements: Element[]): number[] {
-  return elements.map(element => element.getAttribute("data-key"))
-      .filter(Boolean)
-      .map(Number);
-}
-
-function onMouseDown(event: MouseEvent): void {
-  if (event?.button === 0) {
-    selectedChanged.value = false;
-  }
-}
-
-function onMouseUp(event: MouseEvent): void {
-  if (event?.button === 0 && !selectedChanged.value) {
-    selected.value.clear();
-  }
-}
-
-function onStart({event, selection}: SelectionEvent) {
-  if (!event?.ctrlKey && !event?.metaKey) {
-    selection.clearSelection();
-    selected.value.clear();
-  }
-}
-
-function onMove({store: {changed: {added, removed}}}: SelectionEvent) {
-  extractIds(added).forEach(id => selected.value.add(id));
-  extractIds(removed).forEach(id => selected.value.delete(id));
-}
-
-function range(to: number, offset = 0): number[] {
-  return new Array(to).fill(0).map((_, i) => offset + i);
-}
+const searchData = ref<SearchData>();
+const mangaData = ref<MangaData>();
 
 async function test() {
-  let searchResult = await commands.searchManga("一拳超人");
-  if (searchResult.status === "error") {
-    message.error(searchResult.error);
-    return;
-  }
-  let searchResponse = searchResult.data;
-  if (searchResponse.code !== 0) {
-    message.error(searchResponse.msg);
-    return;
-  }
-  let searchData = searchResponse.data;
-  console.log(searchData);
-
-  let mangaId = searchData.list[0].id;
-  let mangaResult = await commands.getMangaData(mangaId);
-  if (mangaResult.status === "error") {
-    message.error(mangaResult.error);
-    return;
-  }
-  let mangaResponse = mangaResult.data;
-  if (mangaResponse.code !== 0) {
-    message.error(mangaResponse.msg);
-    return;
-  }
-  let mangaData = mangaResponse.data;
-  console.log(mangaData);
+  console.log(searchData.value);
+  console.log(mangaData.value);
 }
 
 
@@ -120,60 +19,21 @@ async function test() {
 <template>
   <div class="h-full flex flex-col">
     <n-button @click="test">测试用</n-button>
-    <SelectionArea ref="selectionAreaRef"
-                   class="selection-container"
-                   :options="{selectables: '.selectable'} as SelectionOptions"
-                   @contextmenu="onContextMenu"
-                   @mousedown="onMouseDown"
-                   @mouseup="onMouseUp"
-                   @move="onMove"
-                   @start="onStart">
-      <div v-for="id of range(800, 0)" :key="id" :data-key="id" class="selectable"
-           :class="{ selected: selected.has(id) }"/>
-    </SelectionArea>
-    <n-dropdown
-        placement="bottom-start"
-        trigger="manual"
-        :x="dropdownX"
-        :y="dropdownY"
-        :options="dropdownOptions"
-        :show="showDropdown"
-        :on-clickoutside="()=>showDropdown=false"
-        @select="onDropdownSelect"
-    />
+    <div class="flex flex-1 overflow-hidden">
+      <div class="basis-1/2 overflow-auto">
+        <n-tabs default-value="search" type="line" animated size="small" class="h-full">
+          <n-tab-pane class="h-full overflow-auto p-0!" name="search" tab="漫画搜索" display-directive="show:lazy">
+            <search-pane v-model:search-data="searchData" v-model:manga-data="mangaData">
+            </search-pane>
+          </n-tab-pane>
+          <n-tab-pane class="h-full overflow-auto p-0!" name="download" tab="章节详情" display-directive="show:lazy">
+            <episode-pane></episode-pane>
+          </n-tab-pane>
+        </n-tabs>
+      </div>
+      <div class="basis-1/2 overflow-auto">
+        <downloading-list class="h-full"></downloading-list>
+      </div>
+    </div>
   </div>
 </template>
-
-<style scoped>
-.selection-container {
-  display: -webkit-box;
-  display: -ms-flexbox;
-  display: flex;
-  flex-wrap: wrap;
-  user-select: none;
-  overflow: auto;
-}
-
-.selection-container div {
-  height: 3em;
-  width: 3em;
-  margin: 0.2em;
-  background: rgba(66, 68, 90, 0.075);
-  border: 2px solid transparent;
-  border-radius: 0.15em;
-  cursor: pointer;
-}
-
-.selection-container div.selected {
-  background: red;
-  border: 2px solid rgba(0, 0, 0, 0.075);
-}
-</style>
-
-<style>
-.selection-area {
-  background: rgba(46, 115, 252, 0.5);
-  border: 1px solid rgba(98, 155, 255, 0.85);
-  border-radius: 0.15em;
-}
-</style>
