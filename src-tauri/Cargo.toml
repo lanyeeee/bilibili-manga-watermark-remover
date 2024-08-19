@@ -27,6 +27,7 @@ base64 = { version = "0.22.1" }
 image = { version = "0.25.1", default-features = false, features = ["jpeg", "png"] }
 jpeg-encoder = { version = "0.6.0", features = ["simd"] }
 imagesize = { version = "0.13.0" }
+reqwest = { version = "0.12.5" }
 
 rayon = { version = "1.10" }
 walkdir = { version = "2" }
