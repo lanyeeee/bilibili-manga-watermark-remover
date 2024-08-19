@@ -2,6 +2,7 @@
 import {SelectionArea, SelectionEvent, SelectionOptions} from "@viselect/vue";
 import {nextTick, ref, watch} from "vue";
 import {useMessage} from "naive-ui";
+import {commands} from "../bindings.ts";
 
 
 const message = useMessage();
@@ -84,8 +85,33 @@ function range(to: number, offset = 0): number[] {
   return new Array(to).fill(0).map((_, i) => offset + i);
 }
 
-function test() {
-  selected.value.clear();
+async function test() {
+  let searchResult = await commands.searchManga("一拳超人");
+  if (searchResult.status === "error") {
+    message.error(searchResult.error);
+    return;
+  }
+  let searchResponse = searchResult.data;
+  if (searchResponse.code !== 0) {
+    message.error(searchResponse.msg);
+    return;
+  }
+  let searchData = searchResponse.data;
+  console.log(searchData);
+
+  let mangaId = searchData.list[0].id;
+  let mangaResult = await commands.getMangaData(mangaId);
+  if (mangaResult.status === "error") {
+    message.error(mangaResult.error);
+    return;
+  }
+  let mangaResponse = mangaResult.data;
+  if (mangaResponse.code !== 0) {
+    message.error(mangaResponse.msg);
+    return;
+  }
+  let mangaData = mangaResponse.data;
+  console.log(mangaData);
 }
 
 
