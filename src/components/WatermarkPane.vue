@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {computed, nextTick, onMounted, ref, watch} from "vue";
+import {computed, nextTick, onMounted, ref} from "vue";
 import {useMessage, useNotification} from "naive-ui";
 import {open} from "@tauri-apps/plugin-dialog";
 import {commands, Config, events, JpgImageData, MangaDirData} from "../bindings.ts";
@@ -18,8 +18,9 @@ import MangaDirIndicator from "./WatermarkComponents/MangaDirIndicator.vue";
 const notification = useNotification();
 const message = useMessage();
 
+const config = defineModel<Config | undefined>("config", {required: true});
+
 const mangaDir = ref<string>();
-const config = ref<Config>();
 const mangaDirDataList = ref<MangaDirData[]>([]);
 const removeWatermarkTasks = ref<Map<string, [number, number]>>(new Map());
 
@@ -31,22 +32,6 @@ const mangaDirExist = computed<boolean>(() => mangaDir.value !== undefined);
 const imagesExist = computed<boolean>(() => mangaDirDataList.value.length > 0);
 const removeWatermarkButtonDisabled = computed<boolean>(() => !mangaDirExist.value || !imagesExist.value);
 
-watch(config, async () => {
-  if (config.value === undefined) {
-    return;
-  }
-  const result = await commands.saveConfig(config.value);
-  if (result.status === "error") {
-    notification.error({title: "保存配置失败", description: result.error});
-    return;
-  }
-  const response = result.data;
-  if (response.code !== 0) {
-    notification.warning({title: "保存配置失败", description: response.msg});
-    return;
-  }
-  message.success("保存配置成功");
-}, {deep: true});
 
 onMounted(async () => {
   await events.removeWatermarkStartEvent.listen((event) => {
@@ -65,17 +50,7 @@ onMounted(async () => {
     const {dirPath} = event.payload;
     removeWatermarkTasks.value.delete(dirPath);
   });
-  const result = await commands.getConfig();
-  if (result.status === "error") {
-    notification.error({title: "获取配置失败", description: result.error});
-    return;
-  }
-  const response = result.data;
-  if (response.code !== 0) {
-    notification.warning({title: "获取配置失败", description: response.msg});
-    return;
-  }
-  config.value = response.data;
+
 });
 
 async function removeWatermark() {
