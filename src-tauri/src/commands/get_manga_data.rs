@@ -13,8 +13,7 @@ use crate::types::CommandResponse;
 #[specta::specta]
 pub async fn get_manga_data(app: AppHandle, id: i32) -> CommandResult<CommandResponse<MangaData>> {
     let config = Config::load(&app).map_err(anyhow::Error::from)?;
-    let cookie = config.bili_cookie.unwrap_or(String::new());
-
+    let cookie = format!("SESSDATA={}", config.bili_cookie);
     let headers_vec = [
         ("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"),
         ("cookie", &cookie),
