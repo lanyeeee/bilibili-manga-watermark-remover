@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import {SelectionArea, SelectionEvent, SelectionOptions} from "@viselect/vue";
 import {nextTick, ref, watch} from "vue";
-import {useMessage} from "naive-ui";
+import {MangaData} from "../../bindings.ts";
 
 
-const message = useMessage();
+const checkedIds = ref<number[]>([]);
+
+const mangaData = defineModel<MangaData | undefined>("mangaData", {required: true});
+
 
 const dropdownX = ref(0);
 const dropdownY = ref(0);
@@ -18,19 +21,20 @@ const dropdownOptions = [
 
 function onDropdownSelect(key: "check" | "uncheck" | "check all" | "uncheck all") {
   showDropdown.value = false;
-  switch (key) {
-    case "check":
-      selected.value.forEach(id => message.success(`勾选 ${id}`));
-      break;
-    case "uncheck":
-      selected.value.forEach(id => message.success(`取消勾选 ${id}`));
-      break;
-    case "check all":
-      message.success("全选");
-      break;
-    case "uncheck all":
-      message.success("取消全选");
-      break;
+  if (key === "check") {
+    // 只有未勾选的才会被勾选
+    [...selectedIds.value]
+        .filter(id => !checkedIds.value.includes(id))
+        .forEach(id => checkedIds.value.push(id));
+  } else if (key === "uncheck") {
+    checkedIds.value = checkedIds.value.filter(id => !selectedIds.value.has(id));
+  } else if (key === "check all") {
+    // 只有未锁定的才会被勾选
+    mangaData.value?.ep_list
+        .filter(ep => !ep.is_locked)
+        .forEach(ep => checkedIds.value.push(ep.id));
+  } else if (key === "uncheck all") {
+    checkedIds.value.length = 0;
   }
 }
 
@@ -42,18 +46,19 @@ async function onContextMenu(e: MouseEvent) {
   dropdownY.value = e.clientY;
 }
 
-const selected = ref<Set<number>>(new Set());
+const selectedIds = ref<Set<number>>(new Set());
 // 创建一个变量，记录这次框选是否改动了选中的元素
 const selectedChanged = ref(false);
 
-watch(selected.value, () => {
+watch(selectedIds.value, () => {
   selectedChanged.value = true;
 });
 
 function extractIds(elements: Element[]): number[] {
   return elements.map(element => element.getAttribute("data-key"))
       .filter(Boolean)
-      .map(Number);
+      .map(Number)
+      .filter(epIsUnlocked);
 }
 
 function onMouseDown(event: MouseEvent): void {
@@ -64,42 +69,66 @@ function onMouseDown(event: MouseEvent): void {
 
 function onMouseUp(event: MouseEvent): void {
   if (event?.button === 0 && !selectedChanged.value) {
-    selected.value.clear();
+    selectedIds.value.clear();
   }
 }
 
-function onStart({event, selection}: SelectionEvent) {
+function onDragStart({event, selection}: SelectionEvent) {
   if (!event?.ctrlKey && !event?.metaKey) {
     selection.clearSelection();
-    selected.value.clear();
+    selectedIds.value.clear();
   }
 }
 
-function onMove({store: {changed: {added, removed}}}: SelectionEvent) {
-  extractIds(added).forEach(id => selected.value.add(id));
-  extractIds(removed).forEach(id => selected.value.delete(id));
+function onDragMove({store: {changed: {added, removed}}}: SelectionEvent) {
+  extractIds(added).forEach(id => selectedIds.value.add(id));
+  extractIds(removed).forEach(id => selectedIds.value.delete(id));
 }
 
-function range(to: number, offset = 0): number[] {
-  return new Array(to).fill(0).map((_, i) => offset + i);
+function epIsUnlocked(id: number): boolean {
+  return !mangaData.value?.ep_list.find(ep => ep.id === id)?.is_locked ?? false;
 }
 
+
+function test() {
+  console.log(checkedIds.value);
+  console.log(selectedIds.value);
+}
 
 </script>
 
 <template>
   <div class="h-full flex flex-col">
+    <n-button @click="test">测试用</n-button>
+    <div class="flex flex-justify-around">
+      <span>总章数：{{ mangaData?.ep_list.length }}</span>
+      <n-divider vertical></n-divider>
+      <span>已解锁：{{ mangaData?.ep_list.filter(ep => !ep.is_locked).length }}</span>
+      <n-divider vertical></n-divider>
+      <span>已下载：待完善</span>
+      <n-divider vertical></n-divider>
+      <span>已选中：{{ checkedIds.length }}</span>
+    </div>
     <SelectionArea ref="selectionAreaRef"
                    class="selection-container"
                    :options="{selectables: '.selectable'} as SelectionOptions"
                    @contextmenu="onContextMenu"
                    @mousedown="onMouseDown"
                    @mouseup="onMouseUp"
-                   @move="onMove"
-                   @start="onStart">
-      <div v-for="id of range(800, 0)" :key="id" :data-key="id" class="selectable"
-           :class="{ selected: selected.has(id) }"/>
+                   @move="onDragMove"
+                   @start="onDragStart">
+      <n-checkbox-group v-model:value="checkedIds" class="grid grid-cols-3">
+        <n-checkbox v-for="{id, title, is_locked} of mangaData?.ep_list"
+                    :key="id"
+                    :data-key="id"
+                    class="selectable"
+                    :value="id"
+                    :label="title"
+                    :disabled="is_locked"
+                    :class="{ selected: selectedIds.has(id) }"/>
+      </n-checkbox-group>
     </SelectionArea>
+
     <n-dropdown
         placement="bottom-start"
         trigger="manual"
@@ -117,25 +146,12 @@ function range(to: number, offset = 0): number[] {
 .selection-container {
   display: -webkit-box;
   display: -ms-flexbox;
-  display: flex;
-  flex-wrap: wrap;
   user-select: none;
   overflow: auto;
 }
 
-.selection-container div {
-  height: 3em;
-  width: 3em;
-  margin: 0.2em;
-  background: rgba(66, 68, 90, 0.075);
-  border: 2px solid transparent;
-  border-radius: 0.15em;
-  cursor: pointer;
-}
-
-.selection-container div.selected {
-  background: red;
-  border: 2px solid rgba(0, 0, 0, 0.075);
+.selection-container .selected {
+  background: rgba(24, 160, 88, 0.16);
 }
 </style>
 
