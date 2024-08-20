@@ -51,7 +51,8 @@ pub async fn get_manga_data(app: AppHandle, id: i32) -> CommandResult<CommandRes
     let Some(data) = bili_res.data else {
         return Err(anyhow!("获取漫画详情失败，data字段不存在: {bili_res:?}").into());
     };
-    let manga_data: MangaData = serde_json::from_value(data).map_err(anyhow::Error::from)?;
+    let mut manga_data: MangaData = serde_json::from_value(data).map_err(anyhow::Error::from)?;
+    manga_data.ep_list.reverse();
     let res = CommandResponse {
         code: 0,
         msg: String::new(),
