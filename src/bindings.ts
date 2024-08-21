@@ -106,6 +106,14 @@ async getQrCodeStatusData(qrcodeKey: string) : Promise<Result<CommandResponse<Qr
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async getBiliCookieStatusData(biliCookie: string) : Promise<Result<CommandResponse<CookieStatusData>, CommandError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_bili_cookie_status_data", { biliCookie }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -137,6 +145,7 @@ export type Banner = { icon: string; title: string; url: string }
 export type CommandError = string
 export type CommandResponse<T> = { code: number; msg: string; data: T }
 export type Config = { outputDir: string; outputFormat: ImageFormat; outputOptimize: boolean; biliCookie: string }
+export type CookieStatusData = { isLogin: boolean }
 export type DataInfo = { read_score: ReadScore; interactive_value: InteractiveValue }
 export type EpList = { id: number; ord: number; read: number; pay_mode: number; is_locked: boolean; pay_gold: number; size: number; short_title: string; is_in_free: boolean; title: string; cover: string; pub_time: string; comments: number; unlock_expire_at: string; unlock_type: number; allow_wait_free: boolean; progress: string; like_count: number; chapter_id: number; type: number; extra: number; image_count: number; index_last_modified: string; jump_url: string }
 export type FavComicInfo = { has_fav_activity: boolean; fav_free_amount: number; fav_coupon_type: number }

@@ -1,10 +1,14 @@
 <script setup lang="ts">
-import {Config, MangaData, SearchData} from "../bindings.ts";
+import {commands, Config, MangaData, SearchData} from "../bindings.ts";
 import {ref, watch} from "vue";
 import SearchPane from "./DownloadComponents/SearchPane.vue";
 import EpisodePane from "./DownloadComponents/EpisodePane.vue";
 import DownloadingList from "./DownloadComponents/DownloadingList.vue";
 import QrCodeViewer from "./DownloadComponents/QrCodeViewer.vue";
+import {useMessage, useNotification} from "naive-ui";
+
+const notification = useNotification();
+const message = useMessage();
 
 const config = defineModel<Config | undefined>("config", {required: true});
 
@@ -19,6 +23,25 @@ watch(biliCookie, (value) => {
   }
   config.value.biliCookie = value;
 });
+
+async function checkBiliCookie() {
+  let result = await commands.getBiliCookieStatusData(biliCookie.value);
+  if (result.status === "error") {
+    notification.error({title: "检测失败", description: result.error});
+    return;
+  }
+  const response = result.data;
+  if (response.code !== 0) {
+    notification.warning({title: "检测失败", description: response.msg});
+    return;
+  }
+  let {isLogin} = response.data;
+  if (isLogin) {
+    message.success("Cookie有效");
+  } else {
+    message.error("Cookie无效");
+  }
+}
 
 async function test() {
   console.log(searchData.value);
@@ -38,7 +61,7 @@ async function test() {
         </template>
       </n-input>
       <n-button @click="qrCodeViewerShowing=true">二维码登录</n-button>
-      <n-button>检测</n-button>
+      <n-button @click="checkBiliCookie">检测</n-button>
     </div>
     <div class="flex flex-1 overflow-hidden">
       <div class="basis-1/2 overflow-auto">

@@ -7,9 +7,9 @@ use tauri::{Context, Wry};
 
 use crate::commands::{
     generate_background, generate_qr_code, get_background_dir_abs_path,
-    get_background_dir_relative_path, get_config, get_jpg_image_infos, get_manga_data,
-    get_manga_dir_data, get_qr_code_status_data, open_image, remove_watermark, save_config,
-    search_manga, show_path_in_file_manager,
+    get_background_dir_relative_path, get_bili_cookie_status_data, get_config, get_jpg_image_infos,
+    get_manga_data, get_manga_dir_data, get_qr_code_status_data, open_image, remove_watermark,
+    save_config, search_manga, show_path_in_file_manager,
 };
 use crate::events::{
     RemoveWatermarkEndEvent, RemoveWatermarkErrorEvent, RemoveWatermarkStartEvent,
@@ -46,6 +46,7 @@ fn main() {
             get_manga_data,
             generate_qr_code,
             get_qr_code_status_data,
+            get_bili_cookie_status_data,
         ])
         .events(tauri_specta::collect_events![
             RemoveWatermarkStartEvent,

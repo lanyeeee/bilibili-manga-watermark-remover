@@ -12,6 +12,7 @@ pub use  search_manga::search_manga;
 pub use get_manga_data::get_manga_data;
 pub use generate_qr_code::generate_qr_code;
 pub use get_qr_code_status_data::get_qr_code_status_data;
+pub use get_bili_cookie_status_data::get_bili_cookie_status_data;
 
 mod generate_background;
 mod get_background_dir_abs_path;
@@ -27,3 +28,4 @@ mod search_manga;
 mod get_manga_data;
 mod generate_qr_code;
 mod get_qr_code_status_data;
+mod get_bili_cookie_status_data;
