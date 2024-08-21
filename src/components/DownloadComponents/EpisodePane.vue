@@ -114,7 +114,7 @@ function test() {
                    @mouseup="onMouseUp"
                    @move="onDragMove"
                    @start="onDragStart">
-      <n-checkbox-group v-model:value="checkedIds" class="grid grid-cols-3 gap-3 w-full">
+      <n-checkbox-group v-model:value="checkedIds" class="grid grid-cols-3 gap-1.5 w-full">
         <n-checkbox v-for="{id, title, is_locked} of mangaData?.ep_list"
                     :key="id"
                     :data-key="id"
@@ -151,6 +151,9 @@ function test() {
   background: rgba(24, 160, 88, 0.16);
 }
 
+:deep(.n-checkbox__label) {
+  @apply overflow-hidden whitespace-nowrap text-ellipsis
+}
 
 </style>
 
