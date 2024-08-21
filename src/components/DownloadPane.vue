@@ -6,11 +6,12 @@ import EpisodePane from "./DownloadComponents/EpisodePane.vue";
 import DownloadingList from "./DownloadComponents/DownloadingList.vue";
 import QrCodeViewer from "./DownloadComponents/QrCodeViewer.vue";
 
-
 const config = defineModel<Config | undefined>("config", {required: true});
+
 const biliCookie = ref<string>(config.value?.biliCookie ?? "");
 const qrCodeViewerShowing = ref<boolean>(false);
-
+const searchData = ref<SearchData>();
+const mangaData = ref<MangaData>();
 
 watch(biliCookie, (value) => {
   if (config.value === undefined) {
@@ -18,9 +19,6 @@ watch(biliCookie, (value) => {
   }
   config.value.biliCookie = value;
 });
-
-const searchData = ref<SearchData>();
-const mangaData = ref<MangaData>();
 
 async function test() {
   console.log(searchData.value);
