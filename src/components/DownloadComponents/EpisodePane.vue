@@ -152,10 +152,7 @@ function test() {
   @apply overflow-hidden whitespace-nowrap text-ellipsis;
 }
 
-</style>
-
-<style>
-.selection-area {
+:global(.selection-area) {
   @apply bg-[rgba(46,115,252,0.5)];
 }
 </style>
