@@ -86,10 +86,15 @@ async function searchById(id: number) {
         <span v-html="item.author_name[0]" class="text-gray"></span>
       </n-button>
     </div>
-
   </div>
 </template>
 
 <style scoped>
-
+:deep(.n-button__content) {
+  width: 100%;
+  display: inline-block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
 </style>
