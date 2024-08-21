@@ -3,9 +3,7 @@ import {SelectionArea, SelectionEvent, SelectionOptions} from "@viselect/vue";
 import {nextTick, ref, watch} from "vue";
 import {MangaData} from "../../bindings.ts";
 
-
 const mangaData = defineModel<MangaData | undefined>("mangaData", {required: true});
-
 
 const dropdownX = ref(0);
 const dropdownY = ref(0);
@@ -17,6 +15,48 @@ const dropdownOptions = [
   {label: "取消全选", key: "uncheck all"},
 ];
 const checkedIds = ref<number[]>([]);
+const selectedIds = ref<Set<number>>(new Set());
+// 创建一个变量，记录这次框选是否改动了选中的元素
+const selectedChanged = ref(false);
+
+watch(selectedIds.value, () => {
+  selectedChanged.value = true;
+});
+
+function extractIds(elements: Element[]): number[] {
+  return elements.map(element => element.getAttribute("data-key"))
+      .filter(Boolean)
+      .map(Number)
+      .filter(epIsUnlocked);
+}
+
+function onMouseDown(event: MouseEvent) {
+  if (event.ctrlKey || event.metaKey) {
+    return;
+  }
+  if (event?.button === 0) {
+    selectedChanged.value = false;
+  }
+}
+
+function onMouseUp(event: MouseEvent) {
+  // 如果是左键点击，且没有改动选中的元素，则清空选中
+  if (event?.button === 0 && !selectedChanged.value) {
+    selectedIds.value.clear();
+  }
+}
+
+function onDragStart({event, selection}: SelectionEvent) {
+  if (!event?.ctrlKey && !event?.metaKey) {
+    selection.clearSelection();
+    selectedIds.value.clear();
+  }
+}
+
+function onDragMove({store: {changed: {added, removed}}}: SelectionEvent) {
+  extractIds(added).forEach(id => selectedIds.value.add(id));
+  extractIds(removed).forEach(id => selectedIds.value.delete(id));
+}
 
 function onDropdownSelect(key: "check" | "uncheck" | "check all" | "uncheck all") {
   showDropdown.value = false;
@@ -45,59 +85,14 @@ async function onContextMenu(e: MouseEvent) {
   dropdownY.value = e.clientY;
 }
 
-const selectedIds = ref<Set<number>>(new Set());
-// 创建一个变量，记录这次框选是否改动了选中的元素
-const selectedChanged = ref(false);
-
-watch(selectedIds.value, () => {
-  selectedChanged.value = true;
-});
-
-function extractIds(elements: Element[]): number[] {
-  return elements.map(element => element.getAttribute("data-key"))
-      .filter(Boolean)
-      .map(Number)
-      .filter(epIsUnlocked);
-}
-
-
-function onMouseDown(event: MouseEvent): void {
-  if (event.ctrlKey || event.metaKey) {
-    return;
-  }
-  if (event?.button === 0) {
-    selectedChanged.value = false;
-  }
-}
-
-function onMouseUp(event: MouseEvent): void {
-  if (event?.button === 0 && !selectedChanged.value) {
-    selectedIds.value.clear();
-  }
-}
-
-function onDragStart({event, selection}: SelectionEvent) {
-  if (!event?.ctrlKey && !event?.metaKey) {
-    selection.clearSelection();
-    selectedIds.value.clear();
-  }
-}
-
-function onDragMove({store: {changed: {added, removed}}}: SelectionEvent) {
-  extractIds(added).forEach(id => selectedIds.value.add(id));
-  extractIds(removed).forEach(id => selectedIds.value.delete(id));
-}
-
 function epIsUnlocked(id: number): boolean {
   return !mangaData.value?.ep_list.find(ep => ep.id === id)?.is_locked ?? false;
 }
-
 
 function test() {
   console.log(checkedIds.value);
   console.log(selectedIds.value);
 }
-
 </script>
 
 <template>
