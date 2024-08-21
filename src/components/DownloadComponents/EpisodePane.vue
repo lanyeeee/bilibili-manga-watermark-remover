@@ -117,7 +117,7 @@ function test() {
                    @mouseup="onMouseUp"
                    @move="onDragMove"
                    @start="onDragStart">
-      <n-checkbox-group v-model:value="checkedIds" class="grid grid-cols-3">
+      <n-checkbox-group v-model:value="checkedIds" class="grid grid-cols-3 gap-3">
         <n-checkbox v-for="{id, title, is_locked} of mangaData?.ep_list"
                     :key="id"
                     :data-key="id"
@@ -151,8 +151,13 @@ function test() {
 }
 
 .selection-container .selected {
-  background: rgba(24, 160, 88, 0.16);
+  background: rgba(24, 160, 88, 0.26);
 }
+
+.selection-container .n-checkbox:hover {
+  background: rgba(24, 160, 88, 0.1);
+}
+
 </style>
 
 <style>
