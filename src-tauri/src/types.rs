@@ -56,3 +56,19 @@ pub enum ImageFormat {
     Jpeg,
     Png,
 }
+
+#[derive(Debug, Clone, Deserialize, Serialize, Type)]
+pub enum QrCodeStatus {
+    NotScan,
+    Scanning,
+    Complete(String),
+    Invalid,
+    Unknown,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize, Type)]
+pub struct QrCodeData {
+    pub base64: String,
+    #[serde(rename = "qrcodeKey")]
+    pub qrcode_key: String,
+}
