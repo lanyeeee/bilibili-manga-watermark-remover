@@ -90,6 +90,22 @@ async getMangaData(id: number) : Promise<Result<CommandResponse<MangaData>, Comm
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async generateQrCode() : Promise<Result<CommandResponse<QrCodeData>, CommandError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("generate_qr_code") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getQrCodeStatusData(qrcodeKey: string) : Promise<Result<CommandResponse<QrCodeStatusData>, CommandError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_qr_code_status_data", { qrcodeKey }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -133,6 +149,8 @@ export type JpgImageInfo = { width: number; height: number; path: string }
 export type List = { id: number; title: string; org_title: string; horizontal_cover: string; square_cover: string; vertical_cover: string; author_name: string[]; styles: string[]; is_finish: number; allow_wait_free: boolean; discount_type: number; type: number; wiki: Wiki; numbers: number; jump_value: string; real_title: string }
 export type MangaData = { id: number; title: string; comic_type: number; page_default: number; page_allow: number; horizontal_cover: string; square_cover: string; vertical_cover: string; author_name: string[]; styles: string[]; last_ord: number; is_finish: number; status: number; fav: number; read_order: number; evaluate: string; total: number; ep_list: EpList[]; release_time: string; is_limit: number; read_epid: number; last_read_time: string; is_download: number; read_short_title: string; styles2: Styles2[]; renewal_time: string; last_short_title: string; discount_type: number; discount: number; discount_end: string; no_reward: boolean; batch_discount_type: number; ep_discount_type: number; has_fav_activity: boolean; fav_free_amount: number; allow_wait_free: boolean; wait_hour: number; wait_free_at: string; no_danmaku: number; auto_pay_status: number; no_month_ticket: boolean; immersive: boolean; no_discount: boolean; show_type: number; pay_mode: number; classic_lines: string; pay_for_new: number; fav_comic_info: FavComicInfo; serial_status: number; album_count: number; wiki_id: number; disable_coupon_amount: number; japan_comic: boolean; interact_value: string; temporary_finish_time: string; introduction: string; comment_status: number; no_screenshot: boolean; type: number; no_rank: boolean; presale_text: string; presale_discount: number; no_leaderboard: boolean; auto_pay_info: AutoPayInfo; orientation: number; story_elems: StoryElem[]; tags: Tag[]; is_star_hall: number; hall_icon_text: string; rookie_fav_tip: RookieFavTip; authors: Author[]; comic_alias: string[]; horizontal_covers: string[]; data_info: DataInfo; last_short_title_msg: string }
 export type MangaDirData = { width: number; height: number; count: number; blackBackground: JpgImageData | null; whiteBackground: JpgImageData | null }
+export type QrCodeData = { base64: string; qrcodeKey: string }
+export type QrCodeStatusData = { url: string; refresh_token: string; timestamp: number; code: number; message: string }
 export type ReadScore = { read_score: string; is_jump: boolean; increase: Increase; percentile: number; description: string }
 export type Recommend = { id: number; title: string; horizontal_cover: string; square_cover: string; vertical_cover: string; last_short_title: string; recommendation: string; is_finish: number; total: number; allow_wait_free: boolean; author_name: string[]; styles: string[]; discount_type: number }
 export type RectData = { left: number; top: number; right: number; bottom: number }

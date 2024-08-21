@@ -55,7 +55,7 @@ onMounted(async () => {
       <watermark-pane v-model:config="config"></watermark-pane>
     </n-tab-pane>
     <n-tab-pane class="h-full overflow-auto p-0!" name="export" tab="下载" display-directive="show:lazy">
-      <download-pane></download-pane>
+      <download-pane v-model:config="config"></download-pane>
     </n-tab-pane>
   </n-tabs>
 
