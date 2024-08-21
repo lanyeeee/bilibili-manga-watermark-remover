@@ -123,7 +123,7 @@ function test() {
         <n-checkbox v-for="{id, title, is_locked} of mangaData?.ep_list"
                     :key="id"
                     :data-key="id"
-                    class="selectable"
+                    class="selectable hover:bg-gray-200!"
                     :value="id"
                     :label="title"
                     :disabled="is_locked"
@@ -153,12 +153,9 @@ function test() {
 }
 
 .selection-container .selected {
-  background: rgba(24, 160, 88, 0.26);
+  background: rgba(24, 160, 88, 0.16);
 }
 
-.selection-container .n-checkbox:hover {
-  background: rgba(24, 160, 88, 0.1);
-}
 
 </style>
 
