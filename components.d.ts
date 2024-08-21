@@ -29,6 +29,7 @@ declare module 'vue' {
     NTabPane: typeof import('naive-ui')['NTabPane']
     NTabs: typeof import('naive-ui')['NTabs']
     NTooltip: typeof import('naive-ui')['NTooltip']
+    QrCodeViewer: typeof import('./src/components/DownloadComponents/QrCodeViewer.vue')['default']
     RemoveProgress: typeof import('./src/components/WatermarkComponents/RemoveProgress.vue')['default']
     SearchPane: typeof import('./src/components/DownloadComponents/SearchPane.vue')['default']
     WatermarkCropper: typeof import('./src/components/WatermarkComponents/WatermarkCropper.vue')['default']
