@@ -4,8 +4,6 @@ import {nextTick, ref, watch} from "vue";
 import {MangaData} from "../../bindings.ts";
 
 
-const checkedIds = ref<number[]>([]);
-
 const mangaData = defineModel<MangaData | undefined>("mangaData", {required: true});
 
 
@@ -18,6 +16,7 @@ const dropdownOptions = [
   {label: "全选", key: "check all"},
   {label: "取消全选", key: "uncheck all"},
 ];
+const checkedIds = ref<number[]>([]);
 
 function onDropdownSelect(key: "check" | "uncheck" | "check all" | "uncheck all") {
   showDropdown.value = false;
@@ -61,7 +60,11 @@ function extractIds(elements: Element[]): number[] {
       .filter(epIsUnlocked);
 }
 
+
 function onMouseDown(event: MouseEvent): void {
+  if (event.ctrlKey || event.metaKey) {
+    return;
+  }
   if (event?.button === 0) {
     selectedChanged.value = false;
   }
@@ -109,8 +112,7 @@ function test() {
       <n-divider vertical></n-divider>
       <span>已选中：{{ checkedIds.length }}</span>
     </div>
-    <SelectionArea ref="selectionAreaRef"
-                   class="selection-container"
+    <SelectionArea class="selection-container"
                    :options="{selectables: '.selectable'} as SelectionOptions"
                    @contextmenu="onContextMenu"
                    @mousedown="onMouseDown"
