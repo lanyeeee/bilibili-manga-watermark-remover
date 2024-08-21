@@ -91,10 +91,6 @@ async function searchById(id: number) {
 
 <style scoped>
 :deep(.n-button__content) {
-  width: 100%;
-  display: inline-block;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  @apply inline-block overflow-hidden text-ellipsis;
 }
 </style>

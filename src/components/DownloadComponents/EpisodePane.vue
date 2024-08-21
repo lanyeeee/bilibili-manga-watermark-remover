@@ -141,26 +141,21 @@ function test() {
 
 <style scoped>
 .selection-container {
-  display: -webkit-box;
-  display: -ms-flexbox;
-  user-select: none;
-  overflow: auto;
+  @apply user-select-none overflow-auto;
 }
 
 .selection-container .selected {
-  background: rgba(24, 160, 88, 0.16);
+  @apply bg-[rgba(24,160,88,0.16)];
 }
 
 :deep(.n-checkbox__label) {
-  @apply overflow-hidden whitespace-nowrap text-ellipsis
+  @apply overflow-hidden whitespace-nowrap text-ellipsis;
 }
 
 </style>
 
 <style>
 .selection-area {
-  background: rgba(46, 115, 252, 0.5);
-  border: 1px solid rgba(98, 155, 255, 0.85);
-  border-radius: 0.15em;
+  @apply bg-[rgba(46,115,252,0.5)];
 }
 </style>
