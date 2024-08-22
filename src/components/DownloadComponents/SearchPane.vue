@@ -7,6 +7,7 @@ const notification = useNotification();
 
 const searchData = defineModel<SearchData | undefined>("searchData", {required: true});
 const mangaData = defineModel<MangaData | undefined>("mangaData", {required: true});
+const currentTabName = defineModel<"search" | "episode">("currentTabName", {required: true});
 
 const searchInput = ref("");
 const mangaIdInput = ref("");
@@ -44,6 +45,7 @@ async function searchById(id: number) {
   }
   mangaData.value = response.data;
   console.log("mangaData", mangaData.value);
+  currentTabName.value = "episode";
 }
 
 </script>
