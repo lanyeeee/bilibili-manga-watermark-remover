@@ -16,6 +16,7 @@ const biliCookie = ref<string>(config.value?.biliCookie ?? "");
 const qrCodeViewerShowing = ref<boolean>(false);
 const searchData = ref<SearchData>();
 const mangaData = ref<MangaData>();
+const currentTabName = ref<"search" | "episode">("search");
 
 watch(biliCookie, (value) => {
   if (config.value === undefined) {
@@ -44,8 +45,7 @@ async function checkBiliCookie() {
 }
 
 async function test() {
-  console.log(searchData.value);
-  console.log(mangaData.value);
+  console.log(currentTabName.value);
 }
 
 
@@ -65,13 +65,14 @@ async function test() {
     </div>
     <div class="flex flex-1 overflow-hidden">
       <div class="basis-1/2 overflow-auto">
-        <n-tabs default-value="search" type="line" animated size="small" class="h-full">
+        <n-tabs v-model:value="currentTabName" type="line" size="small" class="h-full">
           <n-tab-pane class="h-full overflow-auto p-0!" name="search" tab="漫画搜索" display-directive="show:lazy">
-            <search-pane v-model:search-data="searchData" v-model:manga-data="mangaData">
-            </search-pane>
+            <search-pane v-model:search-data="searchData"
+                         v-model:manga-data="mangaData"
+                         v-model:current-tab-name="currentTabName"/>
           </n-tab-pane>
-          <n-tab-pane class="h-full overflow-auto p-0!" name="download" tab="章节详情" display-directive="show:lazy">
-            <episode-pane v-model:manga-data="mangaData"></episode-pane>
+          <n-tab-pane class="h-full overflow-auto p-0!" name="episode" tab="章节详情" display-directive="show:lazy">
+            <episode-pane v-model:manga-data="mangaData"/>
           </n-tab-pane>
         </n-tabs>
       </div>
