@@ -16,8 +16,10 @@ const dropdownOptions = [
 ];
 const checkedIds = ref<number[]>([]);
 const selectedIds = ref<Set<number>>(new Set());
-// 创建一个变量，记录这次框选是否改动了选中的元素
+//记录这次框选是否改动了选中的元素
 const selectedChanged = ref(false);
+const selectionAreaRef = ref<InstanceType<typeof SelectionArea>>();
+
 
 watch(selectedIds.value, () => {
   selectedChanged.value = true;
@@ -43,6 +45,7 @@ function onMouseUp(event: MouseEvent) {
   // 如果是左键点击，且没有改动选中的元素，则清空选中
   if (event?.button === 0 && !selectedChanged.value) {
     selectedIds.value.clear();
+    selectionAreaRef.value?.selection?.clearSelection();
   }
 }
 
@@ -107,7 +110,8 @@ function test() {
       <n-divider vertical></n-divider>
       <span>已选中：{{ checkedIds.length }}</span>
     </div>
-    <SelectionArea class="selection-container"
+    <SelectionArea ref="selectionAreaRef"
+                   class="selection-container"
                    :options="{selectables: '.selectable'} as SelectionOptions"
                    @contextmenu="onContextMenu"
                    @mousedown="onMouseDown"
