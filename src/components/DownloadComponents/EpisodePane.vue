@@ -89,7 +89,8 @@ async function onContextMenu(e: MouseEvent) {
 }
 
 function epIsUnlocked(id: number): boolean {
-  return !mangaData.value?.ep_list.find(ep => ep.id === id)?.is_locked ?? false;
+  const ep = mangaData.value?.ep_list.find(ep => ep.id === id);
+  return ep ? !ep.is_locked : false;
 }
 
 function test() {
