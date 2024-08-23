@@ -36,8 +36,11 @@ pub async fn get_bili_cookie_status_data(
     }
 
     let bili_res: BiliResponse = http_res.json().await.map_err(anyhow::Error::from)?;
+    if bili_res.code != 0 {
+        return Err(anyhow!("检查cookie状态失败: {bili_res:?}").into());
+    }
     let Some(data) = bili_res.data else {
-        return Err(anyhow!("获取漫画详情失败，data字段不存在: {bili_res:?}").into());
+        return Err(anyhow!("检查cookie状态失败，data字段不存在: {bili_res:?}").into());
     };
 
     let data: CookieStatusData = serde_json::from_value(data).map_err(anyhow::Error::from)?;
