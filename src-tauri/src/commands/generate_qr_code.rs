@@ -37,12 +37,12 @@ pub async fn generate_qr_code() -> CommandResult<CommandResponse<QrCodeData>> {
     let status = http_res.status();
     if status != StatusCode::OK {
         let text = http_res.text().await.map_err(anyhow::Error::from)?;
-        return Err(anyhow!("预料之外的错误: {text}").into());
+        return Err(anyhow!("生成二维码失败，预料之外的状态码: {text}").into());
     }
 
     let bili_res: BiliResponse = http_res.json().await.map_err(anyhow::Error::from)?;
     if bili_res.code != 0 {
-        return Err(anyhow!("生成二维码失败: {bili_res:?}").into());
+        return Err(anyhow!("生成二维码失败，预料之外的code: {bili_res:?}").into());
     }
     let Some(data) = bili_res.data else {
         return Err(anyhow!("生成二维码失败，data字段不存在: {bili_res:?}").into());
