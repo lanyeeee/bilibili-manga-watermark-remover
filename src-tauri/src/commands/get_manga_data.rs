@@ -45,7 +45,7 @@ pub async fn get_manga_data(app: AppHandle, id: i32) -> CommandResult<CommandRes
 
     let bili_res: BiliResponse = http_res.json().await.map_err(anyhow::Error::from)?;
     if bili_res.code != 0 {
-        return Err(anyhow!("获取漫画详情失败，预料之外的错误: {bili_res:?}").into());
+        return Err(anyhow!("获取漫画详情失败，预料之外的code: {bili_res:?}").into());
     }
     let Some(data) = bili_res.data else {
         return Err(anyhow!("获取漫画详情失败，data字段不存在: {bili_res:?}").into());
