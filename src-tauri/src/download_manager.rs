@@ -98,16 +98,6 @@ async fn process_episode(
     Ok(())
 }
 
-fn emit_error_event(app: &AppHandle, ep_id: u32, url: String, err_msg: String) {
-    let payload = events::DownloadImageErrorEventPayload {
-        ep_id,
-        url,
-        err_msg,
-    };
-    let event = events::DownloadImageErrorEvent(payload);
-    let _ = event.emit(app);
-}
-
 fn get_download_dir(app: &AppHandle, episode_data: &EpisodeData) -> anyhow::Result<PathBuf> {
     let title = filename_filter(&episode_data.title);
     let short_title = filename_filter(&episode_data.short_title);
@@ -302,6 +292,16 @@ fn emit_success_event(app: &AppHandle, ep_id: u32, url: String, current: u32) {
         current,
     };
     let event = events::DownloadImageSuccessEvent(payload);
+    let _ = event.emit(app);
+}
+
+fn emit_error_event(app: &AppHandle, ep_id: u32, url: String, err_msg: String) {
+    let payload = events::DownloadImageErrorEventPayload {
+        ep_id,
+        url,
+        err_msg,
+    };
+    let event = events::DownloadImageErrorEvent(payload);
     let _ = event.emit(app);
 }
 
