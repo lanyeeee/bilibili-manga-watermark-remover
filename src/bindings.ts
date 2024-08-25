@@ -114,6 +114,14 @@ async getBiliCookieStatusData(biliCookie: string) : Promise<Result<CommandRespon
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async downloadEpisodes(epIds: number[]) : Promise<Result<CommandResponse<null>, CommandError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("download_episodes", { epIds }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -121,11 +129,21 @@ async getBiliCookieStatusData(biliCookie: string) : Promise<Result<CommandRespon
 
 
 export const events = __makeEvents__<{
+downloadEpisodeEndEvent: DownloadEpisodeEndEvent,
+downloadEpisodePendingEvent: DownloadEpisodePendingEvent,
+downloadEpisodeStartEvent: DownloadEpisodeStartEvent,
+downloadImageErrorEvent: DownloadImageErrorEvent,
+downloadImageSuccessEvent: DownloadImageSuccessEvent,
 removeWatermarkEndEvent: RemoveWatermarkEndEvent,
 removeWatermarkErrorEvent: RemoveWatermarkErrorEvent,
 removeWatermarkStartEvent: RemoveWatermarkStartEvent,
 removeWatermarkSuccessEvent: RemoveWatermarkSuccessEvent
 }>({
+downloadEpisodeEndEvent: "download-episode-end-event",
+downloadEpisodePendingEvent: "download-episode-pending-event",
+downloadEpisodeStartEvent: "download-episode-start-event",
+downloadImageErrorEvent: "download-image-error-event",
+downloadImageSuccessEvent: "download-image-success-event",
 removeWatermarkEndEvent: "remove-watermark-end-event",
 removeWatermarkErrorEvent: "remove-watermark-error-event",
 removeWatermarkStartEvent: "remove-watermark-start-event",
@@ -147,6 +165,16 @@ export type CommandResponse<T> = { code: number; msg: string; data: T }
 export type Config = { outputDir: string; outputFormat: ImageFormat; outputOptimize: boolean; biliCookie: string }
 export type CookieStatusData = { isLogin: boolean }
 export type DataInfo = { read_score: ReadScore; interactive_value: InteractiveValue }
+export type DownloadEpisodeEndEvent = DownloadEpisodeEndEventPayload
+export type DownloadEpisodeEndEventPayload = { epId: number }
+export type DownloadEpisodePendingEvent = DownloadEpisodePendingEventPayload
+export type DownloadEpisodePendingEventPayload = { ep_id: number }
+export type DownloadEpisodeStartEvent = DownloadEpisodeStartEventPayload
+export type DownloadEpisodeStartEventPayload = { epId: number; total: number }
+export type DownloadImageErrorEvent = DownloadImageErrorEventPayload
+export type DownloadImageErrorEventPayload = { epId: number; url: string; errMsg: string }
+export type DownloadImageSuccessEvent = DownloadImageSuccessEventPayload
+export type DownloadImageSuccessEventPayload = { epId: number; url: string; current: number }
 export type EpList = { id: number; ord: number; read: number; pay_mode: number; is_locked: boolean; pay_gold: number; size: number; short_title: string; is_in_free: boolean; title: string; cover: string; pub_time: string; comments: number; unlock_expire_at: string; unlock_type: number; allow_wait_free: boolean; progress: string; like_count: number; chapter_id: number; type: number; extra: number; image_count: number; index_last_modified: string; jump_url: string }
 export type FavComicInfo = { has_fav_activity: boolean; fav_free_amount: number; fav_coupon_type: number }
 export type ImageFormat = "Jpeg" | "Png"

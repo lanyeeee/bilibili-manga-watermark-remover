@@ -3,21 +3,24 @@
 #![warn(clippy::unwrap_used)]
 
 use specta_typescript::BigIntExportBehavior;
-use tauri::{Context, Wry};
+use tauri::{Context, Manager, Wry};
 
 use crate::commands::{
-    generate_background, generate_qr_code, get_background_dir_abs_path,
+    download_episodes, generate_background, generate_qr_code, get_background_dir_abs_path,
     get_background_dir_relative_path, get_bili_cookie_status_data, get_config, get_jpg_image_infos,
     get_manga_data, get_manga_dir_data, get_qr_code_status_data, open_image, remove_watermark,
     save_config, search_manga, show_path_in_file_manager,
 };
+use crate::download_manager::DownloadManager;
 use crate::events::{
-    RemoveWatermarkEndEvent, RemoveWatermarkErrorEvent, RemoveWatermarkStartEvent,
-    RemoveWatermarkSuccessEvent,
+    DownloadEpisodePendingEvent, DownloadEpisodeEndEvent, DownloadImageErrorEvent,
+    DownloadEpisodeStartEvent, DownloadImageSuccessEvent, RemoveWatermarkEndEvent,
+    RemoveWatermarkErrorEvent, RemoveWatermarkStartEvent, RemoveWatermarkSuccessEvent,
 };
 
 mod commands;
 mod config;
+mod download_manager;
 mod errors;
 mod events;
 mod extensions;
@@ -29,7 +32,8 @@ fn generate_context() -> Context<Wry> {
     tauri::generate_context!()
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let builder = tauri_specta::Builder::<Wry>::new()
         .commands(tauri_specta::collect_commands![
             generate_background,
@@ -47,12 +51,18 @@ fn main() {
             generate_qr_code,
             get_qr_code_status_data,
             get_bili_cookie_status_data,
+            download_episodes,
         ])
         .events(tauri_specta::collect_events![
             RemoveWatermarkStartEvent,
             RemoveWatermarkSuccessEvent,
             RemoveWatermarkErrorEvent,
             RemoveWatermarkEndEvent,
+            DownloadEpisodePendingEvent,
+            DownloadEpisodeStartEvent,
+            DownloadImageSuccessEvent,
+            DownloadImageErrorEvent,
+            DownloadEpisodeEndEvent,
         ]);
     // 只有在debug模式下才会生成bindings.ts
     #[cfg(debug_assertions)]
@@ -73,6 +83,8 @@ fn main() {
         .invoke_handler(builder.invoke_handler())
         .setup(move |app| {
             builder.mount_events(app);
+            let download_manager = DownloadManager::new(app.handle().clone());
+            app.manage(download_manager);
             Ok(())
         })
         .run(generate_context())
