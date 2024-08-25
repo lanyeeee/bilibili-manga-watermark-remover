@@ -20,6 +20,11 @@ const selectedIds = ref<Set<number>>(new Set());
 const selectedChanged = ref(false);
 const selectionAreaRef = ref<InstanceType<typeof SelectionArea>>();
 
+watch(mangaData, () => {
+  checkedIds.value = [];
+  selectedIds.value.clear();
+  selectionAreaRef.value?.selection?.clearSelection();
+});
 
 watch(selectedIds.value, () => {
   selectedChanged.value = true;
