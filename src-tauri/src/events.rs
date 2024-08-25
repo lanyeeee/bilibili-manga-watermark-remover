@@ -46,6 +46,7 @@ pub struct RemoveWatermarkEndEvent(pub RemoveWatermarkEndEventPayload);
 
 #[derive(Serialize, Deserialize, Clone, Type)]
 pub struct DownloadEpisodePendingEventPayload {
+    #[serde(rename = "epId")]
     pub ep_id: u32,
 }
 #[derive(Serialize, Deserialize, Clone, Type, Event)]
