@@ -68,6 +68,7 @@ async fn process_episode(
         .map(|(url, token)| format!("{url}?token={token}"))
         .collect();
 
+    let mut tasks = Vec::with_capacity(urls.len());
     emit_start_event(&app, ep_id, urls.len() as u32);
     for (i, url) in urls.iter().enumerate() {
         let save_path = download_dir.join(format!("{i:03}.jpg"));
@@ -76,7 +77,8 @@ async fn process_episode(
         let img_sem = img_sem.clone();
         let url = url.clone();
         let current = current.clone();
-        tokio::task::spawn(async move {
+
+        let task = tokio::task::spawn(async move {
             if let Err(err) = download_image(url.clone(), save_path, img_sem).await {
                 let err_msg = format!("下载图片失败: {err}");
                 emit_error_event(&app, ep_id, url, err_msg);
@@ -85,8 +87,12 @@ async fn process_episode(
                 emit_success_event(&app, ep_id, url, current);
             }
         });
+        tasks.push(task);
     }
 
+    for task in tasks {
+        task.await?;
+    }
     emit_end_event(&app, ep_id);
 
     Ok(())
