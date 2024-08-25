@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {SelectionArea, SelectionEvent, SelectionOptions} from "@viselect/vue";
 import {nextTick, ref, watch} from "vue";
-import {MangaData} from "../../bindings.ts";
+import {commands, MangaData} from "../../bindings.ts";
 
 const mangaData = defineModel<MangaData | undefined>("mangaData", {required: true});
 
@@ -94,8 +94,8 @@ function epIsUnlocked(id: number): boolean {
 }
 
 function test() {
-  console.log(checkedIds.value);
-  console.log(selectedIds.value);
+  const result = commands.downloadEpisodes(checkedIds.value);
+  console.log(result);
 }
 </script>
 
@@ -120,12 +120,12 @@ function test() {
                    @move="onDragMove"
                    @start="onDragStart">
       <n-checkbox-group v-model:value="checkedIds" class="grid grid-cols-3 gap-1.5 w-full">
-        <n-checkbox v-for="{id, title, is_locked} of mangaData?.ep_list"
+        <n-checkbox v-for="{id, short_title, title, is_locked} of mangaData?.ep_list"
                     :key="id"
                     :data-key="id"
                     class="selectable hover:bg-gray-200!"
                     :value="id"
-                    :label="title"
+                    :label="`${short_title} ${title}`"
                     :disabled="is_locked"
                     :class="{ selected: selectedIds.has(id) }"/>
       </n-checkbox-group>
