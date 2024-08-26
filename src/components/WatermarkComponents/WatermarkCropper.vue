@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {commands, JpgImageInfo, MangaDirData, RectData} from "../bindings.ts";
+import {commands, JpgImageInfo, MangaDirData, RectData} from "../../bindings.ts";
 import {computed, onMounted, ref, watch} from "vue";
 import {useMessage, useNotification} from "naive-ui";
 

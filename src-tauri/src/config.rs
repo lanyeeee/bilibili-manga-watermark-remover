@@ -8,6 +8,7 @@ use crate::types::ImageFormat;
 
 #[allow(clippy::struct_field_names)]
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
+//TODO: 改用 #[serde(rename_all = "camelCase")]
 pub struct Config {
     #[serde(rename = "outputDir")]
     pub output_dir: PathBuf,
@@ -15,6 +16,8 @@ pub struct Config {
     pub output_format: ImageFormat,
     #[serde(rename = "outputOptimize")]
     pub output_optimize: bool,
+    #[serde(rename = "biliCookie")]
+    pub bili_cookie: String,
 }
 
 impl Config {
@@ -25,6 +28,7 @@ impl Config {
             output_dir: resource_dir,
             output_format: ImageFormat::Jpeg,
             output_optimize: false,
+            bili_cookie: String::new(),
         };
         // 如果配置文件存在且能够解析，则使用配置文件中的配置，否则使用默认配置
         let config = if config_path.exists() {
