@@ -91,7 +91,7 @@ fn get_is_downloaded(app: &AppHandle, ep_title: &str, comic_title: &str) -> anyh
         .resource_dir()?
         .join("漫画下载")
         .join(comic_title)
-        .join(ep_title.trim());
+        .join(ep_title);
     let is_downloaded = download_dir.exists();
     Ok(is_downloaded)
 }
@@ -99,9 +99,10 @@ fn get_is_downloaded(app: &AppHandle, ep_title: &str, comic_title: &str) -> anyh
 fn get_ep_title(ep: &EpList) -> String {
     let title = filename_filter(&ep.title);
     let short_title = filename_filter(&ep.short_title);
-    if title == short_title {
+    let ep_title = if title == short_title {
         title
     } else {
         format!("{short_title} {title}")
-    }
+    };
+    ep_title.trim().to_string()
 }
