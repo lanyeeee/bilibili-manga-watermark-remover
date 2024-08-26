@@ -1,21 +1,23 @@
+use std::sync::RwLock;
+
 use anyhow::anyhow;
 use serde_json::json;
-use tauri::AppHandle;
 use tauri::http::{HeaderMap, HeaderValue, StatusCode};
+use tauri::State;
 
 use crate::config::Config;
 use crate::errors::CommandResult;
+use crate::extensions::IgnoreRwLockPoison;
 use crate::responses::{BiliResponse, SearchData};
 use crate::types::CommandResponse;
 
 #[tauri::command(async)]
 #[specta::specta]
 pub async fn search_manga(
-    app: AppHandle,
+    config: State<'_, RwLock<Config>>,
     keyword: &str,
 ) -> CommandResult<CommandResponse<SearchData>> {
-    let config = Config::load(&app).map_err(anyhow::Error::from)?;
-    let cookie = format!("SESSDATA={}", config.bili_cookie);
+    let cookie = config.read_or_panic().get_cookie();
     let headers_vec = [
         ("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"),
         ("cookie", &cookie),
