@@ -22,7 +22,7 @@ const progresses = ref<Map<number, ProgressData>>(new Map());
 onMounted(async () => {
   await events.downloadEpisodePendingEvent.listen(({payload}) => {
     let progressData: ProgressData = {
-      title: `${payload.epId}等待中`,
+      title: `等待中 ${payload.title}`,
       current: 0,
       total: 0,
       percentage: 0,
