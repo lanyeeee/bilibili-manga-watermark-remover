@@ -67,9 +67,11 @@ async fn process_episode(
         .map(|data| (data.url, data.token))
         .map(|(url, token)| format!("{url}?token={token}"))
         .collect();
+    let total = urls.len() as u32;
 
-    let mut tasks = Vec::with_capacity(urls.len());
-    emit_start_event(&app, ep_id, urls.len() as u32);
+    let mut tasks = Vec::with_capacity(total as usize);
+    let title = format!("{} {}", episode_data.short_title, episode_data.title);
+    emit_start_event(&app, ep_id, title, total);
     for (i, url) in urls.iter().enumerate() {
         let save_path = download_dir.join(format!("{i:03}.jpg"));
 
@@ -93,7 +95,14 @@ async fn process_episode(
     for task in tasks {
         task.await?;
     }
-    emit_end_event(&app, ep_id);
+
+    let current = current.load(std::sync::atomic::Ordering::Relaxed);
+    let err_msg = if current == total {
+        None
+    } else {
+        Some(format!("总共有 {total} 张图片，但只下载了 {current} 张"))
+    };
+    emit_end_event(&app, ep_id, err_msg);
 
     Ok(())
 }
@@ -273,8 +282,12 @@ async fn get_episode_data(ep_id: u32, cookie: &str) -> anyhow::Result<EpisodeDat
     Ok(data)
 }
 
-fn emit_start_event(app: &AppHandle, ep_id: u32, total: u32) {
-    let payload = events::DownloadEpisodeStartEventPayload { ep_id, total };
+fn emit_start_event(app: &AppHandle, ep_id: u32, title: String, total: u32) {
+    let payload = events::DownloadEpisodeStartEventPayload {
+        ep_id,
+        title,
+        total,
+    };
     let event = events::DownloadEpisodeStartEvent(payload);
     let _ = event.emit(app);
 }
@@ -305,8 +318,8 @@ fn emit_error_event(app: &AppHandle, ep_id: u32, url: String, err_msg: String) {
     let _ = event.emit(app);
 }
 
-fn emit_end_event(app: &AppHandle, ep_id: u32) {
-    let payload = events::DownloadEpisodeEndEventPayload { ep_id };
+fn emit_end_event(app: &AppHandle, ep_id: u32, err_msg: Option<String>) {
+    let payload = events::DownloadEpisodeEndEventPayload { ep_id, err_msg };
     let event = events::DownloadEpisodeEndEvent(payload);
     let _ = event.emit(app);
 }

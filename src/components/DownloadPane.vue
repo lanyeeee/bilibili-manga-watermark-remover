@@ -45,7 +45,12 @@ async function checkBiliCookie() {
 }
 
 async function test() {
-  console.log(currentTabName.value);
+  notification.warning({
+    title: "titletitletitletitletitletitletitletitletitletitletitletitletitletitletitletitletitletitletitletitletitletitletitletitletitletitletitle",
+    content: "contentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontent",
+    description: "descriptiondescriptiondescriptiondescriptiondescriptiondescriptiondescriptiondescriptiondescriptiondescriptiondescriptiondescriptiondescriptiondescriptiondescriptiondescriptiondescription",
+    meta: "metametametametametametametametametametametametametametametametametametametametametametametametametametametametametametametametametameta "
+  });
 }
 
 
