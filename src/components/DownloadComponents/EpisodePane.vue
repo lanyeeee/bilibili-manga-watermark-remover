@@ -118,6 +118,7 @@ async function downloadEpisodes() {
     const episode = episodes.value?.find(ep => ep.epId === downloadedEp.epId);
     if (episode !== undefined) {
       episode.isDownloaded = true;
+      checkedIds.value = checkedIds.value.filter(id => id !== downloadedEp.epId);
     }
   }
 }
