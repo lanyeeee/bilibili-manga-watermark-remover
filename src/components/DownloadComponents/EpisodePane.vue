@@ -88,7 +88,7 @@ function onDropdownSelect(key: "check" | "uncheck" | "check all" | "uncheck all"
   } else if (key === "check all") {
     // 只有未锁定的才会被勾选
     episodes.value
-        ?.filter(ep => !ep.isLocked)
+        ?.filter(ep => !ep.isLocked && !ep.isDownloaded && !checkedIds.value.includes(ep.epId))
         .forEach(ep => checkedIds.value.push(ep.epId));
   } else if (key === "uncheck all") {
     checkedIds.value.length = 0;
