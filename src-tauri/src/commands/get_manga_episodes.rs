@@ -1,11 +1,14 @@
+use std::sync::RwLock;
+
 use anyhow::anyhow;
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::StatusCode;
 use serde_json::json;
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Manager, State};
 
 use crate::config::Config;
 use crate::errors::CommandResult;
+use crate::extensions::IgnoreRwLockPoison;
 use crate::responses::{BiliResponse, EpList, MangaData};
 use crate::types::{CommandResponse, Episode};
 use crate::utils::filename_filter;
@@ -14,10 +17,10 @@ use crate::utils::filename_filter;
 #[specta::specta]
 pub async fn get_manga_episodes(
     app: AppHandle,
+    config: State<'_, RwLock<Config>>,
     id: i32,
 ) -> CommandResult<CommandResponse<Vec<Episode>>> {
-    let config = Config::load(&app).map_err(anyhow::Error::from)?;
-    let cookie = format!("SESSDATA={}", config.bili_cookie);
+    let cookie = config.read_or_panic().get_cookie();
     let headers_vec = [
         ("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"),
         ("cookie", &cookie),
