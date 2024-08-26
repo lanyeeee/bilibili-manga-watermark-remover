@@ -15,6 +15,7 @@ pub struct QrCodeStatusData {
 }
 
 impl QrCodeStatusData {
+    #[allow(dead_code)]
     pub fn status(&self) -> QrCodeStatus {
         match self.code {
             0 => {

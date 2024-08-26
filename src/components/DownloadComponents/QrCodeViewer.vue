@@ -100,14 +100,10 @@ function handleQrCodeStatusData() {
 
 }
 
-async function test() {
-
-}
 </script>
 
 <template>
   <div class="flex flex-col">
-    <n-button @click="test">测试用</n-button>
     二维码状态：{{ qrCodeStatusData?.message }}
     <img ref="imgRef" src="" alt="">
   </div>
