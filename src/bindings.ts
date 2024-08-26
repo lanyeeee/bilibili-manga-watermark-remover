@@ -107,9 +107,9 @@ async getBiliCookieStatusData(biliCookie: string) : Promise<Result<CommandRespon
     else return { status: "error", error: e  as any };
 }
 },
-async downloadEpisodes(epIds: number[]) : Promise<Result<CommandResponse<null>, CommandError>> {
+async downloadEpisodes(episodes: Episode[]) : Promise<Result<CommandResponse<null>, CommandError>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("download_episodes", { epIds }) };
+    return { status: "ok", data: await TAURI_INVOKE("download_episodes", { episodes }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };

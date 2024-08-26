@@ -47,7 +47,7 @@ pub struct RemoveWatermarkEndEvent(pub RemoveWatermarkEndEventPayload);
 #[derive(Serialize, Deserialize, Clone, Type)]
 pub struct DownloadEpisodePendingEventPayload {
     #[serde(rename = "epId")]
-    pub ep_id: u32,
+    pub ep_id: i64,
 }
 #[derive(Serialize, Deserialize, Clone, Type, Event)]
 pub struct DownloadEpisodePendingEvent(pub DownloadEpisodePendingEventPayload);
@@ -55,7 +55,7 @@ pub struct DownloadEpisodePendingEvent(pub DownloadEpisodePendingEventPayload);
 #[derive(Serialize, Deserialize, Clone, Type)]
 pub struct DownloadEpisodeStartEventPayload {
     #[serde(rename = "epId")]
-    pub ep_id: u32,
+    pub ep_id: i64,
     pub title: String,
     pub total: u32,
 }
@@ -65,7 +65,7 @@ pub struct DownloadEpisodeStartEvent(pub DownloadEpisodeStartEventPayload);
 #[derive(Serialize, Deserialize, Clone, Type)]
 pub struct DownloadImageSuccessEventPayload {
     #[serde(rename = "epId")]
-    pub ep_id: u32,
+    pub ep_id: i64,
     pub url: String,
     pub current: u32,
 }
@@ -75,7 +75,7 @@ pub struct DownloadImageSuccessEvent(pub DownloadImageSuccessEventPayload);
 #[derive(Serialize, Deserialize, Clone, Type)]
 pub struct DownloadImageErrorEventPayload {
     #[serde(rename = "epId")]
-    pub ep_id: u32,
+    pub ep_id: i64,
     pub url: String,
     #[serde(rename = "errMsg")]
     pub err_msg: String,
@@ -86,7 +86,7 @@ pub struct DownloadImageErrorEvent(pub DownloadImageErrorEventPayload);
 #[derive(Serialize, Deserialize, Clone, Type)]
 pub struct DownloadEpisodeEndEventPayload {
     #[serde(rename = "epId")]
-    pub ep_id: u32,
+    pub ep_id: i64,
     #[serde(rename = "errMsg")]
     pub err_msg: Option<String>,
 }
