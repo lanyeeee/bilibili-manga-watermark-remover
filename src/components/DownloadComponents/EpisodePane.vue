@@ -2,7 +2,11 @@
 import {SelectionArea, SelectionEvent, SelectionOptions} from "@viselect/vue";
 import {nextTick, ref, watch} from "vue";
 import {commands, Episode} from "../../bindings.ts";
+import {useNotification} from "naive-ui";
 
+const notification = useNotification();
+
+const mangaId = defineModel<number | undefined>("mangaId", {required: true});
 const episodes = defineModel<Episode[] | undefined>("episodes", {required: true});
 
 const dropdownX = ref(0);
@@ -99,7 +103,6 @@ async function onContextMenu(e: MouseEvent) {
   dropdownY.value = e.clientY;
 }
 
-
 async function downloadEpisodes() {
   const episodesToDownload = episodes.value?.filter(ep => !ep.isDownloaded && checkedIds.value.includes(ep.epId));
   if (episodesToDownload === undefined) {
@@ -118,6 +121,24 @@ async function downloadEpisodes() {
     }
   }
 }
+
+async function refreshEpisodes() {
+  if (mangaId.value === undefined) {
+    return;
+  }
+  const result = await commands.getMangaEpisodes(mangaId.value);
+  if (result.status === "error") {
+    notification.error({title: "获取漫画章节详情失败", description: result.error});
+    return;
+  }
+  const response = result.data;
+  if (response.code !== 0) {
+    notification.warning({title: "获取漫画章节详情失败", description: response.msg});
+    return;
+  }
+  episodes.value = response.data;
+}
+
 </script>
 
 <template>
@@ -133,7 +154,8 @@ async function downloadEpisodes() {
     </div>
     <div class="flex justify-between">
       左键拖动进行框选，右键打开菜单
-      <n-button size="tiny" type="primary" @click="downloadEpisodes" class="w-1/3">下载勾选章节</n-button>
+      <n-button size="tiny" @click="refreshEpisodes" class="w-1/6">刷新</n-button>
+      <n-button size="tiny" type="primary" @click="downloadEpisodes" class="w-1/4">下载勾选章节</n-button>
     </div>
     <n-empty v-if="episodes === undefined" description="请先进行漫画搜索">
     </n-empty>

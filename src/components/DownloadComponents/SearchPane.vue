@@ -7,6 +7,7 @@ const notification = useNotification();
 
 const searchData = defineModel<SearchData | undefined>("searchData", {required: true});
 const currentTabName = defineModel<"search" | "episode">("currentTabName", {required: true});
+const mangaId = defineModel<number | undefined>("mangaId", {required: true});
 const episodes = defineModel<Episode[] | undefined>("episodes", {required: true});
 
 const searchInput = ref("");
@@ -44,6 +45,7 @@ async function searchById(id: number) {
     return;
   }
   episodes.value = response.data;
+  mangaId.value = id;
   // 切换到章节详情页
   currentTabName.value = "episode";
 }
