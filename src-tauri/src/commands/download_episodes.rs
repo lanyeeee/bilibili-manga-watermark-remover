@@ -2,16 +2,16 @@ use tauri::State;
 
 use crate::download_manager::DownloadManager;
 use crate::errors::CommandResult;
-use crate::types::CommandResponse;
+use crate::types::{CommandResponse, Episode};
 
 #[tauri::command(async)]
 #[specta::specta]
 pub async fn download_episodes(
     download_manager: State<'_, DownloadManager>,
-    ep_ids: Vec<u32>,
+    episodes: Vec<Episode>,
 ) -> CommandResult<CommandResponse<()>> {
-    for ep_id in ep_ids {
-        download_manager.submit_episode(ep_id).await?;
+    for ep in episodes {
+        download_manager.submit_episode(ep).await?;
     }
 
     Ok(CommandResponse {

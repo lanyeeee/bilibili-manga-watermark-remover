@@ -34,7 +34,13 @@ function extractIds(elements: Element[]): number[] {
   return elements.map(element => element.getAttribute("data-key"))
       .filter(Boolean)
       .map(Number)
-      .filter(epIsUnlocked);
+      .filter(id => {
+        const ep = episodes.value?.find(ep => ep.epId === id);
+        if (ep === undefined) {
+          return false;
+        }
+        return !ep.isLocked && !ep.isDownloaded;
+      });
 }
 
 function onMouseDown(event: MouseEvent) {
@@ -93,15 +99,23 @@ async function onContextMenu(e: MouseEvent) {
   dropdownY.value = e.clientY;
 }
 
-function epIsUnlocked(id: number): boolean {
-  const ep = episodes.value?.find(ep => ep.epId === id);
-  return ep ? !ep.isLocked : false;
-}
 
 async function downloadEpisodes() {
-  const result = await commands.downloadEpisodes(checkedIds.value);
+  const episodesToDownload = episodes.value?.filter(ep => !ep.isDownloaded && checkedIds.value.includes(ep.epId));
+  if (episodesToDownload === undefined) {
+    return;
+  }
+  const result = await commands.downloadEpisodes(episodesToDownload);
   if (result.status === "error") {
     console.error(result.error);
+    return;
+  }
+
+  for (const downloadedEp of episodesToDownload) {
+    const episode = episodes.value?.find(ep => ep.epId === downloadedEp.epId);
+    if (episode !== undefined) {
+      episode.isDownloaded = true;
+    }
   }
 }
 </script>
@@ -129,14 +143,14 @@ async function downloadEpisodes() {
                    @move="onDragMove"
                    @start="onDragStart">
       <n-checkbox-group v-model:value="checkedIds" class="grid grid-cols-3 gap-1.5 w-full">
-        <n-checkbox v-for="{epId, epTitle, isLocked} in episodes"
+        <n-checkbox v-for="{epId, epTitle, isLocked, isDownloaded} in episodes"
                     :key="epId"
                     :data-key="epId"
                     class="selectable hover:bg-gray-200!"
                     :value="epId"
                     :label="epTitle"
-                    :disabled="isLocked"
-                    :class="{ selected: selectedIds.has(epId) }"/>
+                    :disabled="isLocked || isDownloaded"
+                    :class="{ selected: selectedIds.has(epId), downloaded: isDownloaded }"/>
       </n-checkbox-group>
     </SelectionArea>
 
@@ -159,6 +173,10 @@ async function downloadEpisodes() {
 }
 
 .selection-container .selected {
+  @apply bg-[rgb(204,232,255)];
+}
+
+.selection-container .downloaded {
   @apply bg-[rgba(24,160,88,0.16)];
 }
 
