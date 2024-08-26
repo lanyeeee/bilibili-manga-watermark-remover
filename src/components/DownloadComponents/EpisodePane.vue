@@ -154,8 +154,10 @@ async function refreshEpisodes() {
     </div>
     <div class="flex justify-between">
       左键拖动进行框选，右键打开菜单
-      <n-button size="tiny" @click="refreshEpisodes" class="w-1/6">刷新</n-button>
-      <n-button size="tiny" type="primary" @click="downloadEpisodes" class="w-1/4">下载勾选章节</n-button>
+      <n-button size="tiny" :disabled="mangaId===undefined" @click="refreshEpisodes" class="w-1/6">刷新</n-button>
+      <n-button size="tiny" :disabled="episodes===undefined" type="primary" @click="downloadEpisodes" class="w-1/4">
+        下载勾选章节
+      </n-button>
     </div>
     <n-empty v-if="episodes === undefined" description="请先进行漫画搜索">
     </n-empty>
