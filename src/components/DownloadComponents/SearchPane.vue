@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import {ref} from "vue";
-import {commands, MangaData, SearchData} from "../../bindings.ts";
+import {commands, Episode, SearchData} from "../../bindings.ts";
 import {useNotification} from "naive-ui";
 
 const notification = useNotification();
 
 const searchData = defineModel<SearchData | undefined>("searchData", {required: true});
-const mangaData = defineModel<MangaData | undefined>("mangaData", {required: true});
 const currentTabName = defineModel<"search" | "episode">("currentTabName", {required: true});
+const episodes = defineModel<Episode[] | undefined>("episodes", {required: true});
 
 const searchInput = ref("");
 const mangaIdInput = ref("");
@@ -33,7 +33,7 @@ async function searchByKeyword(keyword: string) {
 }
 
 async function searchById(id: number) {
-  let result = await commands.getMangaData(id);
+  let result = await commands.getMangaEpisodes(id);
   if (result.status === "error") {
     notification.error({title: "获取漫画章节详情失败", description: result.error});
     return;
@@ -43,8 +43,8 @@ async function searchById(id: number) {
     notification.warning({title: "获取漫画章节详情失败", description: response.msg});
     return;
   }
-  mangaData.value = response.data;
-  console.log("mangaData", mangaData.value);
+  episodes.value = response.data;
+  // 切换到章节详情页
   currentTabName.value = "episode";
 }
 

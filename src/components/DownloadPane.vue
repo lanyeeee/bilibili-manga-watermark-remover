@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {commands, Config, MangaData, SearchData} from "../bindings.ts";
+import {commands, Config, Episode, SearchData} from "../bindings.ts";
 import {ref, watch} from "vue";
 import SearchPane from "./DownloadComponents/SearchPane.vue";
 import EpisodePane from "./DownloadComponents/EpisodePane.vue";
@@ -15,8 +15,8 @@ const config = defineModel<Config | undefined>("config", {required: true});
 const biliCookie = ref<string>(config.value?.biliCookie ?? "");
 const qrCodeViewerShowing = ref<boolean>(false);
 const searchData = ref<SearchData>();
-const mangaData = ref<MangaData>();
 const currentTabName = ref<"search" | "episode">("search");
+const episodes = ref<Episode[] | undefined>();
 
 watch(biliCookie, (value) => {
   if (config.value === undefined) {
@@ -73,11 +73,11 @@ async function test() {
         <n-tabs v-model:value="currentTabName" type="line" size="small" class="h-full">
           <n-tab-pane class="h-full overflow-auto p-0!" name="search" tab="漫画搜索" display-directive="show:lazy">
             <search-pane v-model:search-data="searchData"
-                         v-model:manga-data="mangaData"
+                         v-model:episodes="episodes"
                          v-model:current-tab-name="currentTabName"/>
           </n-tab-pane>
           <n-tab-pane class="h-full overflow-auto p-0!" name="episode" tab="章节详情" display-directive="show:lazy">
-            <episode-pane v-model:manga-data="mangaData"/>
+            <episode-pane v-model:episodes="episodes"/>
           </n-tab-pane>
         </n-tabs>
       </div>

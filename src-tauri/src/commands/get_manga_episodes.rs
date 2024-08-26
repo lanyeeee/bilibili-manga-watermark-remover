@@ -2,16 +2,20 @@ use anyhow::anyhow;
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::StatusCode;
 use serde_json::json;
-use tauri::AppHandle;
+use tauri::{AppHandle, Manager};
 
 use crate::config::Config;
 use crate::errors::CommandResult;
-use crate::responses::{BiliResponse, MangaData};
-use crate::types::CommandResponse;
+use crate::responses::{BiliResponse, EpList, MangaData};
+use crate::types::{CommandResponse, Episode};
+use crate::utils::filename_filter;
 
 #[tauri::command(async)]
 #[specta::specta]
-pub async fn get_manga_data(app: AppHandle, id: i32) -> CommandResult<CommandResponse<MangaData>> {
+pub async fn get_manga_episodes(
+    app: AppHandle,
+    id: i32,
+) -> CommandResult<CommandResponse<Vec<Episode>>> {
     let config = Config::load(&app).map_err(anyhow::Error::from)?;
     let cookie = format!("SESSDATA={}", config.bili_cookie);
     let headers_vec = [
@@ -52,10 +56,52 @@ pub async fn get_manga_data(app: AppHandle, id: i32) -> CommandResult<CommandRes
     };
     let mut manga_data: MangaData = serde_json::from_value(data).map_err(anyhow::Error::from)?;
     manga_data.ep_list.reverse();
+
+    let mut episodes = Vec::with_capacity(manga_data.ep_list.len());
+    for ep in manga_data.ep_list {
+        let ep_id = ep.id;
+        let ep_title = get_ep_title(&ep);
+        let comic_id = manga_data.id;
+        let comic_title = manga_data.title.clone();
+        let is_locked = ep.is_locked;
+        let is_downloaded = get_is_downloaded(&app, &ep_title, &comic_title)?;
+        let episode = Episode {
+            ep_id,
+            ep_title,
+            comic_id,
+            comic_title,
+            is_locked,
+            is_downloaded,
+        };
+        episodes.push(episode);
+    }
+
     let res = CommandResponse {
         code: 0,
         msg: String::new(),
-        data: manga_data,
+        data: episodes,
     };
+
     Ok(res)
+}
+
+fn get_is_downloaded(app: &AppHandle, ep_title: &str, comic_title: &str) -> anyhow::Result<bool> {
+    let download_dir = app
+        .path()
+        .resource_dir()?
+        .join("漫画下载")
+        .join(comic_title)
+        .join(ep_title.trim());
+    let is_downloaded = download_dir.exists();
+    Ok(is_downloaded)
+}
+
+fn get_ep_title(ep: &EpList) -> String {
+    let title = filename_filter(&ep.title);
+    let short_title = filename_filter(&ep.short_title);
+    if title == short_title {
+        title
+    } else {
+        format!("{short_title} {title}")
+    }
 }
