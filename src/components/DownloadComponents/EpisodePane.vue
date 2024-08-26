@@ -98,23 +98,27 @@ function epIsUnlocked(id: number): boolean {
   return ep ? !ep.is_locked : false;
 }
 
-function test() {
-  const result = commands.downloadEpisodes(checkedIds.value);
-  console.log(result);
+async function downloadEpisodes() {
+  const result = await commands.downloadEpisodes(checkedIds.value);
+  if (result.status === "error") {
+    console.error(result.error);
+  }
 }
 </script>
 
 <template>
   <div class="h-full flex flex-col">
-    <n-button @click="test">测试用</n-button>
     <div class="flex flex-justify-around">
       <span>总章数：{{ mangaData?.ep_list.length }}</span>
       <n-divider vertical></n-divider>
       <span>已解锁：{{ mangaData?.ep_list.filter(ep => !ep.is_locked).length }}</span>
       <n-divider vertical></n-divider>
-      <span>已下载：待完善</span>
+      <span>已下载：0</span>
       <n-divider vertical></n-divider>
-      <span>已选中：{{ checkedIds.length }}</span>
+      <span>已勾选：{{ checkedIds.length }}</span>
+    </div>
+    <div class="flex justify-end">
+      <n-button size="tiny" type="primary" @click="downloadEpisodes" class="w-1/3">下载勾选章节</n-button>
     </div>
     <SelectionArea ref="selectionAreaRef"
                    class="selection-container"
@@ -135,6 +139,7 @@ function test() {
                     :class="{ selected: selectedIds.has(id) }"/>
       </n-checkbox-group>
     </SelectionArea>
+
 
     <n-dropdown
         placement="bottom-start"
