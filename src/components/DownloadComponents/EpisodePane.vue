@@ -131,7 +131,8 @@ async function downloadEpisodes() {
       <n-divider vertical></n-divider>
       <span>已勾选：{{ checkedIds.length }}</span>
     </div>
-    <div class="flex justify-end">
+    <div class="flex justify-between">
+      左键拖动进行框选，右键打开菜单
       <n-button size="tiny" type="primary" @click="downloadEpisodes" class="w-1/3">下载勾选章节</n-button>
     </div>
     <SelectionArea ref="selectionAreaRef"
