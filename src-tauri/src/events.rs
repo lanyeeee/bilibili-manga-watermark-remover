@@ -48,6 +48,7 @@ pub struct RemoveWatermarkEndEvent(pub RemoveWatermarkEndEventPayload);
 pub struct DownloadEpisodePendingEventPayload {
     #[serde(rename = "epId")]
     pub ep_id: i64,
+    pub title: String,
 }
 #[derive(Serialize, Deserialize, Clone, Type, Event)]
 pub struct DownloadEpisodePendingEvent(pub DownloadEpisodePendingEventPayload);
