@@ -58,7 +58,6 @@ async function test() {
 
 <template>
   <div class="h-full flex flex-col">
-    <n-button @click="test">测试用</n-button>
     <div class="flex">
       <n-input v-model:value="biliCookie" placeholder="" clearable>
         <template #prefix>
@@ -67,6 +66,7 @@ async function test() {
       </n-input>
       <n-button @click="qrCodeViewerShowing=true">二维码登录</n-button>
       <n-button @click="checkBiliCookie">检测</n-button>
+      <n-button @click="test">测试用</n-button>
     </div>
     <div class="flex flex-1 overflow-hidden">
       <div class="basis-1/2 overflow-auto">
