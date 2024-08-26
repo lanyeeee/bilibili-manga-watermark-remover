@@ -69,7 +69,7 @@ async fn process_episode(
     let total = urls.len() as u32;
 
     let mut tasks = Vec::with_capacity(total as usize);
-    emit_start_event(&app, ep.ep_id, ep.ep_title, total);
+    emit_start_event(&app, ep.ep_id, ep.ep_title.clone(), total);
     for (i, url) in urls.iter().enumerate() {
         let save_path = download_dir.join(format!("{i:03}.jpg"));
 
@@ -95,12 +95,16 @@ async fn process_episode(
     }
 
     let current = current.load(std::sync::atomic::Ordering::Relaxed);
-    let err_msg = if current == total {
-        None
+    if current == total {
+        // 下载成功，则把临时目录重命名为正式目录
+        if let Some(parent) = download_dir.parent() {
+            tokio::fs::rename(&download_dir, parent.join(&ep.ep_title)).await?;
+        }
+        emit_end_event(&app, ep.ep_id, None);
     } else {
-        Some(format!("总共有 {total} 张图片，但只下载了 {current} 张"))
+        let err_msg = Some(format!("总共有 {total} 张图片，但只下载了 {current} 张"));
+        emit_end_event(&app, ep.ep_id, err_msg);
     };
-    emit_end_event(&app, ep.ep_id, err_msg);
 
     Ok(())
 }
@@ -111,7 +115,7 @@ fn get_download_dir(app: &AppHandle, ep: &Episode) -> anyhow::Result<PathBuf> {
         .resource_dir()?
         .join("漫画下载")
         .join(&ep.comic_title)
-        .join(&ep.ep_title);
+        .join(format!(".下载中-{}", ep.ep_title)); // 以 `.下载中-` 开头，表示是临时目录
     Ok(download_dir)
 }
 
