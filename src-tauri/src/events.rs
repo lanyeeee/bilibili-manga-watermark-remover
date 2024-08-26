@@ -56,6 +56,7 @@ pub struct DownloadEpisodePendingEvent(pub DownloadEpisodePendingEventPayload);
 pub struct DownloadEpisodeStartEventPayload {
     #[serde(rename = "epId")]
     pub ep_id: u32,
+    pub title: String,
     pub total: u32,
 }
 #[derive(Serialize, Deserialize, Clone, Type, Event)]
@@ -86,6 +87,8 @@ pub struct DownloadImageErrorEvent(pub DownloadImageErrorEventPayload);
 pub struct DownloadEpisodeEndEventPayload {
     #[serde(rename = "epId")]
     pub ep_id: u32,
+    #[serde(rename = "errMsg")]
+    pub err_msg: Option<String>,
 }
 #[derive(Serialize, Deserialize, Clone, Type, Event)]
 pub struct DownloadEpisodeEndEvent(pub DownloadEpisodeEndEventPayload);
