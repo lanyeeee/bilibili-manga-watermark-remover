@@ -51,7 +51,7 @@ async fn process_episode(
     ep_sem: Arc<Semaphore>,
     img_sem: Arc<Semaphore>,
 ) -> anyhow::Result<()> {
-    emit_pending_event(&app, ep.ep_id);
+    emit_pending_event(&app, ep.ep_id, ep.ep_title.clone());
     let _permit = ep_sem.acquire().await?;
 
     let config = app.state::<RwLock<Config>>();
@@ -247,8 +247,8 @@ fn emit_start_event(app: &AppHandle, ep_id: i64, title: String, total: u32) {
     let _ = event.emit(app);
 }
 
-fn emit_pending_event(app: &AppHandle, ep_id: i64) {
-    let payload = events::DownloadEpisodePendingEventPayload { ep_id };
+fn emit_pending_event(app: &AppHandle, ep_id: i64, title: String) {
+    let payload = events::DownloadEpisodePendingEventPayload { ep_id, title };
     let event = events::DownloadEpisodePendingEvent(payload);
     let _ = event.emit(app);
 }
