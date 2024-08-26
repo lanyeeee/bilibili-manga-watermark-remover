@@ -3,6 +3,10 @@
 import {onMounted, ref} from "vue";
 import {events} from "../../bindings.ts";
 import {useNotification} from "naive-ui";
+import {showPathInFileManager} from "../../utils.ts";
+import {resourceDir} from "@tauri-apps/api/path";
+import {path} from "@tauri-apps/api";
+import {BaseDirectory, exists, mkdir} from "@tauri-apps/plugin-fs";
 
 type ProgressData = {
   title: string;
@@ -68,21 +72,32 @@ onMounted(async () => {
     progresses.value.delete(payload.epId);
   });
 });
+
+async function showDownloadDirInFileManager() {
+  const downloadDirName = "漫画下载";
+  const downloadDirExists = await exists(downloadDirName, {baseDir: BaseDirectory.Resource});
+  if (!downloadDirExists) {
+    await mkdir(downloadDirName, {baseDir: BaseDirectory.Resource});
+  }
+  const downloadDirPath = await path.join(await resourceDir(), downloadDirName);
+  await showPathInFileManager(downloadDirPath);
+}
+
 </script>
 
 <template>
-  <div>
-    <n-h3>下载列表</n-h3>
-    <div class="flex flex-col gap-row-1">
-      <div class="grid grid-cols-[2fr_4fr_1fr]" v-for="[epId, {title, current, total, percentage}] in progresses"
-           :key="epId">
-        <span class="text-ellipsis whitespace-nowrap overflow-hidden">{{ title }}</span>
-        <n-progress :percentage="percentage"
-                    indicator-placement="inside">
-        </n-progress>
-        <span>{{ current }}/{{ total }}</span>
-      </div>
+  <div class="flex flex-col gap-row-1">
+    <div class="flex flex-justify-between">
+      <n-text>下载列表</n-text>
+      <n-button class="w-1/3" size="tiny" @click="showDownloadDirInFileManager">打开下载目录</n-button>
     </div>
-
+    <div class="grid grid-cols-[2fr_4fr_1fr]" v-for="[epId, {title, current, total, percentage}] in progresses"
+         :key="epId">
+      <span class="text-ellipsis whitespace-nowrap overflow-hidden">{{ title }}</span>
+      <n-progress :percentage="percentage"
+                  indicator-placement="inside">
+      </n-progress>
+      <span>{{ current }}/{{ total }}</span>
+    </div>
   </div>
 </template>

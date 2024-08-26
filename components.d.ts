@@ -16,7 +16,6 @@ declare module 'vue' {
     NCheckboxGroup: typeof import('naive-ui')['NCheckboxGroup']
     NDivider: typeof import('naive-ui')['NDivider']
     NDropdown: typeof import('naive-ui')['NDropdown']
-    NH3: typeof import('naive-ui')['NH3']
     NInput: typeof import('naive-ui')['NInput']
     NMessageProvider: typeof import('naive-ui')['NMessageProvider']
     NModal: typeof import('naive-ui')['NModal']
