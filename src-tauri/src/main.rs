@@ -10,6 +10,7 @@ use crate::commands::{
     get_manga_dir_data, get_manga_episodes, get_qr_code_status_data, open_image, remove_watermark,
     save_config, search_manga, show_path_in_file_manager,
 };
+use crate::config::Config;
 use crate::download_manager::DownloadManager;
 use crate::events::{
     DownloadEpisodeEndEvent, DownloadEpisodePendingEvent, DownloadEpisodeStartEvent,
@@ -83,7 +84,9 @@ async fn main() {
         .setup(move |app| {
             builder.mount_events(app);
             let download_manager = DownloadManager::new(app.handle().clone());
+            let config = std::sync::RwLock::new(Config::new(app.handle().clone())?);
             app.manage(download_manager);
+            app.manage(config);
             Ok(())
         })
         .run(generate_context())

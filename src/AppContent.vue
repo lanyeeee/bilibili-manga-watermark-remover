@@ -35,12 +35,7 @@ onMounted(async () => {
     event.preventDefault();
   };
   // 获取配置
-  const result = await commands.getConfig();
-  if (result.status === "error") {
-    notification.error({title: "获取配置失败", description: result.error});
-    return;
-  }
-  const response = result.data;
+  const response = await commands.getConfig();
   if (response.code !== 0) {
     notification.warning({title: "获取配置失败", description: response.msg});
     return;
