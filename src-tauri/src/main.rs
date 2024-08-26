@@ -8,13 +8,13 @@ use tauri::{Context, Manager, Wry};
 use crate::commands::{
     download_episodes, generate_background, generate_qr_code, get_background_dir_abs_path,
     get_background_dir_relative_path, get_bili_cookie_status_data, get_config, get_jpg_image_infos,
-    get_manga_data, get_manga_dir_data, get_qr_code_status_data, open_image, remove_watermark,
+    get_manga_dir_data, get_manga_episodes, get_qr_code_status_data, open_image, remove_watermark,
     save_config, search_manga, show_path_in_file_manager,
 };
 use crate::download_manager::DownloadManager;
 use crate::events::{
-    DownloadEpisodePendingEvent, DownloadEpisodeEndEvent, DownloadImageErrorEvent,
-    DownloadEpisodeStartEvent, DownloadImageSuccessEvent, RemoveWatermarkEndEvent,
+    DownloadEpisodeEndEvent, DownloadEpisodePendingEvent, DownloadEpisodeStartEvent,
+    DownloadImageErrorEvent, DownloadImageSuccessEvent, RemoveWatermarkEndEvent,
     RemoveWatermarkErrorEvent, RemoveWatermarkStartEvent, RemoveWatermarkSuccessEvent,
 };
 
@@ -47,11 +47,11 @@ async fn main() {
             get_config,
             save_config,
             search_manga,
-            get_manga_data,
             generate_qr_code,
             get_qr_code_status_data,
             get_bili_cookie_status_data,
             download_episodes,
+            get_manga_episodes,
         ])
         .events(tauri_specta::collect_events![
             RemoveWatermarkStartEvent,
