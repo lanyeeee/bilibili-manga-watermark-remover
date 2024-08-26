@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 use std::sync::atomic::AtomicU32;
 
 use anyhow::anyhow;
@@ -13,6 +13,7 @@ use tokio::sync::mpsc::Receiver;
 
 use crate::config::Config;
 use crate::events;
+use crate::extensions::IgnoreRwLockPoison;
 use crate::responses::{BiliResponse, ImageIndexData, ImageTokenData};
 use crate::types::Episode;
 
@@ -53,8 +54,8 @@ async fn process_episode(
     emit_pending_event(&app, ep.ep_id);
     let _permit = ep_sem.acquire().await?;
 
-    let config = Config::load(&app).map_err(anyhow::Error::from)?;
-    let cookie = format!("SESSDATA={}", config.bili_cookie);
+    let config = app.state::<RwLock<Config>>();
+    let cookie = config.read_or_panic().get_cookie();
 
     let image_index_data = get_image_index_data(ep.ep_id, &cookie).await?;
     let image_token_data = get_image_token_data(&image_index_data, &cookie).await?;

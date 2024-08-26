@@ -21,7 +21,7 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn load(app: &AppHandle) -> anyhow::Result<Self> {
+    pub fn new(app: AppHandle) -> anyhow::Result<Self> {
         let resource_dir = app.path().resource_dir()?;
         let config_path = resource_dir.join("config.json");
         let default_config = Config {
@@ -30,15 +30,13 @@ impl Config {
             output_optimize: false,
             bili_cookie: String::new(),
         };
-        // 如果配置文件存在且能够解析，则使用配置文件中的配置，否则使用默认配置
         let config = if config_path.exists() {
             let config_string = std::fs::read_to_string(config_path)?;
             serde_json::from_str(&config_string).unwrap_or(default_config)
         } else {
             default_config
         };
-        config.save(app)?;
-
+        config.save(&app)?;
         Ok(config)
     }
 
@@ -48,5 +46,9 @@ impl Config {
         let config_string = serde_json::to_string_pretty(self)?;
         std::fs::write(config_path, config_string)?;
         Ok(())
+    }
+
+    pub fn get_cookie(&self) -> String {
+        format!("SESSDATA={}", self.bili_cookie)
     }
 }
