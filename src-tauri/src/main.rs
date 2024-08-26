@@ -2,7 +2,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 #![warn(clippy::unwrap_used)]
 
-use specta_typescript::BigIntExportBehavior;
 use tauri::{Context, Manager, Wry};
 
 use crate::commands::{
@@ -69,7 +68,7 @@ async fn main() {
     builder
         .export(
             specta_typescript::Typescript::default()
-                .bigint(BigIntExportBehavior::Number)
+                .bigint(specta_typescript::BigIntExportBehavior::Number)
                 .formatter(specta_typescript::formatter::prettier)
                 .header("// @ts-nocheck"), // 跳过检查
             "../src/bindings.ts",
