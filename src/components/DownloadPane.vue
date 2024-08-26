@@ -16,6 +16,7 @@ const biliCookie = ref<string>(config.value?.biliCookie ?? "");
 const qrCodeViewerShowing = ref<boolean>(false);
 const searchData = ref<SearchData>();
 const currentTabName = ref<"search" | "episode">("search");
+const mangaId = ref<number>();
 const episodes = ref<Episode[] | undefined>();
 
 watch(biliCookie, (value) => {
@@ -73,11 +74,12 @@ async function test() {
         <n-tabs v-model:value="currentTabName" type="line" size="small" class="h-full">
           <n-tab-pane class="h-full overflow-auto p-0!" name="search" tab="漫画搜索" display-directive="show:lazy">
             <search-pane v-model:search-data="searchData"
+                         v-model:manga-id="mangaId"
                          v-model:episodes="episodes"
                          v-model:current-tab-name="currentTabName"/>
           </n-tab-pane>
           <n-tab-pane class="h-full overflow-auto p-0!" name="episode" tab="章节详情" display-directive="show:lazy">
-            <episode-pane v-model:episodes="episodes"/>
+            <episode-pane v-model:manga-id="mangaId" v-model:episodes="episodes"/>
           </n-tab-pane>
         </n-tabs>
       </div>
