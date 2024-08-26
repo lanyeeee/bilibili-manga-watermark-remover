@@ -135,7 +135,10 @@ async function downloadEpisodes() {
       左键拖动进行框选，右键打开菜单
       <n-button size="tiny" type="primary" @click="downloadEpisodes" class="w-1/3">下载勾选章节</n-button>
     </div>
-    <SelectionArea ref="selectionAreaRef"
+    <n-empty v-if="episodes === undefined" description="请先进行漫画搜索">
+    </n-empty>
+    <SelectionArea v-else
+                   ref="selectionAreaRef"
                    class="selection-container"
                    :options="{selectables: '.selectable'} as SelectionOptions"
                    @contextmenu="onContextMenu"
