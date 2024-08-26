@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import {SelectionArea, SelectionEvent, SelectionOptions} from "@viselect/vue";
 import {nextTick, ref, watch} from "vue";
-import {commands, MangaData} from "../../bindings.ts";
+import {commands, Episode} from "../../bindings.ts";
 
-const mangaData = defineModel<MangaData | undefined>("mangaData", {required: true});
+const episodes = defineModel<Episode[] | undefined>("episodes", {required: true});
 
 const dropdownX = ref(0);
 const dropdownY = ref(0);
@@ -20,7 +20,7 @@ const selectedIds = ref<Set<number>>(new Set());
 const selectedChanged = ref(false);
 const selectionAreaRef = ref<InstanceType<typeof SelectionArea>>();
 
-watch(mangaData, () => {
+watch(episodes, () => {
   checkedIds.value = [];
   selectedIds.value.clear();
   selectionAreaRef.value?.selection?.clearSelection();
@@ -77,9 +77,9 @@ function onDropdownSelect(key: "check" | "uncheck" | "check all" | "uncheck all"
     checkedIds.value = checkedIds.value.filter(id => !selectedIds.value.has(id));
   } else if (key === "check all") {
     // 只有未锁定的才会被勾选
-    mangaData.value?.ep_list
-        .filter(ep => !ep.is_locked)
-        .forEach(ep => checkedIds.value.push(ep.id));
+    episodes.value
+        ?.filter(ep => !ep.isLocked)
+        .forEach(ep => checkedIds.value.push(ep.epId));
   } else if (key === "uncheck all") {
     checkedIds.value.length = 0;
   }
@@ -94,8 +94,8 @@ async function onContextMenu(e: MouseEvent) {
 }
 
 function epIsUnlocked(id: number): boolean {
-  const ep = mangaData.value?.ep_list.find(ep => ep.id === id);
-  return ep ? !ep.is_locked : false;
+  const ep = episodes.value?.find(ep => ep.epId === id);
+  return ep ? !ep.isLocked : false;
 }
 
 async function downloadEpisodes() {
@@ -109,11 +109,11 @@ async function downloadEpisodes() {
 <template>
   <div class="h-full flex flex-col">
     <div class="flex flex-justify-around">
-      <span>总章数：{{ mangaData?.ep_list.length }}</span>
+      <span>总章数：{{ episodes?.length }}</span>
       <n-divider vertical></n-divider>
-      <span>已解锁：{{ mangaData?.ep_list.filter(ep => !ep.is_locked).length }}</span>
+      <span>已解锁：{{ episodes?.filter(ep => !ep.isLocked).length }}</span>
       <n-divider vertical></n-divider>
-      <span>已下载：0</span>
+      <span>已下载：{{ episodes?.filter(ep => ep.isDownloaded).length }}</span>
       <n-divider vertical></n-divider>
       <span>已勾选：{{ checkedIds.length }}</span>
     </div>
@@ -129,17 +129,16 @@ async function downloadEpisodes() {
                    @move="onDragMove"
                    @start="onDragStart">
       <n-checkbox-group v-model:value="checkedIds" class="grid grid-cols-3 gap-1.5 w-full">
-        <n-checkbox v-for="{id, short_title, title, is_locked} of mangaData?.ep_list"
-                    :key="id"
-                    :data-key="id"
+        <n-checkbox v-for="{epId, epTitle, isLocked} in episodes"
+                    :key="epId"
+                    :data-key="epId"
                     class="selectable hover:bg-gray-200!"
-                    :value="id"
-                    :label="`${short_title} ${title}`"
-                    :disabled="is_locked"
-                    :class="{ selected: selectedIds.has(id) }"/>
+                    :value="epId"
+                    :label="epTitle"
+                    :disabled="isLocked"
+                    :class="{ selected: selectedIds.has(epId) }"/>
       </n-checkbox-group>
     </SelectionArea>
-
 
     <n-dropdown
         placement="bottom-start"

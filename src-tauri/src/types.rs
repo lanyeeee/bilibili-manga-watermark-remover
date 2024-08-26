@@ -72,3 +72,14 @@ pub struct QrCodeData {
     #[serde(rename = "qrcodeKey")]
     pub qrcode_key: String,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct Episode {
+    pub ep_id: i64,
+    pub ep_title: String,
+    pub comic_id: i64,
+    pub comic_title: String,
+    pub is_locked: bool,
+    pub is_downloaded: bool,
+}
