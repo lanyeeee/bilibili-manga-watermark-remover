@@ -1,4 +1,5 @@
 use std::path::{Path, PathBuf};
+
 use tauri::{AppHandle, Manager};
 
 pub fn get_background_dir_relative_path(
@@ -25,4 +26,23 @@ pub fn get_background_dir_abs_path(
     let relative_path = get_background_dir_relative_path(manga_dir, width, height)?;
     let abs_path = resource_dir.join(relative_path);
     Ok(abs_path)
+}
+
+pub fn filename_filter(s: &str) -> String {
+    s.chars()
+        .map(|c| match c {
+            '\\' | '/' => ' ',
+            ':' => '：',
+            '*' => '⭐',
+            '?' => '？',
+            '"' => '\'',
+            '<' => '《',
+            '>' => '》',
+            '|' => '丨',
+            '.' => '·',
+            _ => c,
+        })
+        .collect::<String>()
+        .trim()
+        .to_string()
 }
