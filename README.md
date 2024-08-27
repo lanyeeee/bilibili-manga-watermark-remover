@@ -1,5 +1,9 @@
 # 哔哩哔哩漫画去水印工具
 
+<p align="center">
+    <img src="https://github.com/user-attachments/assets/b6526d0d-49c3-41ae-93d8-509d67eedaa8" width="200" style="align-self: center"/>
+</p>
+
 bilibili漫画 哔哩哔哩漫画 B漫 去水印工具，带图形界面，带下载功能，图形界面基于[Tauri](https://v2.tauri.app/start/)
 
 在[Release页面](https://github.com/lanyeeee/bilibili-manga-watermark-remover/releases)可以直接下载
