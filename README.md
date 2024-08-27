@@ -1,34 +1,59 @@
-# bilibili-manga-watermark-remover 哔哩哔哩漫画去水印工具
+# 哔哩哔哩漫画去水印工具
 
-bilibili漫画 哔哩哔哩漫画 B漫 去水印工具，带图形界面，图形界面基于[Tauri](https://v2.tauri.app/start/)
+bilibili漫画 哔哩哔哩漫画 B漫 去水印工具，带图形界面，带下载功能，图形界面基于[Tauri](https://v2.tauri.app/start/)
 
 在[Release页面](https://github.com/lanyeeee/bilibili-manga-watermark-remover/releases)可以直接下载
 
+# 效果预览
+
+| 原图                                 | 去水印                                 |
+| ------------------------------------ | -------------------------------------- |
+| <img src="md/少女终末旅行-原图.jpg"> | <img src="md/少女终末旅行-去水印.jpg"> |
+| <img src="md/炎拳-原图.jpg">         | <img src="md/炎拳-去水印.jpg">         |
+
 # 使用方法
+
+### 去水印
 
 1. 选择漫画目录，等待自动生成背景水印图完成
 2. 点击开始去水印按钮，等待去水印完成
 3. 前往输出目录查看结果
-   ![](md/remove_watermark.gif)
 
-#### 注意
+下面的视频是去水印的完整流程
 
-选择漫画目录后，工具会自动为每种尺寸的图片生成黑色和白色的背景水印图  
-如果自动生成失败，可以尝试手动截取水印，演示如下
+https://github.com/user-attachments/assets/f7ad65d0-4211-4fe3-b090-419a722b2e45
 
-![](md/cropper.gif)
+
+### 生成背景水印图
+
+一般选择漫画目录后，工具会自动为每种尺寸的图片生成黑色和白色的背景水印图 
+如果自动生成失败，可以尝试手动截取水印
+
+下面的视频演示了
+
+- 所有尺寸全部重试自动生成
+- 单个尺寸重试自动生成
+- 单个尺寸手动截取水印
+
+https://github.com/user-attachments/assets/52666942-27df-4e39-9dc1-dfcbe0461c44
+
+### 下载
+
+下面的视频演示了漫画下载的基本功能
+
+- 漫画搜索
+- 扫码登录
+- Cookie有效性检测
+- 框选、全选
+- 漫画下载
+
+https://github.com/user-attachments/assets/dc9bbcc5-28e5-4f48-bb19-fc74ada758e6
 
 # 常见问题
+
 - [生成背景水印图失败](https://github.com/lanyeeee/bilibili-manga-watermark-remover/discussions/1)
 - [极个别图片去除水印失败](https://github.com/lanyeeee/bilibili-manga-watermark-remover/discussions/5)
 - [同一本漫画，正文尺寸相同，但是水印不同](https://github.com/lanyeeee/bilibili-manga-watermark-remover/discussions/8)
-
-# 效果预览
-
-| 原图                           | 去水印                           |
-|------------------------------|-------------------------------|
-| <img src="md/少女终末旅行-原图.jpg"> | <img src="md/少女终末旅行-去水印.jpg"> |
-| <img src="md/炎拳-原图.jpg">     | <img src="md/炎拳-去水印.jpg">     |
 
 # 去水印原理
 
