@@ -8,8 +8,8 @@ bilibili漫画 哔哩哔哩漫画 B漫 去水印工具，带图形界面，带�
 
 | 原图                                 | 去水印                                 |
 | ------------------------------------ | -------------------------------------- |
-| <img src="md/少女终末旅行-原图.jpg"> | <img src="md/少女终末旅行-去水印.jpg"> |
-| <img src="md/炎拳-原图.jpg">         | <img src="md/炎拳-去水印.jpg">         |
+| ![少女终末旅行-原图](https://github.com/user-attachments/assets/832107b5-d40c-4a93-98f1-674bd761abfb) | ![少女终末旅行-去水印](https://github.com/user-attachments/assets/0fdc5118-ddfb-4451-91c2-b284dbc9a775) |
+| ![炎拳-原图](https://github.com/user-attachments/assets/a42ab0df-d9a0-43e9-9d0b-46ac98798cd8)        | ![炎拳-去水印](https://github.com/user-attachments/assets/6fbfc3de-9ffc-4b1a-85c1-90a8ae50a331)        |
 
 # 使用方法
 
