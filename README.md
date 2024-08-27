@@ -21,7 +21,8 @@ bilibili漫画 哔哩哔哩漫画 B漫 去水印工具，带图形界面，带�
 
 下面的视频是去水印的完整流程
 
-<video src="md/remove_watermark.mp4"></video>
+https://github.com/user-attachments/assets/f7ad65d0-4211-4fe3-b090-419a722b2e45
+
 
 ### 生成背景水印图
 
@@ -34,7 +35,7 @@ bilibili漫画 哔哩哔哩漫画 B漫 去水印工具，带图形界面，带�
 - 单个尺寸重试自动生成
 - 单个尺寸手动截取水印
 
-<video src="md/generate_background.mp4"></video>
+https://github.com/user-attachments/assets/52666942-27df-4e39-9dc1-dfcbe0461c44
 
 ### 下载
 
@@ -46,7 +47,7 @@ bilibili漫画 哔哩哔哩漫画 B漫 去水印工具，带图形界面，带�
 - 框选、全选
 - 漫画下载
 
-<video src="md/download.mp4"></video>
+https://github.com/user-attachments/assets/dc9bbcc5-28e5-4f48-bb19-fc74ada758e6
 
 # 常见问题
 
