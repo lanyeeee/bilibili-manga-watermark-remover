@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import {MangaDirData} from "../bindings.ts";
-import {autoGenerateBackground, getBackgroundDirAbsPath, showPathInFileManager} from "../utils.ts";
+import {MangaDirData} from "../../bindings.ts";
+import {autoGenerateBackground, getBackgroundDirAbsPath, showPathInFileManager} from "../../utils.ts";
 import {useMessage, useNotification} from "naive-ui";
 import {nextTick} from "vue";
 
