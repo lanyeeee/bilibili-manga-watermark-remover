@@ -3,7 +3,6 @@ use std::sync::{Arc, RwLock};
 use std::sync::atomic::AtomicU32;
 
 use anyhow::anyhow;
-use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::StatusCode;
 use serde_json::json;
 use tauri::{AppHandle, Manager};
@@ -147,21 +146,13 @@ async fn download_image(
 }
 
 async fn get_image_index_data(ep_id: i64, cookie: &str) -> anyhow::Result<ImageIndexData> {
-    let headers_vec = [
-        ("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"),
-        ("cookie", cookie),
-    ];
-    let mut headers = HeaderMap::new();
-    for (key, value) in headers_vec {
-        headers.insert(key, HeaderValue::from_str(value)?);
-    }
-
     let payload = json!({"ep_id": ep_id});
 
     let http_res = reqwest::Client::new()
         .post("https://manga.bilibili.com/twirp/comic.v1.Comic/GetImageIndex")
         .query(&[("device", "pc"), ("platform", "web")])
-        .headers(headers)
+        .header("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36")
+        .header("cookie", cookie)
         .json(&payload)
         .send()
         .await?;
@@ -191,15 +182,6 @@ async fn get_image_token_data(
     image_index_data: &ImageIndexData,
     cookie: &str,
 ) -> anyhow::Result<ImageTokenData> {
-    let headers_vec = [
-        ("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"),
-        ("cookie", cookie),
-    ];
-    let mut headers = HeaderMap::new();
-    for (key, value) in headers_vec {
-        headers.insert(key, HeaderValue::from_str(value)?);
-    }
-
     let urls: Vec<String> = image_index_data
         .images
         .iter()
@@ -211,7 +193,8 @@ async fn get_image_token_data(
     let http_res = reqwest::Client::new()
         .post("https://manga.bilibili.com/twirp/comic.v1.Comic/ImageToken")
         .query(&[("device", "pc"), ("platform", "web")])
-        .headers(headers)
+        .header("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36")
+        .header("cookie", cookie)
         .json(&payload)
         .send()
         .await?;
