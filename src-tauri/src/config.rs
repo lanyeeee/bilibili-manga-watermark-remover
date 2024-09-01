@@ -8,15 +8,11 @@ use crate::types::ImageFormat;
 
 #[allow(clippy::struct_field_names)]
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
-//TODO: 改用 #[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
 pub struct Config {
-    #[serde(rename = "outputDir")]
     pub output_dir: PathBuf,
-    #[serde(rename = "outputFormat")]
     pub output_format: ImageFormat,
-    #[serde(rename = "outputOptimize")]
     pub output_optimize: bool,
-    #[serde(rename = "biliCookie")]
     pub bili_cookie: String,
 }
 
