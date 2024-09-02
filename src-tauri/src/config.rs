@@ -17,7 +17,7 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn new(app: AppHandle) -> anyhow::Result<Self> {
+    pub fn new(app: &AppHandle) -> anyhow::Result<Self> {
         let resource_dir = app.path().resource_dir()?;
         let config_path = resource_dir.join("config.json");
         let default_config = Config {
