@@ -84,7 +84,7 @@ async fn main() {
         .setup(move |app| {
             builder.mount_events(app);
             let download_manager = DownloadManager::new(app.handle().clone());
-            let config = std::sync::RwLock::new(Config::new(app.handle().clone())?);
+            let config = std::sync::RwLock::new(Config::new(app.handle())?);
             app.manage(download_manager);
             app.manage(config);
             Ok(())
