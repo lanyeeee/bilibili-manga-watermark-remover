@@ -8,20 +8,16 @@ use crate::types::ImageFormat;
 
 #[allow(clippy::struct_field_names)]
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
-//TODO: 改用 #[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
 pub struct Config {
-    #[serde(rename = "outputDir")]
     pub output_dir: PathBuf,
-    #[serde(rename = "outputFormat")]
     pub output_format: ImageFormat,
-    #[serde(rename = "outputOptimize")]
     pub output_optimize: bool,
-    #[serde(rename = "biliCookie")]
     pub bili_cookie: String,
 }
 
 impl Config {
-    pub fn new(app: AppHandle) -> anyhow::Result<Self> {
+    pub fn new(app: &AppHandle) -> anyhow::Result<Self> {
         let resource_dir = app.path().resource_dir()?;
         let config_path = resource_dir.join("config.json");
         let default_config = Config {
