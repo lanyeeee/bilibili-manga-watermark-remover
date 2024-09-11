@@ -12,6 +12,7 @@ declare module 'vue' {
     EpisodePane: typeof import('./src/components/DownloadComponents/EpisodePane.vue')['default']
     MangaDirIndicator: typeof import('./src/components/WatermarkComponents/MangaDirIndicator.vue')['default']
     NButton: typeof import('naive-ui')['NButton']
+    NCard: typeof import('naive-ui')['NCard']
     NCheckbox: typeof import('naive-ui')['NCheckbox']
     NCheckboxGroup: typeof import('naive-ui')['NCheckboxGroup']
     NDivider: typeof import('naive-ui')['NDivider']
@@ -34,6 +35,7 @@ declare module 'vue' {
     QrCodeViewer: typeof import('./src/components/DownloadComponents/QrCodeViewer.vue')['default']
     RemoveProgress: typeof import('./src/components/WatermarkComponents/RemoveProgress.vue')['default']
     SearchPane: typeof import('./src/components/DownloadComponents/SearchPane.vue')['default']
+    SearchResult: typeof import('./src/components/DownloadComponents/SearchResult.vue')['default']
     WatermarkCropper: typeof import('./src/components/WatermarkComponents/WatermarkCropper.vue')['default']
     WatermarkPane: typeof import('./src/components/WatermarkPane.vue')['default']
   }
