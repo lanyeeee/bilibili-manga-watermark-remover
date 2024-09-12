@@ -14,6 +14,7 @@ use tokio::sync::mpsc::Receiver;
 
 use crate::config::Config;
 use crate::events;
+use crate::events::{DownloadSpeedEvent, DownloadSpeedEventPayload};
 use crate::extensions::{AnyhowErrorToStringChain, IgnoreRwLockPoison};
 use crate::responses::{BiliResponse, ImageIndexData, ImageTokenData};
 use crate::types::Episode;
@@ -70,7 +71,8 @@ impl DownloadManager {
             interval.tick().await;
             let byte_per_sec = self.byte_per_sec.swap(0, Ordering::Relaxed);
             let mega_byte_per_sec = byte_per_sec as f64 / 1024.0 / 1024.0;
-            println!("{mega_byte_per_sec:.2} MB/s");
+            let speed = format!("{mega_byte_per_sec:.2} MB/s");
+            emit_download_speed_event(&self.app, speed);
         }
     }
 
@@ -359,5 +361,11 @@ fn emit_update_overall_progress_event(
         percentage,
     };
     let event = events::UpdateOverallDownloadProgressEvent(payload);
+    let _ = event.emit(app);
+}
+
+fn emit_download_speed_event(app: &AppHandle, speed: String) {
+    let payload = DownloadSpeedEventPayload { speed };
+    let event = DownloadSpeedEvent(payload);
     let _ = event.emit(app);
 }

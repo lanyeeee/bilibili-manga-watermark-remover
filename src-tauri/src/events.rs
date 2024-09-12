@@ -98,3 +98,11 @@ pub struct UpdateOverallDownloadProgressEventPayload {
 }
 #[derive(Serialize, Deserialize, Clone, Type, Event)]
 pub struct UpdateOverallDownloadProgressEvent(pub UpdateOverallDownloadProgressEventPayload);
+
+#[derive(Serialize, Deserialize, Clone, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct DownloadSpeedEventPayload {
+    pub speed: String,
+}
+#[derive(Serialize, Deserialize, Clone, Type, Event)]
+pub struct DownloadSpeedEvent(pub DownloadSpeedEventPayload);
