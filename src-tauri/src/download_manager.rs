@@ -121,6 +121,7 @@ impl DownloadManager {
             tasks.push(task);
         }
         // 等待所有下载任务完成
+        // TODO: 需要类似C#的Task.WhenAny方法来找到tasks中第一个完成的task，否则可能卡在某个拿不到semaphore的task上，导致总进度条的进度与实际下载进度不一致
         for task in tasks {
             task.await?;
             // 每张图片下载完成后，更新总体下载进度
@@ -354,7 +355,7 @@ fn emit_update_overall_progress_event(
     downloaded_image_count: u32,
     total_image_count: u32,
 ) {
-    let percentage: f64 = downloaded_image_count as f64 / total_image_count as f64;
+    let percentage: f64 = downloaded_image_count as f64 / total_image_count as f64 * 100.0;
     let payload = events::UpdateOverallDownloadProgressEventPayload {
         downloaded_image_count,
         total_image_count,
