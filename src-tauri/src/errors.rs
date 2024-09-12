@@ -1,7 +1,7 @@
-use std::fmt::Write;
-
 use serde::Serialize;
 use specta::Type;
+
+use crate::extensions::AnyhowErrorToStringChain;
 
 pub type CommandResult<T> = Result<T, CommandError>;
 
@@ -17,13 +17,6 @@ impl Serialize for CommandError {
 }
 impl From<anyhow::Error> for CommandError {
     fn from(err: anyhow::Error) -> Self {
-        let msg = err
-            .chain()
-            .enumerate()
-            .fold(String::new(), |mut output, (i, e)| {
-                let _ = writeln!(output, "{i}: {e}");
-                output
-            });
-        CommandError(msg)
+        Self(err.to_string_chain())
     }
 }
