@@ -1,8 +1,10 @@
 use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
-use std::sync::atomic::AtomicU32;
+use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
+use std::time::Duration;
 
-use anyhow::anyhow;
+use anyhow::{anyhow, Context};
+use bytes::Bytes;
 use reqwest::StatusCode;
 use serde_json::json;
 use tauri::{AppHandle, Manager};
@@ -12,13 +14,13 @@ use tokio::sync::mpsc::Receiver;
 
 use crate::config::Config;
 use crate::events;
-use crate::extensions::IgnoreRwLockPoison;
+use crate::extensions::{AnyhowErrorToStringChain, IgnoreRwLockPoison};
 use crate::responses::{BiliResponse, ImageIndexData, ImageTokenData};
 use crate::types::Episode;
 
 /// 用于管理下载任务
 ///
-/// 克隆 `DownloadManager` 的开销极小，性能开销几乎可以忽略不计。  
+/// 克隆 `DownloadManager` 的开销极小，性能开销几乎可以忽略不计。
 /// 可以放心地在多个线程中传递和使用它的克隆副本。
 ///
 /// 具体来说：
@@ -30,6 +32,7 @@ pub struct DownloadManager {
     sender: Arc<mpsc::Sender<Episode>>,
     ep_sem: Arc<Semaphore>,
     img_sem: Arc<Semaphore>,
+    byte_per_sec: Arc<AtomicU64>,
 }
 
 impl DownloadManager {
@@ -42,15 +45,29 @@ impl DownloadManager {
             sender: Arc::new(sender),
             ep_sem,
             img_sem,
+            byte_per_sec: Arc::new(AtomicU64::new(0)),
         };
 
-        tokio::task::spawn(manager.clone().receiver_loop(receiver));
+        tokio::spawn(manager.clone().log_download_speed());
+        tokio::spawn(manager.clone().receiver_loop(receiver));
 
         manager
     }
 
     pub async fn submit_episode(&self, ep: Episode) -> anyhow::Result<()> {
         Ok(self.sender.send(ep).await?)
+    }
+
+    #[allow(clippy::cast_precision_loss)]
+    async fn log_download_speed(self) {
+        let mut interval = tokio::time::interval(Duration::from_secs(1));
+
+        loop {
+            interval.tick().await;
+            let byte_per_sec = self.byte_per_sec.swap(0, Ordering::Relaxed);
+            let mega_byte_per_sec = byte_per_sec as f64 / 1024.0 / 1024.0;
+            println!("{mega_byte_per_sec:.2} MB/s");
+        }
     }
 
     async fn receiver_loop(self, mut receiver: Receiver<Episode>) {
@@ -71,54 +88,86 @@ impl DownloadManager {
         let image_index_data = get_image_index_data(ep.ep_id, &cookie).await?;
         let image_token_data = get_image_token_data(&image_index_data, &cookie).await?;
 
-        let download_dir = get_download_dir(&self.app, &ep)?;
-        let current = Arc::new(AtomicU32::new(0));
+        let temp_download_dir = get_download_dir(&self.app, &ep)?;
+        std::fs::create_dir_all(&temp_download_dir)
+            .context(format!("创建目录 {temp_download_dir:?} 失败"))?;
+        // 构造图片下载链接
         let urls: Vec<String> = image_token_data
             .into_iter()
             .map(|data| (data.url, data.token))
             .map(|(url, token)| format!("{url}?token={token}"))
             .collect();
+        let current = Arc::new(AtomicU32::new(0));
         let total = urls.len() as u32;
-
         let mut tasks = Vec::with_capacity(total as usize);
+        // 开始下载
         emit_start_event(&self.app, ep.ep_id, ep.ep_title.clone(), total);
         for (i, url) in urls.iter().enumerate() {
-            let save_path = download_dir.join(format!("{i:03}.jpg"));
-
-            let app = self.app.clone();
-            let img_sem = self.img_sem.clone();
+            let manager = self.clone();
+            let ep_id = ep.ep_id;
+            let save_path = temp_download_dir.join(format!("{i:03}.jpg"));
             let url = url.clone();
             let current = current.clone();
-
-            let task = tokio::task::spawn(async move {
-                if let Err(err) = download_image(url.clone(), save_path, img_sem).await {
-                    let err_msg = format!("下载图片失败: {err}");
-                    emit_error_event(&app, ep.ep_id, url, err_msg);
-                } else {
-                    let current = current.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1;
-                    emit_success_event(&app, ep.ep_id, url, current);
-                }
-            });
+            // 创建下载任务
+            let task = tokio::spawn(manager.download_image(url, save_path, ep_id, current));
             tasks.push(task);
         }
-
+        // 等待所有下载任务完成
         for task in tasks {
             task.await?;
         }
-
-        let current = current.load(std::sync::atomic::Ordering::Relaxed);
+        // 处理下载结果
+        let current = current.load(Ordering::Relaxed);
         if current == total {
             // 下载成功，则把临时目录重命名为正式目录
-            if let Some(parent) = download_dir.parent() {
-                tokio::fs::rename(&download_dir, parent.join(&ep.ep_title)).await?;
+            if let Some(parent) = temp_download_dir.parent() {
+                let download_dir = parent.join(&ep.ep_title);
+                std::fs::rename(&temp_download_dir, &download_dir).context(format!(
+                    "将 {temp_download_dir:?} 重命名为 {download_dir:?} 失败"
+                ))?;
             }
             emit_end_event(&self.app, ep.ep_id, None);
         } else {
             let err_msg = Some(format!("总共有 {total} 张图片，但只下载了 {current} 张"));
             emit_end_event(&self.app, ep.ep_id, err_msg);
         };
-
         Ok(())
+    }
+
+    // TODO: 把current变量名改成downloaded_count比较合适
+    async fn download_image(
+        self,
+        url: String,
+        save_path: PathBuf,
+        ep_id: i64,
+        current: Arc<AtomicU32>,
+    ) {
+        // 下载图片
+        let image_data = match get_image_bytes(&url, self.img_sem.clone()).await {
+            Ok(data) => data,
+            Err(err) => {
+                let err = err.context(format!("下载图片 {url} 失败"));
+                emit_error_event(&self.app, ep_id, url, err.to_string_chain());
+                return;
+            }
+        };
+        // 保存图片
+        if let Err(err) = std::fs::write(&save_path, &image_data).map_err(anyhow::Error::from) {
+            let err = err.context(format!("保存图片 {save_path:?} 失败"));
+            emit_error_event(&self.app, ep_id, url, err.to_string_chain());
+            return;
+        }
+        // 记录下载字节数
+        self.byte_per_sec
+            .fetch_add(image_data.len() as u64, Ordering::Relaxed);
+        // 记录下载进度
+        let current = current.fetch_add(1, Ordering::Relaxed) + 1;
+        emit_success_event(
+            &self.app,
+            ep_id,
+            save_path.to_string_lossy().to_string(),
+            current,
+        );
     }
 }
 
@@ -132,14 +181,10 @@ fn get_download_dir(app: &AppHandle, ep: &Episode) -> anyhow::Result<PathBuf> {
     Ok(download_dir)
 }
 
-async fn download_image(
-    url: String,
-    save_path: PathBuf,
-    img_sem: Arc<Semaphore>,
-) -> anyhow::Result<()> {
+async fn get_image_bytes(url: &str, img_sem: Arc<Semaphore>) -> anyhow::Result<Bytes> {
     let _permit = img_sem.acquire().await?;
 
-    let http_res = reqwest::get(&url).await?;
+    let http_res = reqwest::get(url).await?;
 
     let status = http_res.status();
     if status != StatusCode::OK {
@@ -150,12 +195,7 @@ async fn download_image(
 
     let image_data = http_res.bytes().await?;
 
-    if let Some(parent) = save_path.parent() {
-        tokio::fs::create_dir_all(parent).await?;
-    }
-
-    tokio::fs::write(save_path, image_data).await?;
-    Ok(())
+    Ok(image_data)
 }
 
 async fn get_image_index_data(ep_id: i64, cookie: &str) -> anyhow::Result<ImageIndexData> {
