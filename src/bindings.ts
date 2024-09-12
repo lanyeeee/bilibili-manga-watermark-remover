@@ -132,7 +132,8 @@ downloadImageSuccessEvent: DownloadImageSuccessEvent,
 removeWatermarkEndEvent: RemoveWatermarkEndEvent,
 removeWatermarkErrorEvent: RemoveWatermarkErrorEvent,
 removeWatermarkStartEvent: RemoveWatermarkStartEvent,
-removeWatermarkSuccessEvent: RemoveWatermarkSuccessEvent
+removeWatermarkSuccessEvent: RemoveWatermarkSuccessEvent,
+updateOverallDownloadProgressEvent: UpdateOverallDownloadProgressEvent
 }>({
 downloadEpisodeEndEvent: "download-episode-end-event",
 downloadEpisodePendingEvent: "download-episode-pending-event",
@@ -142,7 +143,8 @@ downloadImageSuccessEvent: "download-image-success-event",
 removeWatermarkEndEvent: "remove-watermark-end-event",
 removeWatermarkErrorEvent: "remove-watermark-error-event",
 removeWatermarkStartEvent: "remove-watermark-start-event",
-removeWatermarkSuccessEvent: "remove-watermark-success-event"
+removeWatermarkSuccessEvent: "remove-watermark-success-event",
+updateOverallDownloadProgressEvent: "update-overall-download-progress-event"
 })
 
 /** user-defined constants **/
@@ -185,6 +187,8 @@ export type RemoveWatermarkStartEventPayload = { dirPath: string; total: number 
 export type RemoveWatermarkSuccessEvent = RemoveWatermarkSuccessEventPayload
 export type RemoveWatermarkSuccessEventPayload = { dirPath: string; imgPath: string; current: number }
 export type SearchData = { list: List[]; total_page: number; total_num: number; recommends: Recommend[]; similar: string; se_id: string; banner: Banner }
+export type UpdateOverallDownloadProgressEvent = UpdateOverallDownloadProgressEventPayload
+export type UpdateOverallDownloadProgressEventPayload = { downloadedImageCount: number; totalImageCount: number; percentage: number }
 export type Wiki = { id: number; title: string; origin_title: string; vertical_cover: string; producer: string; author_name: string[]; publish_time: string; frequency: string }
 
 /** tauri-specta globals **/
