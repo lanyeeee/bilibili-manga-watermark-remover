@@ -4,6 +4,7 @@
 
 use tauri::{Context, Manager, Wry};
 
+//TODO: 用crate::commands::*代替
 use crate::commands::{
     download_episodes, generate_background, generate_qr_code, get_background_dir_abs_path,
     get_background_dir_relative_path, get_bili_cookie_status_data, get_config, get_jpg_image_infos,
@@ -12,10 +13,12 @@ use crate::commands::{
 };
 use crate::config::Config;
 use crate::download_manager::DownloadManager;
+//TODO: 用crate::events::*代替
 use crate::events::{
     DownloadEpisodeEndEvent, DownloadEpisodePendingEvent, DownloadEpisodeStartEvent,
     DownloadImageErrorEvent, DownloadImageSuccessEvent, RemoveWatermarkEndEvent,
     RemoveWatermarkErrorEvent, RemoveWatermarkStartEvent, RemoveWatermarkSuccessEvent,
+    UpdateOverallDownloadProgressEvent,
 };
 
 mod commands;
@@ -63,6 +66,7 @@ async fn main() {
             DownloadImageSuccessEvent,
             DownloadImageErrorEvent,
             DownloadEpisodeEndEvent,
+            UpdateOverallDownloadProgressEvent,
         ]);
     // 只有在debug模式下才会生成bindings.ts
     #[cfg(debug_assertions)]

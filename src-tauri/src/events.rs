@@ -88,3 +88,13 @@ pub struct DownloadEpisodeEndEventPayload {
 }
 #[derive(Serialize, Deserialize, Clone, Type, Event)]
 pub struct DownloadEpisodeEndEvent(pub DownloadEpisodeEndEventPayload);
+
+#[derive(Serialize, Deserialize, Clone, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateOverallDownloadProgressEventPayload {
+    pub downloaded_image_count: u32,
+    pub total_image_count: u32,
+    pub percentage: f64,
+}
+#[derive(Serialize, Deserialize, Clone, Type, Event)]
+pub struct UpdateOverallDownloadProgressEvent(pub UpdateOverallDownloadProgressEventPayload);

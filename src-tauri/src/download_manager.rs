@@ -33,6 +33,8 @@ pub struct DownloadManager {
     ep_sem: Arc<Semaphore>,
     img_sem: Arc<Semaphore>,
     byte_per_sec: Arc<AtomicU64>,
+    downloaded_image_count: Arc<AtomicU32>,
+    total_image_count: Arc<AtomicU32>,
 }
 
 impl DownloadManager {
@@ -46,6 +48,8 @@ impl DownloadManager {
             ep_sem,
             img_sem,
             byte_per_sec: Arc::new(AtomicU64::new(0)),
+            downloaded_image_count: Arc::new(AtomicU32::new(0)),
+            total_image_count: Arc::new(AtomicU32::new(0)),
         };
 
         tokio::spawn(manager.clone().log_download_speed());
@@ -80,7 +84,6 @@ impl DownloadManager {
     #[allow(clippy::cast_possible_truncation)]
     async fn process_episode(self, ep: Episode) -> anyhow::Result<()> {
         emit_pending_event(&self.app, ep.ep_id, ep.ep_title.clone());
-        let _permit = self.ep_sem.acquire().await?;
 
         let config = self.app.state::<RwLock<Config>>();
         let cookie = config.read_or_panic().get_cookie();
@@ -97,10 +100,13 @@ impl DownloadManager {
             .map(|data| (data.url, data.token))
             .map(|(url, token)| format!("{url}?token={token}"))
             .collect();
-        let current = Arc::new(AtomicU32::new(0));
         let total = urls.len() as u32;
+        // 记录总共需要下载的图片数量
+        self.total_image_count.fetch_add(total, Ordering::Relaxed);
+        let current = Arc::new(AtomicU32::new(0));
         let mut tasks = Vec::with_capacity(total as usize);
-        // 开始下载
+        // 限制同时下载的章节数量
+        let permit = self.ep_sem.acquire().await?;
         emit_start_event(&self.app, ep.ep_id, ep.ep_title.clone(), total);
         for (i, url) in urls.iter().enumerate() {
             let manager = self.clone();
@@ -115,8 +121,25 @@ impl DownloadManager {
         // 等待所有下载任务完成
         for task in tasks {
             task.await?;
+            // 每张图片下载完成后，更新总体下载进度
+            self.downloaded_image_count.fetch_add(1, Ordering::Relaxed);
+            let downloaded_image_count = self.downloaded_image_count.load(Ordering::Relaxed);
+            let total_image_count = self.total_image_count.load(Ordering::Relaxed);
+            emit_update_overall_progress_event(
+                &self.app,
+                downloaded_image_count,
+                total_image_count,
+            );
         }
-        // 处理下载结果
+        drop(permit);
+        // 如果DownloadManager所有图片全部都已下载(无论成功或失败)，则清空下载进度
+        let downloaded_image_count = self.downloaded_image_count.load(Ordering::Relaxed);
+        let total_image_count = self.total_image_count.load(Ordering::Relaxed);
+        if downloaded_image_count == total_image_count {
+            self.downloaded_image_count.store(0, Ordering::Relaxed);
+            self.total_image_count.store(0, Ordering::Relaxed);
+        }
+        // 检查此章节的图片是否全部下载成功
         let current = current.load(Ordering::Relaxed);
         if current == total {
             // 下载成功，则把临时目录重命名为正式目录
@@ -143,7 +166,15 @@ impl DownloadManager {
         current: Arc<AtomicU32>,
     ) {
         // 下载图片
-        let image_data = match get_image_bytes(&url, self.img_sem.clone()).await {
+        let permit = match self.img_sem.acquire().await.map_err(anyhow::Error::from) {
+            Ok(permit) => permit,
+            Err(err) => {
+                let err = err.context("获取下载图片的semaphore失败");
+                emit_error_event(&self.app, ep_id, url, err.to_string_chain());
+                return;
+            }
+        };
+        let image_data = match get_image_bytes(&url).await {
             Ok(data) => data,
             Err(err) => {
                 let err = err.context(format!("下载图片 {url} 失败"));
@@ -151,6 +182,7 @@ impl DownloadManager {
                 return;
             }
         };
+        drop(permit);
         // 保存图片
         if let Err(err) = std::fs::write(&save_path, &image_data).map_err(anyhow::Error::from) {
             let err = err.context(format!("保存图片 {save_path:?} 失败"));
@@ -160,12 +192,12 @@ impl DownloadManager {
         // 记录下载字节数
         self.byte_per_sec
             .fetch_add(image_data.len() as u64, Ordering::Relaxed);
-        // 记录下载进度
+        // 更新章节下载进度
         let current = current.fetch_add(1, Ordering::Relaxed) + 1;
         emit_success_event(
             &self.app,
             ep_id,
-            save_path.to_string_lossy().to_string(),
+            save_path.to_string_lossy().to_string(), // TODO: 把save_path.to_string_lossy().to_string()保存到一个变量里，像current一样
             current,
         );
     }
@@ -181,9 +213,8 @@ fn get_download_dir(app: &AppHandle, ep: &Episode) -> anyhow::Result<PathBuf> {
     Ok(download_dir)
 }
 
-async fn get_image_bytes(url: &str, img_sem: Arc<Semaphore>) -> anyhow::Result<Bytes> {
-    let _permit = img_sem.acquire().await?;
-
+async fn get_image_bytes(url: &str) -> anyhow::Result<Bytes> {
+    // TODO: 添加重试规则
     let http_res = reqwest::get(url).await?;
 
     let status = http_res.status();
@@ -312,5 +343,21 @@ fn emit_error_event(app: &AppHandle, ep_id: i64, url: String, err_msg: String) {
 fn emit_end_event(app: &AppHandle, ep_id: i64, err_msg: Option<String>) {
     let payload = events::DownloadEpisodeEndEventPayload { ep_id, err_msg };
     let event = events::DownloadEpisodeEndEvent(payload);
+    let _ = event.emit(app);
+}
+
+#[allow(clippy::cast_lossless)]
+fn emit_update_overall_progress_event(
+    app: &AppHandle,
+    downloaded_image_count: u32,
+    total_image_count: u32,
+) {
+    let percentage: f64 = downloaded_image_count as f64 / total_image_count as f64;
+    let payload = events::UpdateOverallDownloadProgressEventPayload {
+        downloaded_image_count,
+        total_image_count,
+        percentage,
+    };
+    let event = events::UpdateOverallDownloadProgressEvent(payload);
     let _ = event.emit(app);
 }

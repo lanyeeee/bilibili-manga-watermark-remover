@@ -71,6 +71,10 @@ onMounted(async () => {
     }
     progresses.value.delete(payload.epId);
   });
+
+  await events.updateOverallDownloadProgressEvent.listen(({payload}) => {
+    console.log(`${payload.downloadedImageCount}/${payload.totalImageCount} ${payload.percentage}%`);
+  });
 });
 
 async function showDownloadDirInFileManager() {
