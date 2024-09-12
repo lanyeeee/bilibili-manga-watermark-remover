@@ -75,6 +75,9 @@ onMounted(async () => {
   await events.updateOverallDownloadProgressEvent.listen(({payload}) => {
     console.log(`${payload.downloadedImageCount}/${payload.totalImageCount} ${payload.percentage}%`);
   });
+  await events.downloadSpeedEvent.listen(({payload}) => {
+    console.log(`下载速度: ${payload.speed}`);
+  });
 });
 
 async function showDownloadDirInFileManager() {

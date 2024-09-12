@@ -16,9 +16,9 @@ use crate::download_manager::DownloadManager;
 //TODO: 用crate::events::*代替
 use crate::events::{
     DownloadEpisodeEndEvent, DownloadEpisodePendingEvent, DownloadEpisodeStartEvent,
-    DownloadImageErrorEvent, DownloadImageSuccessEvent, RemoveWatermarkEndEvent,
-    RemoveWatermarkErrorEvent, RemoveWatermarkStartEvent, RemoveWatermarkSuccessEvent,
-    UpdateOverallDownloadProgressEvent,
+    DownloadImageErrorEvent, DownloadImageSuccessEvent, DownloadSpeedEvent,
+    RemoveWatermarkEndEvent, RemoveWatermarkErrorEvent, RemoveWatermarkStartEvent,
+    RemoveWatermarkSuccessEvent, UpdateOverallDownloadProgressEvent,
 };
 
 mod commands;
@@ -67,6 +67,7 @@ async fn main() {
             DownloadImageErrorEvent,
             DownloadEpisodeEndEvent,
             UpdateOverallDownloadProgressEvent,
+            DownloadSpeedEvent,
         ]);
     // 只有在debug模式下才会生成bindings.ts
     #[cfg(debug_assertions)]

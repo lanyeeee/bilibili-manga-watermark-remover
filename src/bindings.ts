@@ -129,6 +129,7 @@ downloadEpisodePendingEvent: DownloadEpisodePendingEvent,
 downloadEpisodeStartEvent: DownloadEpisodeStartEvent,
 downloadImageErrorEvent: DownloadImageErrorEvent,
 downloadImageSuccessEvent: DownloadImageSuccessEvent,
+downloadSpeedEvent: DownloadSpeedEvent,
 removeWatermarkEndEvent: RemoveWatermarkEndEvent,
 removeWatermarkErrorEvent: RemoveWatermarkErrorEvent,
 removeWatermarkStartEvent: RemoveWatermarkStartEvent,
@@ -140,6 +141,7 @@ downloadEpisodePendingEvent: "download-episode-pending-event",
 downloadEpisodeStartEvent: "download-episode-start-event",
 downloadImageErrorEvent: "download-image-error-event",
 downloadImageSuccessEvent: "download-image-success-event",
+downloadSpeedEvent: "download-speed-event",
 removeWatermarkEndEvent: "remove-watermark-end-event",
 removeWatermarkErrorEvent: "remove-watermark-error-event",
 removeWatermarkStartEvent: "remove-watermark-start-event",
@@ -168,6 +170,8 @@ export type DownloadImageErrorEvent = DownloadImageErrorEventPayload
 export type DownloadImageErrorEventPayload = { epId: number; url: string; errMsg: string }
 export type DownloadImageSuccessEvent = DownloadImageSuccessEventPayload
 export type DownloadImageSuccessEventPayload = { epId: number; url: string; current: number }
+export type DownloadSpeedEvent = DownloadSpeedEventPayload
+export type DownloadSpeedEventPayload = { speed: string }
 export type Episode = { epId: number; epTitle: string; comicId: number; comicTitle: string; isLocked: boolean; isDownloaded: boolean }
 export type ImageFormat = "Jpeg" | "Png"
 export type JpgImageData = { info: JpgImageInfo; base64: string }
