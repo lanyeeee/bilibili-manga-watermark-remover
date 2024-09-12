@@ -2,7 +2,7 @@
 
 import {onMounted, ref} from "vue";
 import {events} from "../../bindings.ts";
-import {useNotification} from "naive-ui";
+import {NProgress, useNotification} from "naive-ui";
 import {showPathInFileManager} from "../../utils.ts";
 import {resourceDir} from "@tauri-apps/api/path";
 import {path} from "@tauri-apps/api";
@@ -13,11 +13,13 @@ type ProgressData = {
   current: number;
   total: number;
   percentage: number;
+  indicator: string;
 }
 
 const notification = useNotification();
 
 const progresses = ref<Map<number, ProgressData>>(new Map());
+const overallProgress = ref<ProgressData>({title: "总进度", current: 0, total: 0, percentage: 0, indicator: ""});
 
 onMounted(async () => {
   await events.downloadEpisodePendingEvent.listen(({payload}) => {
@@ -26,6 +28,7 @@ onMounted(async () => {
       current: 0,
       total: 0,
       percentage: 0,
+      indicator: ""
     };
     progresses.value.set(payload.epId, progressData);
   });
@@ -73,10 +76,14 @@ onMounted(async () => {
   });
 
   await events.updateOverallDownloadProgressEvent.listen(({payload}) => {
-    console.log(`${payload.downloadedImageCount}/${payload.totalImageCount} ${payload.percentage}%`);
+    overallProgress.value.percentage = payload.percentage;
+    overallProgress.value.current = payload.downloadedImageCount;
+    overallProgress.value.total = payload.totalImageCount;
+    console.log(payload);
   });
+
   await events.downloadSpeedEvent.listen(({payload}) => {
-    console.log(`下载速度: ${payload.speed}`);
+    overallProgress.value.indicator = payload.speed;
   });
 });
 
@@ -98,13 +105,18 @@ async function showDownloadDirInFileManager() {
       <n-text>下载列表</n-text>
       <n-button class="w-1/3" size="tiny" @click="showDownloadDirInFileManager">打开下载目录</n-button>
     </div>
-    <div class="grid grid-cols-[2fr_4fr_1fr]" v-for="[epId, {title, current, total, percentage}] in progresses"
-         :key="epId">
-      <span class="text-ellipsis whitespace-nowrap overflow-hidden">{{ title }}</span>
-      <n-progress :percentage="percentage"
-                  indicator-placement="inside">
+    <div class="grid grid-cols-[1fr_4fr_2fr]">
+      <span class="text-ellipsis whitespace-nowrap overflow-hidden">{{ overallProgress.title }}</span>
+      <n-progress :percentage="overallProgress.percentage" indicator-placement="inside" :height="21">
+        {{ overallProgress.indicator }}
       </n-progress>
-      <span>{{ current }}/{{ total }}</span>
+      <span>{{ overallProgress.current }}/{{ overallProgress.total }}</span>
+    </div>
+    <div class="grid grid-cols-[2fr_4fr_1fr]" v-for="[epId, {title, percentage, indicator}] in progresses"
+         :key="epId">
+      <span class="mb-1! text-ellipsis whitespace-nowrap overflow-hidden">{{ title }}</span>
+      <n-progress class="" :percentage="percentage"/>
+      <span>{{ indicator }}</span>
     </div>
   </div>
 </template>
