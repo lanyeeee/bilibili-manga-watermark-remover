@@ -11,6 +11,7 @@ use tauri::{AppHandle, Manager};
 use tauri_specta::Event;
 use tokio::sync::{mpsc, Semaphore};
 use tokio::sync::mpsc::Receiver;
+use tokio::task::JoinSet;
 
 use crate::config::Config;
 use crate::events;
@@ -106,7 +107,7 @@ impl DownloadManager {
         // 记录总共需要下载的图片数量
         self.total_image_count.fetch_add(total, Ordering::Relaxed);
         let current = Arc::new(AtomicU32::new(0));
-        let mut tasks = Vec::with_capacity(total as usize);
+        let mut join_set = JoinSet::new();
         // 限制同时下载的章节数量
         let permit = self.ep_sem.acquire().await?;
         emit_start_event(&self.app, ep.ep_id, ep.ep_title.clone(), total);
@@ -117,17 +118,15 @@ impl DownloadManager {
             let url = url.clone();
             let current = current.clone();
             // 创建下载任务
-            let task = tokio::spawn(manager.download_image(url, save_path, ep_id, current));
-            tasks.push(task);
+            join_set.spawn(manager.download_image(url, save_path, ep_id, current));
         }
-        // 等待所有下载任务完成
-        // TODO: 需要类似C#的Task.WhenAny方法来找到tasks中第一个完成的task，否则可能卡在某个拿不到semaphore的task上，导致总进度条的进度与实际下载进度不一致
-        for task in tasks {
-            task.await?;
-            // 每张图片下载完成后，更新总体下载进度
+        // 逐一处理完成的下载任务
+        while let Some(completed_task) = join_set.join_next().await {
+            completed_task?;
             self.downloaded_image_count.fetch_add(1, Ordering::Relaxed);
             let downloaded_image_count = self.downloaded_image_count.load(Ordering::Relaxed);
             let total_image_count = self.total_image_count.load(Ordering::Relaxed);
+            // 更新下载进度
             emit_update_overall_progress_event(
                 &self.app,
                 downloaded_image_count,
