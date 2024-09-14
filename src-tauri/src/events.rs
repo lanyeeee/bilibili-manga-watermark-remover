@@ -4,6 +4,15 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 use tauri_specta::Event;
 
+pub mod prelude {
+    pub use crate::events::{
+        DownloadEpisodeEndEvent, DownloadEpisodePendingEvent, DownloadEpisodeStartEvent,
+        DownloadImageErrorEvent, DownloadImageSuccessEvent, DownloadSpeedEvent,
+        RemoveWatermarkEndEvent, RemoveWatermarkErrorEvent, RemoveWatermarkStartEvent,
+        RemoveWatermarkSuccessEvent, UpdateOverallDownloadProgressEvent,
+    };
+}
+
 #[derive(Serialize, Deserialize, Clone, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct RemoveWatermarkStartEventPayload {

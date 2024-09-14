@@ -4,22 +4,10 @@
 
 use tauri::{Context, Manager, Wry};
 
-//TODO: 用crate::commands::*代替
-use crate::commands::{
-    download_episodes, generate_background, generate_qr_code, get_background_dir_abs_path,
-    get_background_dir_relative_path, get_bili_cookie_status_data, get_config, get_jpg_image_infos,
-    get_manga_dir_data, get_manga_episodes, get_qr_code_status_data, open_image, remove_watermark,
-    save_config, search_manga, show_path_in_file_manager,
-};
+use crate::commands::prelude::*;
 use crate::config::Config;
 use crate::download_manager::DownloadManager;
-//TODO: 用crate::events::*代替
-use crate::events::{
-    DownloadEpisodeEndEvent, DownloadEpisodePendingEvent, DownloadEpisodeStartEvent,
-    DownloadImageErrorEvent, DownloadImageSuccessEvent, DownloadSpeedEvent,
-    RemoveWatermarkEndEvent, RemoveWatermarkErrorEvent, RemoveWatermarkStartEvent,
-    RemoveWatermarkSuccessEvent, UpdateOverallDownloadProgressEvent,
-};
+use crate::events::prelude::*;
 
 mod commands;
 mod config;
