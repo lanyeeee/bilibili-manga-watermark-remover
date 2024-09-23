@@ -36,9 +36,7 @@
         "installMode": "perMachine",
         "displayLanguageSelector": true,
         "languages": [
-          "English",
-          "SimpChinese",
-          "TradChinese"
+          "SimpChinese"
         ]
       }
     }
