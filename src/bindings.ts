@@ -129,20 +129,24 @@ downloadEpisodePendingEvent: DownloadEpisodePendingEvent,
 downloadEpisodeStartEvent: DownloadEpisodeStartEvent,
 downloadImageErrorEvent: DownloadImageErrorEvent,
 downloadImageSuccessEvent: DownloadImageSuccessEvent,
+downloadSpeedEvent: DownloadSpeedEvent,
 removeWatermarkEndEvent: RemoveWatermarkEndEvent,
 removeWatermarkErrorEvent: RemoveWatermarkErrorEvent,
 removeWatermarkStartEvent: RemoveWatermarkStartEvent,
-removeWatermarkSuccessEvent: RemoveWatermarkSuccessEvent
+removeWatermarkSuccessEvent: RemoveWatermarkSuccessEvent,
+updateOverallDownloadProgressEvent: UpdateOverallDownloadProgressEvent
 }>({
 downloadEpisodeEndEvent: "download-episode-end-event",
 downloadEpisodePendingEvent: "download-episode-pending-event",
 downloadEpisodeStartEvent: "download-episode-start-event",
 downloadImageErrorEvent: "download-image-error-event",
 downloadImageSuccessEvent: "download-image-success-event",
+downloadSpeedEvent: "download-speed-event",
 removeWatermarkEndEvent: "remove-watermark-end-event",
 removeWatermarkErrorEvent: "remove-watermark-error-event",
 removeWatermarkStartEvent: "remove-watermark-start-event",
-removeWatermarkSuccessEvent: "remove-watermark-success-event"
+removeWatermarkSuccessEvent: "remove-watermark-success-event",
+updateOverallDownloadProgressEvent: "update-overall-download-progress-event"
 })
 
 /** user-defined constants **/
@@ -166,6 +170,8 @@ export type DownloadImageErrorEvent = DownloadImageErrorEventPayload
 export type DownloadImageErrorEventPayload = { epId: number; url: string; errMsg: string }
 export type DownloadImageSuccessEvent = DownloadImageSuccessEventPayload
 export type DownloadImageSuccessEventPayload = { epId: number; url: string; current: number }
+export type DownloadSpeedEvent = DownloadSpeedEventPayload
+export type DownloadSpeedEventPayload = { speed: string }
 export type Episode = { epId: number; epTitle: string; comicId: number; comicTitle: string; isLocked: boolean; isDownloaded: boolean }
 export type ImageFormat = "Jpeg" | "Png"
 export type JpgImageData = { info: JpgImageInfo; base64: string }
@@ -185,6 +191,8 @@ export type RemoveWatermarkStartEventPayload = { dirPath: string; total: number 
 export type RemoveWatermarkSuccessEvent = RemoveWatermarkSuccessEventPayload
 export type RemoveWatermarkSuccessEventPayload = { dirPath: string; imgPath: string; current: number }
 export type SearchData = { list: List[]; total_page: number; total_num: number; recommends: Recommend[]; similar: string; se_id: string; banner: Banner }
+export type UpdateOverallDownloadProgressEvent = UpdateOverallDownloadProgressEventPayload
+export type UpdateOverallDownloadProgressEventPayload = { downloadedImageCount: number; totalImageCount: number; percentage: number }
 export type Wiki = { id: number; title: string; origin_title: string; vertical_cover: string; producer: string; author_name: string[]; publish_time: string; frequency: string }
 
 /** tauri-specta globals **/

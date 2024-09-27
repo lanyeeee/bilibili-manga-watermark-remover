@@ -2,6 +2,7 @@
 import {ref} from "vue";
 import {commands, Episode, SearchData} from "../../bindings.ts";
 import {useNotification} from "naive-ui";
+import SearchResult from "./SearchResult.vue";
 
 const notification = useNotification();
 
@@ -12,11 +13,6 @@ const episodes = defineModel<Episode[] | undefined>("episodes", {required: true}
 
 const searchInput = ref("");
 const mangaIdInput = ref("");
-
-
-async function onSelectItem(id: number) {
-  await searchById(id);
-}
 
 async function searchByKeyword(keyword: string) {
   let result = await commands.searchManga(keyword);
@@ -53,7 +49,7 @@ async function searchById(id: number) {
 </script>
 
 <template>
-  <div class="flex flex-col">
+  <div class="h-full flex flex-col">
     <div class="flex flex-1">
       <n-input class="text-align-left"
                size="tiny"
@@ -81,20 +77,6 @@ async function searchById(id: number) {
       </n-input>
       <n-button size="tiny" @click="searchById(Number(mangaIdInput.trim()))">直达</n-button>
     </div>
-    <div class="flex flex-col flex-1 gap-row-2">
-      <n-button v-for="item in searchData?.list"
-                :key="item.id"
-                @click="onSelectItem(item.id)"
-                class="overflow-hidden">
-        {{ item.real_title }} by：
-        <span v-html="item.author_name[0]" class="text-gray"></span>
-      </n-button>
-    </div>
+    <search-result :on-click-item="searchById" :search-data="searchData"/>
   </div>
 </template>
-
-<style scoped>
-:deep(.n-button__content) {
-  @apply inline-block overflow-hidden text-ellipsis;
-}
-</style>

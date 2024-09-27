@@ -5,7 +5,7 @@ use path_slash::PathBufExt;
 use tauri::AppHandle;
 use walkdir::WalkDir;
 
-use crate::commands::open_image;
+use crate::commands::open_image::open_image;
 use crate::errors::CommandResult;
 use crate::types::{CommandResponse, MangaDirData};
 use crate::utils;
