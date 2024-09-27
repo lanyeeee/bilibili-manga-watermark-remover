@@ -4,6 +4,15 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 use tauri_specta::Event;
 
+pub mod prelude {
+    pub use crate::events::{
+        DownloadEpisodeEndEvent, DownloadEpisodePendingEvent, DownloadEpisodeStartEvent,
+        DownloadImageErrorEvent, DownloadImageSuccessEvent, DownloadSpeedEvent,
+        RemoveWatermarkEndEvent, RemoveWatermarkErrorEvent, RemoveWatermarkStartEvent,
+        RemoveWatermarkSuccessEvent, UpdateOverallDownloadProgressEvent,
+    };
+}
+
 #[derive(Serialize, Deserialize, Clone, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct RemoveWatermarkStartEventPayload {
@@ -88,3 +97,21 @@ pub struct DownloadEpisodeEndEventPayload {
 }
 #[derive(Serialize, Deserialize, Clone, Type, Event)]
 pub struct DownloadEpisodeEndEvent(pub DownloadEpisodeEndEventPayload);
+
+#[derive(Serialize, Deserialize, Clone, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateOverallDownloadProgressEventPayload {
+    pub downloaded_image_count: u32,
+    pub total_image_count: u32,
+    pub percentage: f64,
+}
+#[derive(Serialize, Deserialize, Clone, Type, Event)]
+pub struct UpdateOverallDownloadProgressEvent(pub UpdateOverallDownloadProgressEventPayload);
+
+#[derive(Serialize, Deserialize, Clone, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct DownloadSpeedEventPayload {
+    pub speed: String,
+}
+#[derive(Serialize, Deserialize, Clone, Type, Event)]
+pub struct DownloadSpeedEvent(pub DownloadSpeedEventPayload);
