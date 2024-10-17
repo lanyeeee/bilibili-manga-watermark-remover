@@ -21,8 +21,8 @@ importers:
         specifier: '>=2.0.0-beta.0'
         version: 2.0.0-beta.6
       '@viselect/vue':
-        specifier: ^3.5.1
-        version: 3.5.1(vue@3.4.31(typescript@5.5.2))
+        specifier: ^3.6.0
+        version: 3.6.0(vue@3.4.31(typescript@5.5.2))
       vue:
         specifier: ^3.3.4
         version: 3.4.31(typescript@5.5.2)
@@ -695,11 +695,11 @@ packages:
     peerDependencies:
       vite: ^2.9.0 || ^3.0.0-0 || ^4.0.0 || ^5.0.0-0
 
-  '@viselect/vanilla@3.5.1':
-    resolution: {integrity: sha512-qsHOoFd97MkSQREAvHHylBq5jVIsUYt+Bt/E2ncUIJLV7izKZVNX+UgNIgmeAyvW9qKLzUDft5bOab1aUXHYdw==}
+  '@viselect/vanilla@3.6.0':
+    resolution: {integrity: sha512-YVr1zr53vCZ9HLlLF3xURB4JpVzl8ZPI2InCxXPbjup6EmsO9aNG8v6z5AepjekRqj8R0l58sVCXx9S9+2mg0w==}
 
-  '@viselect/vue@3.5.1':
-    resolution: {integrity: sha512-ZB51vljlJUGAsf85L/gyy2U+vNeYX2z8bKwDWYbc+GJUHPGy2rjydxDp+Rih1Sg8PB4e3V5L3aOnyWP1ceMuDg==}
+  '@viselect/vue@3.6.0':
+    resolution: {integrity: sha512-J4lN4p7YhWEph+Usnbo+CS+RateBcAfu/ni2sLLcPTB0bG8G2t8NHSmzNl4Yjdt/y0OK0AztIVlCCaOb6xm1bA==}
     peerDependencies:
       vue: '>=3.2.0'
 
@@ -2007,11 +2007,11 @@ snapshots:
     transitivePeerDependencies:
       - rollup
 
-  '@viselect/vanilla@3.5.1': {}
+  '@viselect/vanilla@3.6.0': {}
 
-  '@viselect/vue@3.5.1(vue@3.4.31(typescript@5.5.2))':
+  '@viselect/vue@3.6.0(vue@3.4.31(typescript@5.5.2))':
     dependencies:
-      '@viselect/vanilla': 3.5.1
+      '@viselect/vanilla': 3.6.0
       vue: 3.4.31(typescript@5.5.2)
 
   '@vitejs/plugin-vue@5.0.5(vite@5.3.2)(vue@3.4.31(typescript@5.5.2))':
