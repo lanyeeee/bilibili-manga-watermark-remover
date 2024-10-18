@@ -20,18 +20,12 @@ const dropdownOptions = [
 ];
 const checkedIds = ref<number[]>([]);
 const selectedIds = ref<Set<number>>(new Set());
-//记录这次框选是否改动了选中的元素
-const selectedChanged = ref(false);
 const selectionAreaRef = ref<InstanceType<typeof SelectionArea>>();
 
 watch(episodes, () => {
   checkedIds.value = [];
   selectedIds.value.clear();
   selectionAreaRef.value?.selection?.clearSelection();
-});
-
-watch(selectedIds.value, () => {
-  selectedChanged.value = true;
 });
 
 function extractIds(elements: Element[]): number[] {
@@ -45,23 +39,6 @@ function extractIds(elements: Element[]): number[] {
         }
         return !ep.isLocked && !ep.isDownloaded;
       });
-}
-
-function onMouseDown(event: MouseEvent) {
-  if (event.ctrlKey || event.metaKey) {
-    return;
-  }
-  if (event?.button === 0) {
-    selectedChanged.value = false;
-  }
-}
-
-function onMouseUp(event: MouseEvent) {
-  // 如果是左键点击，且没有改动选中的元素，则清空选中
-  if (event?.button === 0 && !selectedChanged.value) {
-    selectedIds.value.clear();
-    selectionAreaRef.value?.selection?.clearSelection();
-  }
 }
 
 function onDragStart({event, selection}: SelectionEvent) {
@@ -165,10 +142,8 @@ async function refreshEpisodes() {
     <SelectionArea v-else
                    ref="selectionAreaRef"
                    class="selection-container"
-                   :options="{selectables: '.selectable'} as SelectionOptions"
+                   :options="{selectables: '.selectable', features: {deselectOnBlur: true}} as SelectionOptions"
                    @contextmenu="onContextMenu"
-                   @mousedown="onMouseDown"
-                   @mouseup="onMouseUp"
                    @move="onDragMove"
                    @start="onDragStart">
       <n-checkbox-group v-model:value="checkedIds" class="grid grid-cols-3 gap-1.5 w-full">
