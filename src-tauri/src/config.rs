@@ -32,8 +32,7 @@ impl Config {
         } else {
             default_config
         };
-        // TODO: 没必要用&app, 直接用app就行
-        config.save(&app)?;
+        config.save(app)?;
         Ok(config)
     }
 
