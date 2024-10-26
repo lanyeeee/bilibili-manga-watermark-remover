@@ -59,6 +59,9 @@ https://github.com/user-attachments/assets/dc9bbcc5-28e5-4f48-bb19-fc74ada758e6
 - [极个别图片去除水印失败](https://github.com/lanyeeee/bilibili-manga-watermark-remover/discussions/5)
 - [同一本漫画，正文尺寸相同，但是水印不同](https://github.com/lanyeeee/bilibili-manga-watermark-remover/discussions/8)
 
+# 哔哩哔哩漫画下载器
+[![Readme Card](https://github-readme-stats.vercel.app/api/pin/?username=lanyeeee&repo=bilibili-manga-downloader)](https://github.com/lanyeeee/bilibili-manga-downloader)  
+
 # 去水印原理
 
 本工具的去水印算法基于[这个项目](https://github.com/yuchenxi2000/bilibili-watermark/tree/master)
