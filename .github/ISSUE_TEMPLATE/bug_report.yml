@@ -3,6 +3,13 @@ description: 反馈遇到的问题
 labels: [bug]
 title: "[Bug] 修改我！"
 body:
+  - type: checkboxes
+    attributes:
+      label: 在提问之前
+      description: 请先查看[常见问题](https://github.com/lanyeeee/bilibili-manga-watermark-remover?tab=readme-ov-file#%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98)
+      options:
+        - label: 我已经查看了[常见问题](https://github.com/lanyeeee/bilibili-manga-watermark-remover?tab=readme-ov-file#%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98)，我确定这个问题不在其中
+          required: true
   - type: markdown
     attributes:
       value: |
