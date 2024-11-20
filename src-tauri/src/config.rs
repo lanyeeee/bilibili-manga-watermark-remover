@@ -13,7 +13,6 @@ pub struct Config {
     pub output_dir: PathBuf,
     pub output_format: ImageFormat,
     pub output_optimize: bool,
-    pub bili_cookie: String,
 }
 
 impl Config {
@@ -24,7 +23,6 @@ impl Config {
             output_dir: resource_dir,
             output_format: ImageFormat::Jpeg,
             output_optimize: false,
-            bili_cookie: String::new(),
         };
         let config = if config_path.exists() {
             let config_string = std::fs::read_to_string(config_path)?;
@@ -42,9 +40,5 @@ impl Config {
         let config_string = serde_json::to_string_pretty(self)?;
         std::fs::write(config_path, config_string)?;
         Ok(())
-    }
-
-    pub fn get_cookie(&self) -> String {
-        format!("SESSDATA={}", self.bili_cookie)
     }
 }
