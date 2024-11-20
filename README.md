@@ -4,7 +4,7 @@
     <img src="https://github.com/user-attachments/assets/b6526d0d-49c3-41ae-93d8-509d67eedaa8" width="200" style="align-self: center"/>
 </p>
 
-bilibili漫画 哔哩哔哩漫画 B漫 去水印工具，带图形界面，带下载功能，图形界面基于[Tauri](https://v2.tauri.app/start/)
+bilibili漫画 哔哩哔哩漫画 B漫 去水印工具(无痕 无损)，带图形界面，图形界面基于[Tauri](https://v2.tauri.app/start/)
 
 在[Release页面](https://github.com/lanyeeee/bilibili-manga-watermark-remover/releases)可以直接下载
 
@@ -41,17 +41,6 @@ https://github.com/user-attachments/assets/f7ad65d0-4211-4fe3-b090-419a722b2e45
 
 https://github.com/user-attachments/assets/52666942-27df-4e39-9dc1-dfcbe0461c44
 
-### 下载
-
-下面的视频演示了漫画下载的基本功能
-
-- 漫画搜索
-- 扫码登录
-- Cookie有效性检测
-- 框选、全选
-- 漫画下载
-
-https://github.com/user-attachments/assets/dc9bbcc5-28e5-4f48-bb19-fc74ada758e6
 
 # 常见问题
 
@@ -113,9 +102,9 @@ pnpm tauri build
 # 提交PR
 **PR请提交至`develop`分支**
 
-**如果想新加一个功能，请先开个`issue`讨论一下，避免无效工作**  
+**如果想新加一个功能，请先开个`issue`或`discussion`讨论一下，避免无效工作**  
 
-其他情况的PR欢迎直接提交至`develop`分支，比如：
+其他情况的PR欢迎直接提交，比如：
 1. 对原有功能的改进
 2. 修复BUG
 3. 使用更轻量的库实现原有功能
@@ -131,5 +120,5 @@ pnpm tauri build
 - 作者不对用户使用本工具的行为负责，包括但不限于用户违反法律或任何第三方权益的行为
 # 其他
 
-任何使用中遇到的问题、任何希望添加的功能，都欢迎提交issue交流，我会尽力解决
+任何使用中遇到的问题、任何希望添加的功能，都欢迎提交issue或开discussion交流，我会尽力解决
 
