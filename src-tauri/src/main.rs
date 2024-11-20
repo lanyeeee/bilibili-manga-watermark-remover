@@ -6,16 +6,13 @@ use tauri::{Context, Manager, Wry};
 
 use crate::commands::prelude::*;
 use crate::config::Config;
-use crate::download_manager::DownloadManager;
 use crate::events::prelude::*;
 
 mod commands;
 mod config;
-mod download_manager;
 mod errors;
 mod events;
 mod extensions;
-mod responses;
 mod types;
 mod utils;
 
@@ -37,25 +34,12 @@ async fn main() {
             get_background_dir_abs_path,
             get_config,
             save_config,
-            search_manga,
-            generate_qr_code,
-            get_qr_code_status_data,
-            get_bili_cookie_status_data,
-            download_episodes,
-            get_manga_episodes,
         ])
         .events(tauri_specta::collect_events![
             RemoveWatermarkStartEvent,
             RemoveWatermarkSuccessEvent,
             RemoveWatermarkErrorEvent,
             RemoveWatermarkEndEvent,
-            DownloadEpisodePendingEvent,
-            DownloadEpisodeStartEvent,
-            DownloadImageSuccessEvent,
-            DownloadImageErrorEvent,
-            DownloadEpisodeEndEvent,
-            UpdateOverallDownloadProgressEvent,
-            DownloadSpeedEvent,
         ]);
     // 只有在debug模式下才会生成bindings.ts
     #[cfg(debug_assertions)]
@@ -76,9 +60,7 @@ async fn main() {
         .invoke_handler(builder.invoke_handler())
         .setup(move |app| {
             builder.mount_events(app);
-            let download_manager = DownloadManager::new(app.handle().clone());
             let config = std::sync::RwLock::new(Config::new(app.handle())?);
-            app.manage(download_manager);
             app.manage(config);
             Ok(())
         })
