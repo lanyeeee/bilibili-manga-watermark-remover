@@ -27,22 +27,3 @@ pub fn get_background_dir_abs_path(
     let abs_path = resource_dir.join(relative_path);
     Ok(abs_path)
 }
-
-pub fn filename_filter(s: &str) -> String {
-    s.chars()
-        .map(|c| match c {
-            '\\' | '/' => ' ',
-            ':' => '：',
-            '*' => '⭐',
-            '?' => '？',
-            '"' => '\'',
-            '<' => '《',
-            '>' => '》',
-            '|' => '丨',
-            '.' => '·',
-            _ => c,
-        })
-        .collect::<String>()
-        .trim()
-        .to_string()
-}
