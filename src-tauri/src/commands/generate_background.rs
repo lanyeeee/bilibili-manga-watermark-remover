@@ -1,15 +1,14 @@
 use std::path::PathBuf;
-use std::sync::Mutex;
 
 use anyhow::Context;
 use image::RgbImage;
+use parking_lot::Mutex;
 use path_slash::PathBufExt;
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 use tauri::AppHandle;
 use walkdir::WalkDir;
 
 use crate::errors::CommandResult;
-use crate::extensions::IgnoreLockPoison;
 use crate::types::{CommandResponse, RectData};
 use crate::utils;
 
@@ -45,8 +44,8 @@ pub fn generate_background(
     // 用于记录是否找到了黑色背景和白色背景的水印图片
     let black_status: Mutex<Option<()>> = Mutex::new(None);
     let white_status: Mutex<Option<()>> = Mutex::new(None);
-    let black_found = || black_status.lock_or_panic().is_some();
-    let white_found = || white_status.lock_or_panic().is_some();
+    let black_found = || black_status.lock().is_some();
+    let white_found = || white_status.lock().is_some();
     // 并发遍历image_paths
     let image_paths = image_paths.par_iter();
     image_paths.try_for_each(|path| -> anyhow::Result<()> {
@@ -75,9 +74,9 @@ pub fn generate_background(
         let output_path = output_dir.join(filename);
         // 保存黑色背景或白色背景的水印图片
         let mut background_path = if is_black {
-            black_status.lock_or_panic()
+            black_status.lock()
         } else {
-            white_status.lock_or_panic()
+            white_status.lock()
         };
         // 如果background_path是None，则把output_path赋值给background_path，并保存图片
         if background_path.is_none() {

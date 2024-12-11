@@ -278,6 +278,7 @@ dependencies = [
  "image",
  "imagesize",
  "jpeg-encoder",
+ "parking_lot",
  "path-slash",
  "qrcode",
  "rayon",
