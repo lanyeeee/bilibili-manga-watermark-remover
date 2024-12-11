@@ -2,6 +2,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 #![warn(clippy::unwrap_used)]
 
+use parking_lot::RwLock;
 use tauri::{Context, Manager, Wry};
 
 use crate::commands::prelude::*;
@@ -60,7 +61,7 @@ async fn main() {
         .invoke_handler(builder.invoke_handler())
         .setup(move |app| {
             builder.mount_events(app);
-            let config = std::sync::RwLock::new(Config::new(app.handle())?);
+            let config = RwLock::new(Config::new(app.handle())?);
             app.manage(config);
             Ok(())
         })

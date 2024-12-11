@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 use std::io::BufWriter;
 use std::path::{Path, PathBuf};
-use std::sync::Mutex;
 
 use anyhow::{anyhow, Context};
-use image::{Rgb, RgbImage};
 use image::codecs::png::PngEncoder;
+use image::{Rgb, RgbImage};
+use parking_lot::Mutex;
 use path_slash::PathBufExt;
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 use tauri::AppHandle;
@@ -14,7 +14,6 @@ use walkdir::WalkDir;
 
 use crate::errors::CommandResult;
 use crate::events;
-use crate::extensions::IgnoreLockPoison;
 use crate::types::{CommandResponse, ImageFormat, JpgImageData};
 
 #[tauri::command(async)]
@@ -72,7 +71,7 @@ pub fn remove_watermark(
                 .context(format!("保存图片 {} 失败", out_image_path.display()))?;
             // 更新目录的进度
             let (current, total) = {
-                let mut dir_progress = dir_progress.lock_or_panic();
+                let mut dir_progress = dir_progress.lock();
                 let (current, total) = dir_progress
                     .get_mut(dir)
                     .ok_or(anyhow!("目录 {} 的进度不存在", dir.display()))?;
