@@ -26,6 +26,7 @@ pub fn generate_background(
     height: u32,
 ) -> CommandResult<CommandResponse<()>> {
     let output_dir = utils::get_background_dir_abs_path(&app, manga_dir, width, height)?;
+    // TODO: 给RectData实现Default trait，以替换下面的代码
     let default_rect_data = RectData {
         left: (width as f32 * 0.835) as u32,
         top: (height as f32 * 0.946) as u32,
@@ -33,36 +34,38 @@ pub fn generate_background(
         bottom: (height as f32 * 0.994) as u32,
     };
     let rect_data = rect_data.unwrap_or(default_rect_data);
+    // TODO: 删除下面的代码
     // let res = watermark::generate_background(manga_dir, &rect_data, &output_dir, width, height)?;
     // Ok(res)
 
     // 保证输出目录存在
+    // TODO: 将各种.display()换成 {:?}
     std::fs::create_dir_all(&output_dir)
         .context(format!("创建目录 {} 失败", output_dir.display()))?;
     // 收集尺寸符合width和height的图片的路径
     let image_paths = create_image_paths(manga_dir, width, height);
-    // 用于记录是否找到了黑色背景和白色背景的水印图片
-    let black_status: Mutex<Option<()>> = Mutex::new(None);
-    let white_status: Mutex<Option<()>> = Mutex::new(None);
-    let black_found = || black_status.lock().is_some();
-    let white_found = || white_status.lock().is_some();
+    // 用于保存各种符合条件的背景水印图
+    let backgrounds = Mutex::new(vec![]);
+    // 用于标记是否找到了黑色和白色背景水印图
+    let background_pair_found = Mutex::new(false);
     // 并发遍历image_paths
     let image_paths = image_paths.par_iter();
     image_paths.try_for_each(|path| -> anyhow::Result<()> {
-        // 如果black_path和white_path都已经找到了，则直接跳过
-        if black_found() && white_found() {
+        // 如果已经找到了黑色和白色背景水印图，则直接返回
+        if *background_pair_found.lock() {
             return Ok(());
         }
+
         let mut img = image::open(path)
             .context(format!("打开图片 {} 失败", path.display()))?
             .to_rgb8();
-        let (left, top) = (rect_data.left, rect_data.top);
-        let (right, bottom) = (rect_data.right, rect_data.bottom);
-        // 检查图片是否满足黑色或白色背景的条件
-        let Some(is_black) = is_black_background(&img, &rect_data) else {
+        // 如果图片不满足背景的条件，则直接跳过
+        if !is_background(&img, &rect_data) {
             return Ok(());
         };
         // 获取左上角的颜色
+        let (left, top) = (rect_data.left, rect_data.top);
+        let (right, bottom) = (rect_data.right, rect_data.bottom);
         let color = *img.get_pixel(left, top);
         // 把截图区域外的像素点设置为左上角的颜色
         for (x, y, pixel) in img.enumerate_pixels_mut() {
@@ -70,37 +73,61 @@ pub fn generate_background(
                 *pixel = color;
             }
         }
-        let filename = if is_black { "black.png" } else { "white.png" };
-        let output_path = output_dir.join(filename);
-        // 保存黑色背景或白色背景的水印图片
-        let mut background_path = if is_black {
-            black_status.lock()
-        } else {
-            white_status.lock()
-        };
-        // 如果background_path是None，则把output_path赋值给background_path，并保存图片
-        if background_path.is_none() {
-            *background_path = Some(());
-            // 因为save是耗时操作，所以在这里手动释放锁
-            drop(background_path);
-            img.save(&output_path)
-                .context(format!("保存图片 {} 失败", output_path.display()))?;
+        let mut backgrounds = backgrounds.lock();
+        backgrounds.push(img);
+        // 按照像素值排序，保证黑色背景水印图在前，白色背景水印图在后
+        backgrounds.sort_by(|a, b| {
+            let a_color = a.get_pixel(0, 0);
+            let b_color = b.get_pixel(0, 0);
+            a_color[0].cmp(&b_color[0])
+        });
+        if backgrounds.len() < 2 {
+            return Ok(());
         }
+
+        let black = &backgrounds[0];
+        let white = &backgrounds[backgrounds.len() - 1];
+        // 如果黑色和白色背景水印图的像素值差异大于50，则认为找到了黑色和白色背景水印图
+        let black_color = black.get_pixel(0, 0);
+        let white_color = white.get_pixel(0, 0);
+        if white_color[0] - black_color[0] > 50 {
+            *background_pair_found.lock() = true;
+        }
+
         Ok(())
     })?;
+
+    let backgrounds = std::mem::take(&mut *backgrounds.lock());
+    // 如果有第一张背景水印图，则将其保存为黑色背景
+    if let Some(black) = backgrounds.first() {
+        let black_output_path = output_dir.join("black.png");
+        black
+            .save(&black_output_path)
+            .context(format!("保存图片 {} 失败", black_output_path.display()))?;
+    }
+    // 如果找到了黑色和白色背景水印图
+    if *background_pair_found.lock() {
+        // 把最后一张背景水印图保存为白色背景
+        let white = &backgrounds[backgrounds.len() - 1];
+        let white_output_path = output_dir.join("white.png");
+        white
+            .save(&white_output_path)
+            .context(format!("保存图片 {} 失败", white_output_path.display()))?;
+    }
+
     let mut res = CommandResponse {
         code: 0,
         msg: String::new(),
         data: (),
     };
-    if !black_found() {
+    if backgrounds.is_empty() {
         res.code = -1;
-        res.msg += format!("找不到尺寸为({width}x{height})的黑色背景水印图\n").as_str();
-    };
-    if !white_found() {
+        res.msg += format!("找不到尺寸为({width}x{height})的背景水印图\n").as_str();
+    } else if backgrounds.len() == 1 {
         res.code = -1;
-        res.msg += format!("找不到尺寸为({width}x{height})的白色背景水印图\n").as_str();
+        res.msg += format!("只找到一张尺寸为({width}x{height})的背景水印图\n").as_str();
     };
+
     Ok(res)
 }
 
@@ -131,29 +158,29 @@ fn create_image_paths(manga_dir: &str, width: u32, height: u32) -> Vec<PathBuf> 
     image_paths
 }
 
-/// 检查图片`img`是否满足黑色背景的条件，如果返回`None`则表示既不满足黑色背景的条件也不满足白色背景的条件
+/// 检查图片`img`是否满足背景的条件
 #[allow(clippy::cast_precision_loss)]
-fn is_black_background(img: &RgbImage, rect_data: &RectData) -> Option<bool> {
+fn is_background(img: &RgbImage, rect_data: &RectData) -> bool {
     let (left, top) = (rect_data.left, rect_data.top);
     let (right, bottom) = (rect_data.right, rect_data.bottom);
     let inside_rect = |x: u32, y: u32| x >= left && x <= right && y >= top && y <= bottom;
     // 获取左上角的颜色
     let color = *img.get_pixel(left, top);
     let [r, g, b] = color.0;
-    // 如果r,g,b通道之间不相等，则不满足黑色背景或白色背景的条件
+    // 如果r,g,b通道之间不相等，则不满足背景的条件
     if r != g || g != b {
-        return None;
+        return false;
     }
-    // 如果截图区域的左右两边的颜色有一个与左上角的颜色不同，则不满足黑色背景或白色背景的条件
+    // 如果截图区域的左右两边的颜色有一个与左上角的颜色不同，则不满足背景的条件
     for y in top..=bottom {
         if img.get_pixel(left, y) != &color || img.get_pixel(right, y) != &color {
-            return None;
+            return false;
         }
     }
-    // 如果截图区域的上下两边的颜色有一个与左上角的颜色不同，则不满足黑色背景或白色背景的条件
+    // 如果截图区域的上下两边的颜色有一个与左上角的颜色不同，则不满足背景的条件
     for x in left..=right {
         if img.get_pixel(x, top) != &color || img.get_pixel(x, bottom) != &color {
-            return None;
+            return false;
         }
     }
     // 统计rect_data区域内color颜色的像素点数量
@@ -161,21 +188,9 @@ fn is_black_background(img: &RgbImage, rect_data: &RectData) -> Option<bool> {
         .enumerate_pixels()
         .filter(|(x, y, &pixel)| inside_rect(*x, *y) && pixel == color)
         .count();
-    // 如果rect_data区域内的像素点数量大于总数的90%，则返回None
+    // 如果rect_data区域内的像素点数量大于总数的90%，则不满足背景的条件
     if color_count as f32 / ((right - left + 1) * (bottom - top + 1)) as f32 > 0.9 {
-        return None;
+        return false;
     }
-    // 如果color所有通道的值都小于25，则认为是黑色背景
-    let is_black = r <= 25;
-    // 如果color所有通道的值都大于230，并且截图区域内的通道值都大于100(小于100一般是页码)，则认为是白色背景
-    let is_white = r >= 230
-        && img
-            .enumerate_pixels()
-            .filter(|(x, y, _)| inside_rect(*x, *y)) //矩形区域内的像素
-            .all(|(_, _, pixel)| pixel.0[0] > 100); // 通道值大于100
-    match (is_black, is_white) {
-        (true, false) => Some(true),
-        (false, true) => Some(false),
-        _ => None,
-    }
+    true
 }
