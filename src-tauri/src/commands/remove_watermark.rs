@@ -201,9 +201,9 @@ fn remove_image_watermark(black: &RgbImage, white: &RgbImage, img: &mut RgbImage
         let [white_r, white_g, white_b] = white.get_pixel(x, y).0;
         // 计算去除水印后的像素点值，将f32转换为u8自带clamp功能
         let watermark_removed_pixel = Rgb([
-            ((img_r as f32 - black_r as f32) / ((white_r - black_r) as f32 / 255.0)) as u8,
-            ((img_g as f32 - black_g as f32) / ((white_g - black_g) as f32 / 255.0)) as u8,
-            ((img_b as f32 - black_b as f32) / ((white_b - black_b) as f32 / 255.0)) as u8,
+            ((img_r as f64 - black_r as f64) / ((white_r - black_r) as f64 / 255.0)).round() as u8,
+            ((img_g as f64 - black_g as f64) / ((white_g - black_g) as f64 / 255.0)).round() as u8,
+            ((img_b as f64 - black_b as f64) / ((white_b - black_b) as f64 / 255.0)).round() as u8,
         ]);
         // 将去除水印后的像素点值写入到图片缓冲区中
         *img_pixel = watermark_removed_pixel;
