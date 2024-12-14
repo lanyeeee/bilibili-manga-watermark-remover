@@ -1,10 +1,8 @@
-use std::sync::RwLock;
-
+use parking_lot::RwLock;
 use tauri::{AppHandle, State};
 
 use crate::config::Config;
 use crate::errors::CommandResult;
-use crate::extensions::IgnoreRwLockPoison;
 use crate::types::CommandResponse;
 
 #[tauri::command(async)]
@@ -15,7 +13,7 @@ pub fn save_config(
     config_state: State<RwLock<Config>>,
     config: Config,
 ) -> CommandResult<CommandResponse<()>> {
-    let mut config_state = config_state.write_or_panic();
+    let mut config_state = config_state.write();
     *config_state = config;
     config_state.save(&app)?;
     Ok(CommandResponse {
