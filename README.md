@@ -49,6 +49,7 @@ https://github.com/user-attachments/assets/52666942-27df-4e39-9dc1-dfcbe0461c44
 - [生成背景水印图失败](https://github.com/lanyeeee/bilibili-manga-watermark-remover/discussions/1)
 - [极个别图片去除水印失败](https://github.com/lanyeeee/bilibili-manga-watermark-remover/discussions/5)
 - [同一本漫画，正文尺寸相同，但是水印不同](https://github.com/lanyeeee/bilibili-manga-watermark-remover/discussions/8)
+- [白色背景水印图被命名为black.png](https://github.com/lanyeeee/bilibili-manga-watermark-remover/discussions/55)
 
 # 哔哩哔哩漫画下载器
 [![Readme Card](https://github-readme-stats.vercel.app/api/pin/?username=lanyeeee&repo=bilibili-manga-downloader)](https://github.com/lanyeeee/bilibili-manga-downloader)  
