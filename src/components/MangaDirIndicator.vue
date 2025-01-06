@@ -74,10 +74,9 @@ async function autoGenerateSingle(width: number, height: number) {
         <n-button size="tiny" @click="showCropper(dirData.width, dirData.height)">手动截取水印</n-button>
         <span v-if="dirData.blackBackground !== null && dirData.whiteBackground !== null">✅将被去除水印</span>
         <span v-else-if="dirData.blackBackground === null && dirData.whiteBackground === null">
-          ❌将被复制，因为缺少黑色和白色背景水印图
+          ❌将被复制，因为缺少2张背景水印图
         </span>
-        <span v-else-if="dirData.blackBackground === null">❌将被复制，因为缺少黑色背景水印图</span>
-        <span v-else-if="dirData.whiteBackground === null">❌将被复制，因为缺少白色背景水印图</span>
+        <span v-else>❌将被复制，因为只有1张背景水印图</span>
       </span>
     </div>
   </div>
