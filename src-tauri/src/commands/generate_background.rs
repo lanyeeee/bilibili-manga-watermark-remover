@@ -34,9 +34,6 @@ pub fn generate_background(
         bottom: (height as f32 * 0.994) as u32,
     };
     let rect_data = rect_data.unwrap_or(default_rect_data);
-    // TODO: 删除下面的代码
-    // let res = watermark::generate_background(manga_dir, &rect_data, &output_dir, width, height)?;
-    // Ok(res)
 
     // 保证输出目录存在
     std::fs::create_dir_all(&output_dir).context(format!("创建目录 {output_dir:?} 失败"))?;
