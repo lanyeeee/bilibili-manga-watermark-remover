@@ -55,18 +55,28 @@ pub fn remove_watermark(
                 ))?;
             // 构建输出图片的路径(输出目录/漫画名/章节名/图片名)
             let out_image_path = output_dir.join(relative_path);
-            // 打开输入图片
-            let mut img = image::open(img_path)
-                .context(format!("打开图片 {img_path:?} 失败"))?
-                .to_rgb8();
-            let (width, height) = (img.width(), img.height());
+            // 获取图片的尺寸
+            let (width, height) = image::image_dimensions(img_path)
+                .context(format!("获取图片 {img_path:?} 的尺寸失败"))?;
             if let Some((black, white)) = backgrounds.get(&(width, height)) {
-                // 只有在backgrounds中找到了黑色背景和白色背景的水印图片才会去除水印
+                // 在backgrounds中找到了黑色背景和白色背景的水印图片，可以去除水印
+                let mut img = image::open(img_path)
+                    .context(format!("打开图片 {img_path:?} 失败"))?
+                    .to_rgb8();
+
                 remove_image_watermark(black, white, &mut img);
+
+                save_image(&img, &out_image_path, &format, optimize)
+                    .context(format!("保存图片 {out_image_path:?} 失败"))?;
+            } else {
+                // 否则，直接复制图片到输出目录
+                if let Some(parent) = out_image_path.parent() {
+                    // 保证输出目录存在
+                    std::fs::create_dir_all(parent).context(format!("创建目录 {parent:?} 失败"))?;
+                }
+                std::fs::copy(img_path, &out_image_path)
+                    .context(format!("复制图片 {img_path:?} 到 {out_image_path:?} 失败"))?;
             }
-            // 保存去除水印后的图片(无论是否成功去除水印都会保存)
-            save_image(&img, &out_image_path, &format, optimize)
-                .context(format!("保存图片 {out_image_path:?} 失败"))?;
             // 更新目录的进度
             let (current, total) = {
                 let mut dir_progress = dir_progress.lock();
