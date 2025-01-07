@@ -30,7 +30,7 @@ pub fn remove_watermark(
     let manga_dir = PathBuf::from_slash(manga_dir);
     let manga_dir_without_name = manga_dir
         .parent()
-        .ok_or(anyhow!("漫画目录 {} 的父目录不存在", manga_dir.display()))?;
+        .ok_or(anyhow!("漫画目录 {manga_dir:?} 的父目录不存在"))?;
     let output_dir = PathBuf::from_slash(output_dir);
     // (width, height) => (black, white)
     let backgrounds = create_backgrounds(&backgrounds_data)?;
@@ -51,30 +51,38 @@ pub fn remove_watermark(
             let relative_path = img_path
                 .strip_prefix(manga_dir_without_name)
                 .context(format!(
-                    "{} 不是 {} 的父目录",
-                    manga_dir_without_name.display(),
-                    img_path.display()
+                    "{manga_dir_without_name:?} 不是 {img_path:?} 的父目录"
                 ))?;
             // 构建输出图片的路径(输出目录/漫画名/章节名/图片名)
             let out_image_path = output_dir.join(relative_path);
-            // 打开输入图片
-            let mut img = image::open(img_path)
-                .context(format!("打开图片 {} 失败", img_path.display()))?
-                .to_rgb8();
-            let (width, height) = (img.width(), img.height());
+            // 获取图片的尺寸
+            let (width, height) = image::image_dimensions(img_path)
+                .context(format!("获取图片 {img_path:?} 的尺寸失败"))?;
             if let Some((black, white)) = backgrounds.get(&(width, height)) {
-                // 只有在backgrounds中找到了黑色背景和白色背景的水印图片才会去除水印
+                // 在backgrounds中找到了黑色背景和白色背景的水印图片，可以去除水印
+                let mut img = image::open(img_path)
+                    .context(format!("打开图片 {img_path:?} 失败"))?
+                    .to_rgb8();
+
                 remove_image_watermark(black, white, &mut img);
+
+                save_image(&img, &out_image_path, &format, optimize)
+                    .context(format!("保存图片 {out_image_path:?} 失败"))?;
+            } else {
+                // 否则，直接复制图片到输出目录
+                if let Some(parent) = out_image_path.parent() {
+                    // 保证输出目录存在
+                    std::fs::create_dir_all(parent).context(format!("创建目录 {parent:?} 失败"))?;
+                }
+                std::fs::copy(img_path, &out_image_path)
+                    .context(format!("复制图片 {img_path:?} 到 {out_image_path:?} 失败"))?;
             }
-            // 保存去除水印后的图片(无论是否成功去除水印都会保存)
-            save_image(&img, &out_image_path, &format, optimize)
-                .context(format!("保存图片 {} 失败", out_image_path.display()))?;
             // 更新目录的进度
             let (current, total) = {
                 let mut dir_progress = dir_progress.lock();
                 let (current, total) = dir_progress
                     .get_mut(dir)
-                    .ok_or(anyhow!("目录 {} 的进度不存在", dir.display()))?;
+                    .ok_or(anyhow!("目录 {dir:?} 的进度不存在"))?;
                 *current += 1;
                 (*current, *total)
             };
@@ -164,11 +172,11 @@ fn create_backgrounds(
         .map(|(black_data, white_data)| {
             let black = black_data
                 .to_image()
-                .context(format!("黑色背景水印图 {} 转换失败", black_data.info.path.display()))?
+                .context(format!("黑色背景水印图 {:?} 转换失败", black_data.info.path))?
                 .to_rgb8();
             let white = white_data
                 .to_image()
-                .context(format!("白色背景水印图 {} 转换失败", white_data.info.path.display()))?
+                .context(format!("白色背景水印图 {:?} 转换失败", white_data.info.path))?
                 .to_rgb8();
             if black.dimensions() != white.dimensions() {
                 return Err(anyhow!(
@@ -219,7 +227,7 @@ fn save_image(
 ) -> anyhow::Result<()> {
     // 保证输出目录存在
     if let Some(parent) = path.parent() {
-        std::fs::create_dir_all(parent).context(format!("创建目录 {} 失败", parent.display()))?;
+        std::fs::create_dir_all(parent).context(format!("创建目录 {parent:?} 失败"))?;
     }
 
     match format {
@@ -245,11 +253,11 @@ fn save_jpg_image(img: &RgbImage, path: &Path, optimize: bool) -> anyhow::Result
         let luma = image::DynamicImage::ImageRgb8(img.clone()).into_luma8();
         encoder
             .encode(luma.as_raw(), width, height, jpeg_encoder::ColorType::Luma)
-            .context(format!("编码luma8图片 {} 失败", path.display()))?;
+            .context(format!("编码luma8图片 {path:?} 失败"))?;
     } else {
         encoder
             .encode(img.as_raw(), width, height, jpeg_encoder::ColorType::Rgb)
-            .context(format!("编码rgb图片 {} 失败", path.display()))?;
+            .context(format!("编码rgb图片 {path:?} 失败"))?;
     }
     Ok(())
 }
@@ -265,10 +273,10 @@ fn save_png_image(img: &RgbImage, path: &Path, optimize: bool) -> anyhow::Result
     if optimize && is_grey_image(img) {
         let luma = image::DynamicImage::ImageRgb8(img.clone()).into_luma8();
         luma.write_with_encoder(encoder)
-            .context(format!("编码luma8图片 {} 失败", path.display()))?;
+            .context(format!("编码luma8图片 {path:?} 失败"))?;
     } else {
         img.write_with_encoder(encoder)
-            .context(format!("编码rgb图片 {} 失败", path.display()))?;
+            .context(format!("编码rgb图片 {path:?} 失败"))?;
     }
     Ok(())
 }

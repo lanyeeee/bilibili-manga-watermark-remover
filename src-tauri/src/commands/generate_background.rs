@@ -34,14 +34,9 @@ pub fn generate_background(
         bottom: (height as f32 * 0.994) as u32,
     };
     let rect_data = rect_data.unwrap_or(default_rect_data);
-    // TODO: 删除下面的代码
-    // let res = watermark::generate_background(manga_dir, &rect_data, &output_dir, width, height)?;
-    // Ok(res)
 
     // 保证输出目录存在
-    // TODO: 将各种.display()换成 {:?}
-    std::fs::create_dir_all(&output_dir)
-        .context(format!("创建目录 {} 失败", output_dir.display()))?;
+    std::fs::create_dir_all(&output_dir).context(format!("创建目录 {output_dir:?} 失败"))?;
     // 收集尺寸符合width和height的图片的路径
     let image_paths = create_image_paths(manga_dir, width, height);
     // 用于保存各种符合条件的背景水印图
@@ -57,7 +52,7 @@ pub fn generate_background(
         }
 
         let mut img = image::open(path)
-            .context(format!("打开图片 {} 失败", path.display()))?
+            .context(format!("打开图片 {path:?} 失败"))?
             .to_rgb8();
         // 如果图片不满足背景的条件，则直接跳过
         if !is_background(&img, &rect_data) {
@@ -103,7 +98,7 @@ pub fn generate_background(
         let black_output_path = output_dir.join("black.png");
         black
             .save(&black_output_path)
-            .context(format!("保存图片 {} 失败", black_output_path.display()))?;
+            .context(format!("保存图片 {black_output_path:?} 失败",))?;
     }
     // 如果找到了黑色和白色背景水印图
     if *background_pair_found.lock() {
@@ -112,7 +107,7 @@ pub fn generate_background(
         let white_output_path = output_dir.join("white.png");
         white
             .save(&white_output_path)
-            .context(format!("保存图片 {} 失败", white_output_path.display()))?;
+            .context(format!("保存图片 {white_output_path:?} 失败",))?;
     }
 
     let mut res = CommandResponse {

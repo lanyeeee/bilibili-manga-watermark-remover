@@ -1,17 +1,16 @@
 <script setup lang="ts">
-import {computed} from "vue";
+import { computed } from 'vue'
 
 const props = defineProps<{
-  removeWatermarkTasks: Map<string, [number, number]>;
-}>();
+  removeWatermarkTasks: Map<string, [number, number]>
+}>()
 
 const tasksProgress = computed(() =>
-    Array.from(props.removeWatermarkTasks)
-        .map(([dirPath, [current, total]]) => ({
-          dirPath,
-          percentage: Math.round(current / total * 100),
-        }))
-);
+  Array.from(props.removeWatermarkTasks).map(([dirPath, [current, total]]) => ({
+    dirPath,
+    percentage: Math.round((current / total) * 100),
+  })),
+)
 </script>
 
 <template>
