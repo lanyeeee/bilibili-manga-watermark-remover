@@ -24,13 +24,13 @@ pub fn get_jpg_image_infos(manga_dir: &str) -> CommandResponse<Vec<JpgImageInfo>
             if ext != "jpg" && ext != "jpeg" {
                 return None;
             }
-            let size = imagesize::size(&path).ok()?;
+            let size = image::image_dimensions(&path).ok()?;
             Some((path, size))
         })
         .for_each(|(path, size)| {
             jpg_image_infos.push(JpgImageInfo {
-                width: size.width as u32,
-                height: size.height as u32,
+                width: size.0,
+                height: size.1,
                 path,
             });
         });

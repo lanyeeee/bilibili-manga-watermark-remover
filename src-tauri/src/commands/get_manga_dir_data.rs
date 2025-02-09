@@ -33,11 +33,11 @@ pub fn get_manga_dir_data(
             if ext != "jpg" && ext != "jpeg" {
                 return None;
             }
-            imagesize::size(&path).ok()
+            // imagesize::size(&path).ok()
+            image::image_dimensions(&path).ok()
         })
         .for_each(|size| {
-            let key = (size.width as u32, size.height as u32);
-            let count = size_count.entry(key).or_insert(0);
+            let count = size_count.entry(size).or_insert(0);
             *count += 1;
         });
     // 将统计结果转换为Vec<MangaDirData>
