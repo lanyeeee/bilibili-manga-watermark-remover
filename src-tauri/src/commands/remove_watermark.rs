@@ -6,7 +6,6 @@ use anyhow::{anyhow, Context};
 use image::codecs::png::PngEncoder;
 use image::{Rgb, RgbImage};
 use parking_lot::Mutex;
-use path_slash::PathBufExt;
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 use tauri::AppHandle;
 use tauri_specta::Event;
@@ -27,11 +26,11 @@ pub fn remove_watermark(
     optimize: bool,
     backgrounds_data: Vec<(JpgImageData, JpgImageData)>,
 ) -> CommandResult<CommandResponse<()>> {
-    let manga_dir = PathBuf::from_slash(manga_dir);
+    let manga_dir = PathBuf::from(manga_dir);
     let manga_dir_without_name = manga_dir
         .parent()
         .ok_or(anyhow!("漫画目录 {manga_dir:?} 的父目录不存在"))?;
-    let output_dir = PathBuf::from_slash(output_dir);
+    let output_dir = PathBuf::from(output_dir);
     // (width, height) => (black, white)
     let backgrounds = create_backgrounds(&backgrounds_data)?;
     // dir => [img_path1, img_path2, ...]

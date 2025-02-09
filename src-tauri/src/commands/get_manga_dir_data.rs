@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-use path_slash::PathBufExt;
 use tauri::AppHandle;
 use walkdir::WalkDir;
 
@@ -21,7 +20,7 @@ pub fn get_manga_dir_data(
     // 用于存储不同尺寸的图片的数量
     let mut size_count: HashMap<(u32, u32), u32> = HashMap::new();
     // 遍历漫画目录下的所有文件，统计不同尺寸的图片的数量
-    WalkDir::new(PathBuf::from_slash(manga_dir))
+    WalkDir::new(PathBuf::from(manga_dir))
         .max_depth(2) // 一般第一层目录是章节目录，第二层目录是图片文件
         .into_iter()
         .filter_map(Result::ok)

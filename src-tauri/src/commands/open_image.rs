@@ -3,7 +3,6 @@ use std::path::PathBuf;
 use anyhow::Context;
 use base64::engine::general_purpose;
 use base64::Engine;
-use path_slash::PathBufExt;
 
 use crate::errors::CommandResult;
 use crate::types::{CommandResponse, JpgImageData, JpgImageInfo};
@@ -12,7 +11,7 @@ use crate::types::{CommandResponse, JpgImageData, JpgImageInfo};
 #[specta::specta]
 #[allow(clippy::cast_possible_truncation)]
 pub fn open_image(path: String) -> CommandResult<CommandResponse<JpgImageData>> {
-    let path = PathBuf::from_slash(path);
+    let path = PathBuf::from(path);
     let size = imagesize::size(&path)
         .context(format!("获取图片 {path:?} 的尺寸失败"))
         .map_err(anyhow::Error::from)?;

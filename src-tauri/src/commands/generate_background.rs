@@ -3,7 +3,6 @@ use std::path::PathBuf;
 use anyhow::Context;
 use image::RgbImage;
 use parking_lot::Mutex;
-use path_slash::PathBufExt;
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 use tauri::AppHandle;
 use walkdir::WalkDir;
@@ -129,7 +128,7 @@ pub fn generate_background(
 /// 遍历`manga_dir`目录下的所有jpg文件，收集尺寸符合`width`和`height`的图片的路径
 #[allow(clippy::cast_possible_truncation)]
 fn create_image_paths(manga_dir: &str, width: u32, height: u32) -> Vec<PathBuf> {
-    let image_paths: Vec<PathBuf> = WalkDir::new(PathBuf::from_slash(manga_dir))
+    let image_paths: Vec<PathBuf> = WalkDir::new(PathBuf::from(manga_dir))
         .max_depth(2) // 一般第一层目录是章节目录，第二层目录是图片文件
         .into_iter()
         .filter_map(Result::ok)
