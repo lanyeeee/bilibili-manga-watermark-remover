@@ -21,8 +21,7 @@ fn generate_context() -> Context<Wry> {
     tauri::generate_context!()
 }
 
-#[tokio::main]
-async fn main() {
+fn main() {
     let builder = tauri_specta::Builder::<Wry>::new()
         .commands(tauri_specta::collect_commands![
             generate_background,
