@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use anyhow::Context;
+use anyhow::{anyhow, Context};
 use image::RgbImage;
 use parking_lot::Mutex;
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
@@ -8,7 +8,7 @@ use tauri::AppHandle;
 use walkdir::WalkDir;
 
 use crate::errors::CommandResult;
-use crate::types::{CommandResponse, RectData};
+use crate::types::RectData;
 use crate::utils;
 
 #[tauri::command(async)]
@@ -23,7 +23,7 @@ pub fn generate_background(
     rect_data: Option<RectData>,
     width: u32,
     height: u32,
-) -> CommandResult<CommandResponse<()>> {
+) -> CommandResult<()> {
     let output_dir = utils::get_background_dir_abs_path(&app, manga_dir, width, height)?;
     // TODO: 给RectData实现Default trait，以替换下面的代码
     let default_rect_data = RectData {
@@ -109,20 +109,13 @@ pub fn generate_background(
             .context(format!("保存图片 {white_output_path:?} 失败",))?;
     }
 
-    let mut res = CommandResponse {
-        code: 0,
-        msg: String::new(),
-        data: (),
-    };
     if backgrounds.is_empty() {
-        res.code = -1;
-        res.msg += format!("找不到尺寸为({width}x{height})的背景水印图\n").as_str();
+        return Err(anyhow!("找不到尺寸为({width}x{height})的背景水印图\n").into());
     } else if backgrounds.len() == 1 {
-        res.code = -1;
-        res.msg += format!("只找到一张尺寸为({width}x{height})的背景水印图\n").as_str();
+        return Err(anyhow!("只找到一张尺寸为({width}x{height})的背景水印图\n").into());
     };
 
-    Ok(res)
+    Ok(())
 }
 
 /// 遍历`manga_dir`目录下的所有jpg文件，收集尺寸符合`width`和`height`的图片的路径

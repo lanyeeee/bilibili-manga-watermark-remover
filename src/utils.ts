@@ -14,17 +14,12 @@ export async function getBackgroundDirRelativePath(
   height: number,
   notification: NotificationApiInjection,
 ): Promise<string | null> {
-  const dirResult = await commands.getBackgroundDirRelativePath(mangaDir, width, height)
-  if (dirResult.status === 'error') {
-    notification.error({ title: '获取背景水印图相对路径失败', description: dirResult.error })
+  const result = await commands.getBackgroundDirRelativePath(mangaDir, width, height)
+  if (result.status === 'error') {
+    notification.error({ title: '获取背景水印图相对路径失败', description: result.error })
     return null
   }
-  const dirResponse = dirResult.data
-  if (dirResponse.code !== 0) {
-    notification.warning({ title: '获取背景水印图相对路径失败', description: dirResponse.msg })
-    return null
-  }
-  return dirResponse.data
+  return result.data
 }
 
 export async function getBackgroundDirAbsPath(
@@ -33,17 +28,12 @@ export async function getBackgroundDirAbsPath(
   height: number,
   notification: NotificationApiInjection,
 ): Promise<string | null> {
-  const dirResult = await commands.getBackgroundDirAbsPath(mangaDir, width, height)
-  if (dirResult.status === 'error') {
-    notification.error({ title: '获取背景水印图绝对路径失败', description: dirResult.error })
+  const result = await commands.getBackgroundDirAbsPath(mangaDir, width, height)
+  if (result.status === 'error') {
+    notification.error({ title: '获取背景水印图绝对路径失败', description: result.error })
     return null
   }
-  const dirResponse = dirResult.data
-  if (dirResponse.code !== 0) {
-    notification.warning({ title: '获取背景水印图绝对路径失败', description: dirResponse.msg })
-    return null
-  }
-  return dirResponse.data
+  return result.data
 }
 
 export async function autoGenerateBackground(
@@ -52,20 +42,11 @@ export async function autoGenerateBackground(
   height: number,
   notification: NotificationApiInjection,
 ): Promise<boolean> {
-  const generateResult = await commands.generateBackground(mangaDir, null, width, height)
-  if (generateResult.status === 'error') {
+  const result = await commands.generateBackground(mangaDir, null, width, height)
+  if (result.status === 'error') {
     notification.error({
       title: `自动生成背景水印图(${width}x${height})失败`,
-      description: generateResult.error,
-    })
-    return false
-  }
-  const response = generateResult.data
-  if (response.code !== 0) {
-    notification.warning({
-      title: `自动生成背景水印图(${width}x${height})失败`,
-      description: response.msg,
-      content: '请尝试手动截取水印',
+      description: result.error,
     })
     return false
   }
