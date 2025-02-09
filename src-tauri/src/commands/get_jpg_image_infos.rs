@@ -1,6 +1,5 @@
 use std::path::PathBuf;
 
-use path_slash::PathBufExt;
 use walkdir::WalkDir;
 
 use crate::types::{CommandResponse, JpgImageInfo};
@@ -12,7 +11,7 @@ pub fn get_jpg_image_infos(manga_dir: &str) -> CommandResponse<Vec<JpgImageInfo>
     // 用于存储jpg图片的信息
     let mut jpg_image_infos = vec![];
     // 遍历漫画目录下的所有文件，获取jpg图片的信息
-    WalkDir::new(PathBuf::from_slash(manga_dir))
+    WalkDir::new(PathBuf::from(manga_dir))
         .max_depth(2) //  一般第一层目录是章节目录，第二层目录是图片文件
         .into_iter()
         .filter_map(Result::ok)
