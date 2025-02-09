@@ -92,6 +92,7 @@ pub fn generate_background(
     })?;
 
     let backgrounds = std::mem::take(&mut *backgrounds.lock());
+    let background_pair_found = std::mem::take(&mut *background_pair_found.lock());
     // 如果有第一张背景水印图，则将其保存为黑色背景
     if let Some(black) = backgrounds.first() {
         let black_output_path = output_dir.join("black.png");
@@ -100,7 +101,7 @@ pub fn generate_background(
             .context(format!("保存图片 {black_output_path:?} 失败",))?;
     }
     // 如果找到了黑色和白色背景水印图
-    if *background_pair_found.lock() {
+    if background_pair_found {
         // 把最后一张背景水印图保存为白色背景
         let white = &backgrounds[backgrounds.len() - 1];
         let white_output_path = output_dir.join("white.png");
@@ -111,7 +112,7 @@ pub fn generate_background(
 
     if backgrounds.is_empty() {
         return Err(anyhow!("找不到尺寸为({width}x{height})的背景水印图\n").into());
-    } else if backgrounds.len() == 1 {
+    } else if !background_pair_found {
         return Err(anyhow!("只找到一张尺寸为({width}x{height})的背景水印图\n").into());
     };
 
