@@ -141,8 +141,9 @@ fn create_image_paths(manga_dir: &str, width: u32, height: u32) -> Vec<PathBuf> 
             if ext != "jpg" && ext != "jpeg" {
                 return None;
             }
-            let size = imagesize::size(&path).ok()?;
-            if size.width as u32 == width && size.height as u32 == height {
+            // 只收集尺寸符合width和height的图片的路径
+            let (img_width, img_height) = image::image_dimensions(&path).ok()?;
+            if img_width == width && img_height == height {
                 Some(path)
             } else {
                 None

@@ -12,10 +12,9 @@ use crate::types::{CommandResponse, JpgImageData, JpgImageInfo};
 #[allow(clippy::cast_possible_truncation)]
 pub fn open_image(path: String) -> CommandResult<CommandResponse<JpgImageData>> {
     let path = PathBuf::from(path);
-    let size = imagesize::size(&path)
+    let (width, height) = image::image_dimensions(&path)
         .context(format!("获取图片 {path:?} 的尺寸失败"))
         .map_err(anyhow::Error::from)?;
-    let (width, height) = (size.width as u32, size.height as u32);
     let image_data: Vec<u8> = std::fs::read(&path)
         .context(format!("读取图片 {path:?} 失败"))
         .map_err(anyhow::Error::from)?;
