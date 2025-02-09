@@ -13,7 +13,7 @@ use walkdir::WalkDir;
 
 use crate::errors::CommandResult;
 use crate::events;
-use crate::types::{CommandResponse, ImageFormat, JpgImageData};
+use crate::types::{ImageFormat, JpgImageData};
 
 #[tauri::command(async)]
 #[specta::specta]
@@ -25,7 +25,7 @@ pub fn remove_watermark(
     format: ImageFormat,
     optimize: bool,
     backgrounds_data: Vec<(JpgImageData, JpgImageData)>,
-) -> CommandResult<CommandResponse<()>> {
+) -> CommandResult<()> {
     let manga_dir = PathBuf::from(manga_dir);
     let manga_dir_without_name = manga_dir
         .parent()
@@ -107,12 +107,7 @@ pub fn remove_watermark(
         Ok(())
     })?;
 
-    let res = CommandResponse {
-        code: 0,
-        msg: String::new(),
-        data: (),
-    };
-    Ok(res)
+    Ok(())
 }
 
 /// 构建一个`HashMap`，`key`是目录的路径，`value`是该目录下的所有jpg文件的路径

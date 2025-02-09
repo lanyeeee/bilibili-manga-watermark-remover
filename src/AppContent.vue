@@ -61,11 +61,6 @@ watch(
       notification.error({ title: '保存配置失败', description: result.error })
       return
     }
-    const response = result.data
-    if (response.code !== 0) {
-      notification.warning({ title: '保存配置失败', description: response.msg })
-      return
-    }
     message.success('保存配置成功')
   },
   { deep: true },
@@ -77,12 +72,7 @@ onMounted(async () => {
     event.preventDefault()
   }
   // 获取配置
-  const response = await commands.getConfig()
-  if (response.code !== 0) {
-    notification.warning({ title: '获取配置失败', description: response.msg })
-    return
-  }
-  config.value = response.data
+  config.value = await commands.getConfig()
 })
 
 async function removeWatermark() {
@@ -112,11 +102,6 @@ async function removeWatermark() {
   )
   if (result.status === 'error') {
     notification.error({ title: '去水印失败', description: result.error })
-    return
-  }
-  const response = result.data
-  if (response.code !== 0) {
-    notification.warning({ title: '去水印失败', description: response.msg })
     return
   }
   message.success('去水印成功')
@@ -154,12 +139,7 @@ async function selectMangaDir() {
     notification.error({ title: '获取漫画目录数据', description: result.error })
     return
   }
-  const response = result.data
-  if (response.code !== 0) {
-    notification.warning({ title: '获取漫画目录数据', description: response.msg })
-    return
-  }
-  mangaDirDataList.value = response.data
+  mangaDirDataList.value = result.data
   mangaDir.value = selectedDirPath
   await autoGenerateAll()
 }
@@ -215,15 +195,10 @@ async function loadBackground() {
         notification.error({ title: '打开背景水印图失败', description: result.error })
         return
       }
-      const response = result.data
-      if (response.code !== 0) {
-        notification.warning({ title: '打开背景水印图失败', description: response.msg })
-        return
-      }
       if (isBlack) {
-        mangaDirData.blackBackground = response.data
+        mangaDirData.blackBackground = result.data
       } else {
-        mangaDirData.whiteBackground = response.data
+        mangaDirData.whiteBackground = result.data
       }
     }
     mangaDirData.blackBackground = null

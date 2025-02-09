@@ -5,12 +5,12 @@ use base64::engine::general_purpose;
 use base64::Engine;
 
 use crate::errors::CommandResult;
-use crate::types::{CommandResponse, JpgImageData, JpgImageInfo};
+use crate::types::{JpgImageData, JpgImageInfo};
 
 #[tauri::command(async)]
 #[specta::specta]
 #[allow(clippy::cast_possible_truncation)]
-pub fn open_image(path: String) -> CommandResult<CommandResponse<JpgImageData>> {
+pub fn open_image(path: String) -> CommandResult<JpgImageData> {
     let path = PathBuf::from(path);
     let (width, height) = image::image_dimensions(&path)
         .context(format!("获取图片 {path:?} 的尺寸失败"))
@@ -29,10 +29,6 @@ pub fn open_image(path: String) -> CommandResult<CommandResponse<JpgImageData>> 
         },
         base64,
     };
-    let res = CommandResponse {
-        code: 0,
-        msg: String::new(),
-        data,
-    };
-    Ok(res)
+
+    Ok(data)
 }

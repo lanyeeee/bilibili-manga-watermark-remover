@@ -3,7 +3,6 @@ use tauri::{AppHandle, State};
 
 use crate::config::Config;
 use crate::errors::CommandResult;
-use crate::types::CommandResponse;
 
 #[tauri::command(async)]
 #[specta::specta]
@@ -12,13 +11,9 @@ pub fn save_config(
     app: AppHandle,
     config_state: State<RwLock<Config>>,
     config: Config,
-) -> CommandResult<CommandResponse<()>> {
+) -> CommandResult<()> {
     let mut config_state = config_state.write();
     *config_state = config;
     config_state.save(&app)?;
-    Ok(CommandResponse {
-        code: 0,
-        msg: String::new(),
-        data: (),
-    })
+    Ok(())
 }

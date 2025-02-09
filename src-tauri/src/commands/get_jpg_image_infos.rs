@@ -2,12 +2,12 @@ use std::path::PathBuf;
 
 use walkdir::WalkDir;
 
-use crate::types::{CommandResponse, JpgImageInfo};
+use crate::types::JpgImageInfo;
 
 #[tauri::command(async)]
 #[specta::specta]
 #[allow(clippy::cast_possible_truncation)]
-pub fn get_jpg_image_infos(manga_dir: &str) -> CommandResponse<Vec<JpgImageInfo>> {
+pub fn get_jpg_image_infos(manga_dir: &str) -> Vec<JpgImageInfo> {
     // 用于存储jpg图片的信息
     let mut jpg_image_infos = vec![];
     // 遍历漫画目录下的所有文件，获取jpg图片的信息
@@ -34,9 +34,6 @@ pub fn get_jpg_image_infos(manga_dir: &str) -> CommandResponse<Vec<JpgImageInfo>
                 path,
             });
         });
-    CommandResponse {
-        code: 0,
-        msg: String::new(),
-        data: jpg_image_infos,
-    }
+
+    jpg_image_infos
 }

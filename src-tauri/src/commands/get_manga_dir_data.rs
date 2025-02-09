@@ -6,17 +6,14 @@ use walkdir::WalkDir;
 
 use crate::commands::open_image::open_image;
 use crate::errors::CommandResult;
-use crate::types::{CommandResponse, MangaDirData};
+use crate::types::MangaDirData;
 use crate::utils;
 
 #[tauri::command(async)]
 #[specta::specta]
 #[allow(clippy::cast_possible_truncation)]
 #[allow(clippy::needless_pass_by_value)]
-pub fn get_manga_dir_data(
-    app: AppHandle,
-    manga_dir: &str,
-) -> CommandResult<CommandResponse<Vec<MangaDirData>>> {
+pub fn get_manga_dir_data(app: AppHandle, manga_dir: &str) -> CommandResult<Vec<MangaDirData>> {
     // 用于存储不同尺寸的图片的数量
     let mut size_count: HashMap<(u32, u32), u32> = HashMap::new();
     // 遍历漫画目录下的所有文件，统计不同尺寸的图片的数量
@@ -62,21 +59,15 @@ pub fn get_manga_dir_data(
         let white_background_path = background_dir.join("white.png");
         if black_background_path.exists() {
             let black_background_path = black_background_path.display().to_string();
-            let black_background = open_image(black_background_path).map(|res| Some(res.data))?;
-            dir_data.black_background = black_background;
+            let black_background = open_image(black_background_path)?;
+            dir_data.black_background = Some(black_background);
         }
         if white_background_path.exists() {
             let white_background_path = white_background_path.display().to_string();
-            let white_background = open_image(white_background_path).map(|res| Some(res.data))?;
-            dir_data.white_background = white_background;
+            let white_background = open_image(white_background_path)?;
+            dir_data.white_background = Some(white_background);
         }
     }
-    // 返回结果
-    let res = CommandResponse {
-        code: 0,
-        msg: String::new(),
-        data: manga_dir_data,
-    };
 
-    Ok(res)
+    Ok(manga_dir_data)
 }
