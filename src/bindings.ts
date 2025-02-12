@@ -5,7 +5,7 @@
 
 
 export const commands = {
-async generateBackground(mangaDir: string, rectData: RectData | null, width: number, height: number) : Promise<Result<CommandResponse<null>, CommandError>> {
+async generateBackground(mangaDir: string, rectData: RectData | null, width: number, height: number) : Promise<Result<null, CommandError>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("generate_background", { mangaDir, rectData, width, height }) };
 } catch (e) {
@@ -13,7 +13,7 @@ async generateBackground(mangaDir: string, rectData: RectData | null, width: num
     else return { status: "error", error: e  as any };
 }
 },
-async removeWatermark(mangaDir: string, outputDir: string, format: ImageFormat, optimize: boolean, backgroundsData: ([JpgImageData, JpgImageData])[]) : Promise<Result<CommandResponse<null>, CommandError>> {
+async removeWatermark(mangaDir: string, outputDir: string, format: ImageFormat, optimize: boolean, backgroundsData: ([JpgImageData, JpgImageData])[]) : Promise<Result<null, CommandError>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("remove_watermark", { mangaDir, outputDir, format, optimize, backgroundsData }) };
 } catch (e) {
@@ -21,7 +21,7 @@ async removeWatermark(mangaDir: string, outputDir: string, format: ImageFormat, 
     else return { status: "error", error: e  as any };
 }
 },
-async openImage(path: string) : Promise<Result<CommandResponse<JpgImageData>, CommandError>> {
+async openImage(path: string) : Promise<Result<JpgImageData, CommandError>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("open_image", { path }) };
 } catch (e) {
@@ -29,7 +29,7 @@ async openImage(path: string) : Promise<Result<CommandResponse<JpgImageData>, Co
     else return { status: "error", error: e  as any };
 }
 },
-async getMangaDirData(mangaDir: string) : Promise<Result<CommandResponse<MangaDirData[]>, CommandError>> {
+async getMangaDirData(mangaDir: string) : Promise<Result<MangaDirData[], CommandError>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_manga_dir_data", { mangaDir }) };
 } catch (e) {
@@ -37,13 +37,13 @@ async getMangaDirData(mangaDir: string) : Promise<Result<CommandResponse<MangaDi
     else return { status: "error", error: e  as any };
 }
 },
-async getJpgImageInfos(mangaDir: string) : Promise<CommandResponse<JpgImageInfo[]>> {
+async getJpgImageInfos(mangaDir: string) : Promise<JpgImageInfo[]> {
     return await TAURI_INVOKE("get_jpg_image_infos", { mangaDir });
 },
 async showPathInFileManager(path: string) : Promise<void> {
     await TAURI_INVOKE("show_path_in_file_manager", { path });
 },
-async getBackgroundDirRelativePath(mangaDir: string, width: number, height: number) : Promise<Result<CommandResponse<string>, CommandError>> {
+async getBackgroundDirRelativePath(mangaDir: string, width: number, height: number) : Promise<Result<string, CommandError>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_background_dir_relative_path", { mangaDir, width, height }) };
 } catch (e) {
@@ -51,7 +51,7 @@ async getBackgroundDirRelativePath(mangaDir: string, width: number, height: numb
     else return { status: "error", error: e  as any };
 }
 },
-async getBackgroundDirAbsPath(mangaDir: string, width: number, height: number) : Promise<Result<CommandResponse<string>, CommandError>> {
+async getBackgroundDirAbsPath(mangaDir: string, width: number, height: number) : Promise<Result<string, CommandError>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_background_dir_abs_path", { mangaDir, width, height }) };
 } catch (e) {
@@ -59,10 +59,10 @@ async getBackgroundDirAbsPath(mangaDir: string, width: number, height: number) :
     else return { status: "error", error: e  as any };
 }
 },
-async getConfig() : Promise<CommandResponse<Config>> {
+async getConfig() : Promise<Config> {
     return await TAURI_INVOKE("get_config");
 },
-async saveConfig(config: Config) : Promise<Result<CommandResponse<null>, CommandError>> {
+async saveConfig(config: Config) : Promise<Result<null, CommandError>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("save_config", { config }) };
 } catch (e) {
@@ -94,7 +94,6 @@ removeWatermarkSuccessEvent: "remove-watermark-success-event"
 /** user-defined types **/
 
 export type CommandError = string
-export type CommandResponse<T> = { code: number; msg: string; data: T }
 export type Config = { outputDir: string; outputFormat: ImageFormat; outputOptimize: boolean }
 export type ImageFormat = "Jpeg" | "Png"
 export type JpgImageData = { info: JpgImageInfo; base64: string }

@@ -1,15 +1,14 @@
 use std::path::PathBuf;
 
-use anyhow::Context;
+use anyhow::{anyhow, Context};
 use image::RgbImage;
 use parking_lot::Mutex;
-use path_slash::PathBufExt;
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 use tauri::AppHandle;
 use walkdir::WalkDir;
 
 use crate::errors::CommandResult;
-use crate::types::{CommandResponse, RectData};
+use crate::types::RectData;
 use crate::utils;
 
 #[tauri::command(async)]
@@ -24,7 +23,7 @@ pub fn generate_background(
     rect_data: Option<RectData>,
     width: u32,
     height: u32,
-) -> CommandResult<CommandResponse<()>> {
+) -> CommandResult<()> {
     let output_dir = utils::get_background_dir_abs_path(&app, manga_dir, width, height)?;
     // TODO: 给RectData实现Default trait，以替换下面的代码
     let default_rect_data = RectData {
@@ -93,6 +92,7 @@ pub fn generate_background(
     })?;
 
     let backgrounds = std::mem::take(&mut *backgrounds.lock());
+    let background_pair_found = std::mem::take(&mut *background_pair_found.lock());
     // 如果有第一张背景水印图，则将其保存为黑色背景
     if let Some(black) = backgrounds.first() {
         let black_output_path = output_dir.join("black.png");
@@ -101,7 +101,7 @@ pub fn generate_background(
             .context(format!("保存图片 {black_output_path:?} 失败",))?;
     }
     // 如果找到了黑色和白色背景水印图
-    if *background_pair_found.lock() {
+    if background_pair_found {
         // 把最后一张背景水印图保存为白色背景
         let white = &backgrounds[backgrounds.len() - 1];
         let white_output_path = output_dir.join("white.png");
@@ -110,26 +110,19 @@ pub fn generate_background(
             .context(format!("保存图片 {white_output_path:?} 失败",))?;
     }
 
-    let mut res = CommandResponse {
-        code: 0,
-        msg: String::new(),
-        data: (),
-    };
     if backgrounds.is_empty() {
-        res.code = -1;
-        res.msg += format!("找不到尺寸为({width}x{height})的背景水印图\n").as_str();
-    } else if backgrounds.len() == 1 {
-        res.code = -1;
-        res.msg += format!("只找到一张尺寸为({width}x{height})的背景水印图\n").as_str();
+        return Err(anyhow!("找不到尺寸为({width}x{height})的背景水印图\n").into());
+    } else if !background_pair_found {
+        return Err(anyhow!("只找到一张尺寸为({width}x{height})的背景水印图\n").into());
     };
 
-    Ok(res)
+    Ok(())
 }
 
 /// 遍历`manga_dir`目录下的所有jpg文件，收集尺寸符合`width`和`height`的图片的路径
 #[allow(clippy::cast_possible_truncation)]
 fn create_image_paths(manga_dir: &str, width: u32, height: u32) -> Vec<PathBuf> {
-    let image_paths: Vec<PathBuf> = WalkDir::new(PathBuf::from_slash(manga_dir))
+    let image_paths: Vec<PathBuf> = WalkDir::new(PathBuf::from(manga_dir))
         .max_depth(2) // 一般第一层目录是章节目录，第二层目录是图片文件
         .into_iter()
         .filter_map(Result::ok)
@@ -142,8 +135,9 @@ fn create_image_paths(manga_dir: &str, width: u32, height: u32) -> Vec<PathBuf> 
             if ext != "jpg" && ext != "jpeg" {
                 return None;
             }
-            let size = imagesize::size(&path).ok()?;
-            if size.width as u32 == width && size.height as u32 == height {
+            // 只收集尺寸符合width和height的图片的路径
+            let (img_width, img_height) = image::image_dimensions(&path).ok()?;
+            if img_width == width && img_height == height {
                 Some(path)
             } else {
                 None

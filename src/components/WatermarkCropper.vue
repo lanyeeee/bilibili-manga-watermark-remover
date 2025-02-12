@@ -45,12 +45,7 @@ watch(srcImagePath, async () => {
     notification.error({ title: '打开图片失败', description: result.error })
     return
   }
-  const response = result.data
-  if (response.code !== 0) {
-    notification.warning({ title: '打开图片失败', description: response.msg })
-    return
-  }
-  srcImage.src = `data:image/jpeg;base64,${response.data.base64}`
+  srcImage.src = `data:image/jpeg;base64,${result.data.base64}`
   rectData.value = null
 })
 // 监听 mangaDir 的变化，当路径变化时，获取对应路径下的所有jpg图片信息，并从中随机选择一张图片，将其路径赋值给srcImagePath
@@ -61,12 +56,7 @@ watch(
       return
     }
     // 获取mangaDir下所有jpg图片信息
-    const response = await commands.getJpgImageInfos(props.mangaDir)
-    if (response.code !== 0) {
-      notification.warning({ title: '获取jpg图片信息失败', description: response.msg })
-      return
-    }
-    jpgImageInfos = response.data
+    jpgImageInfos = await commands.getJpgImageInfos(props.mangaDir)
     // 随机选择一张图片，将其路径赋值给srcImagePath
     srcImagePath.value = getRandomJpgImageInfo()?.path
   },
@@ -186,16 +176,10 @@ async function generateBackground() {
   generating.value = true
   const width = props.width
   const height = props.height
-  const generateResult = await commands.generateBackground(props.mangaDir, rectData.value, width, height)
+  const result = await commands.generateBackground(props.mangaDir, rectData.value, width, height)
   await props.loadBackground()
-  if (generateResult.status === 'error') {
-    notification.error({ title: '生成背景水印图失败', description: generateResult.error })
-    generating.value = false
-    return
-  }
-  const response = generateResult.data
-  if (response.code !== 0) {
-    notification.warning({ title: '生成背景水印图失败', description: response.msg })
+  if (result.status === 'error') {
+    notification.error({ title: '生成背景水印图失败', description: result.error })
     generating.value = false
     return
   }

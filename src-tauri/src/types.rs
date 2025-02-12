@@ -6,13 +6,6 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 
 #[derive(Debug, Deserialize, Serialize, Type)]
-pub struct CommandResponse<T> {
-    pub code: i32,
-    pub msg: String,
-    pub data: T,
-}
-
-#[derive(Debug, Deserialize, Serialize, Type)]
 pub struct RectData {
     pub left: u32,
     pub top: u32,

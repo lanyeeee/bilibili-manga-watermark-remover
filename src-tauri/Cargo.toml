@@ -26,18 +26,11 @@ serde_json = "1"
 base64 = { version = "0.22.1" }
 image = { version = "0.25.1", default-features = false, features = ["jpeg", "png"] }
 jpeg-encoder = { version = "0.6.0", features = ["simd"] }
-imagesize = { version = "0.13.0" }
 
-reqwest = { version = "0.12.5" }
-qrcode = { version = "0.14.1" }
 rayon = { version = "1.10" }
 walkdir = { version = "2" }
 anyhow = { version = "1.0" }
 showfile = { version = "0.1.1" }
-dirs = { version = "5.0" }
-path-slash = { version = "0.2.1" }
-tokio = { version = "1", features = ["full"] }
-bytes = { version = "1.7.1" }
 parking_lot = { version = "0.12.3", features = ["send_guard"] }
 
 [profile.release]

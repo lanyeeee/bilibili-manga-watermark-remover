@@ -1,27 +1,23 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-use path_slash::PathBufExt;
 use tauri::AppHandle;
 use walkdir::WalkDir;
 
 use crate::commands::open_image::open_image;
 use crate::errors::CommandResult;
-use crate::types::{CommandResponse, MangaDirData};
+use crate::types::MangaDirData;
 use crate::utils;
 
 #[tauri::command(async)]
 #[specta::specta]
 #[allow(clippy::cast_possible_truncation)]
 #[allow(clippy::needless_pass_by_value)]
-pub fn get_manga_dir_data(
-    app: AppHandle,
-    manga_dir: &str,
-) -> CommandResult<CommandResponse<Vec<MangaDirData>>> {
+pub fn get_manga_dir_data(app: AppHandle, manga_dir: &str) -> CommandResult<Vec<MangaDirData>> {
     // 用于存储不同尺寸的图片的数量
     let mut size_count: HashMap<(u32, u32), u32> = HashMap::new();
     // 遍历漫画目录下的所有文件，统计不同尺寸的图片的数量
-    WalkDir::new(PathBuf::from_slash(manga_dir))
+    WalkDir::new(PathBuf::from(manga_dir))
         .max_depth(2) // 一般第一层目录是章节目录，第二层目录是图片文件
         .into_iter()
         .filter_map(Result::ok)
@@ -34,11 +30,11 @@ pub fn get_manga_dir_data(
             if ext != "jpg" && ext != "jpeg" {
                 return None;
             }
-            imagesize::size(&path).ok()
+            // imagesize::size(&path).ok()
+            image::image_dimensions(&path).ok()
         })
         .for_each(|size| {
-            let key = (size.width as u32, size.height as u32);
-            let count = size_count.entry(key).or_insert(0);
+            let count = size_count.entry(size).or_insert(0);
             *count += 1;
         });
     // 将统计结果转换为Vec<MangaDirData>
@@ -63,21 +59,15 @@ pub fn get_manga_dir_data(
         let white_background_path = background_dir.join("white.png");
         if black_background_path.exists() {
             let black_background_path = black_background_path.display().to_string();
-            let black_background = open_image(black_background_path).map(|res| Some(res.data))?;
-            dir_data.black_background = black_background;
+            let black_background = open_image(black_background_path)?;
+            dir_data.black_background = Some(black_background);
         }
         if white_background_path.exists() {
             let white_background_path = white_background_path.display().to_string();
-            let white_background = open_image(white_background_path).map(|res| Some(res.data))?;
-            dir_data.white_background = white_background;
+            let white_background = open_image(white_background_path)?;
+            dir_data.white_background = Some(white_background);
         }
     }
-    // 返回结果
-    let res = CommandResponse {
-        code: 0,
-        msg: String::new(),
-        data: manga_dir_data,
-    };
 
-    Ok(res)
+    Ok(manga_dir_data)
 }

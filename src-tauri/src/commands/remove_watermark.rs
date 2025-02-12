@@ -6,7 +6,6 @@ use anyhow::{anyhow, Context};
 use image::codecs::png::PngEncoder;
 use image::{Rgb, RgbImage};
 use parking_lot::Mutex;
-use path_slash::PathBufExt;
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 use tauri::AppHandle;
 use tauri_specta::Event;
@@ -14,7 +13,7 @@ use walkdir::WalkDir;
 
 use crate::errors::CommandResult;
 use crate::events;
-use crate::types::{CommandResponse, ImageFormat, JpgImageData};
+use crate::types::{ImageFormat, JpgImageData};
 
 #[tauri::command(async)]
 #[specta::specta]
@@ -26,12 +25,12 @@ pub fn remove_watermark(
     format: ImageFormat,
     optimize: bool,
     backgrounds_data: Vec<(JpgImageData, JpgImageData)>,
-) -> CommandResult<CommandResponse<()>> {
-    let manga_dir = PathBuf::from_slash(manga_dir);
+) -> CommandResult<()> {
+    let manga_dir = PathBuf::from(manga_dir);
     let manga_dir_without_name = manga_dir
         .parent()
         .ok_or(anyhow!("漫画目录 {manga_dir:?} 的父目录不存在"))?;
-    let output_dir = PathBuf::from_slash(output_dir);
+    let output_dir = PathBuf::from(output_dir);
     // (width, height) => (black, white)
     let backgrounds = create_backgrounds(&backgrounds_data)?;
     // dir => [img_path1, img_path2, ...]
@@ -108,12 +107,7 @@ pub fn remove_watermark(
         Ok(())
     })?;
 
-    let res = CommandResponse {
-        code: 0,
-        msg: String::new(),
-        data: (),
-    };
-    Ok(res)
+    Ok(())
 }
 
 /// 构建一个`HashMap`，`key`是目录的路径，`value`是该目录下的所有jpg文件的路径
@@ -202,18 +196,25 @@ fn remove_image_watermark(black: &RgbImage, white: &RgbImage, img: &mut RgbImage
         return;
     }
     // 遍历图片的每个像素点
+    let [black_in_r, black_in_g, black_in_b] = black.get_pixel(0, 0).0.map(|x| x as f64);
     for (x, y, img_pixel) in img.enumerate_pixels_mut() {
-        let [img_r, img_g, img_b] = img_pixel.0;
-        let [black_r, black_g, black_b] = black.get_pixel(x, y).0;
-        let [white_r, white_g, white_b] = white.get_pixel(x, y).0;
-        // 计算去除水印后的像素点值，将f32转换为u8自带clamp功能
-        let watermark_removed_pixel = Rgb([
-            ((img_r as f64 - black_r as f64) / ((white_r - black_r) as f64 / 255.0)).round() as u8,
-            ((img_g as f64 - black_g as f64) / ((white_g - black_g) as f64 / 255.0)).round() as u8,
-            ((img_b as f64 - black_b as f64) / ((white_b - black_b) as f64 / 255.0)).round() as u8,
+        let [out_r, out_g, out_b] = img_pixel.0.map(|x| x as f64);
+        let [black_out_r, black_out_g, black_out_b] = black.get_pixel(x, y).0.map(|x| x as f64);
+        let [white_out_r, white_out_g, white_out_b] = white.get_pixel(x, y).0.map(|x| x as f64);
+
+        let in_r = (out_r - black_out_r) / ((white_out_r - black_out_r) / 255.0) + black_in_r;
+        let in_g = (out_g - black_out_g) / ((white_out_g - black_out_g) / 255.0) + black_in_g;
+        let in_b = (out_b - black_out_b) / ((white_out_b - black_out_b) / 255.0) + black_in_b;
+        // 将f64转换为u8自带clamp功能
+        let watermark_removed_r = in_r.round() as u8;
+        let watermark_removed_g = in_g.round() as u8;
+        let watermark_removed_b = in_b.round() as u8;
+        // 将去除水印后的像素点赋值给img
+        *img_pixel = Rgb([
+            watermark_removed_r,
+            watermark_removed_g,
+            watermark_removed_b,
         ]);
-        // 将去除水印后的像素点值写入到图片缓冲区中
-        *img_pixel = watermark_removed_pixel;
     }
 }
 
