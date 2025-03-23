@@ -1,7 +1,5 @@
 use std::path::PathBuf;
 
-use base64::engine::general_purpose;
-use base64::Engine;
 use serde::{Deserialize, Serialize};
 use specta::Type;
 
@@ -19,27 +17,26 @@ pub struct MangaDirData {
     pub height: u32,
     pub count: u32,
     #[serde(rename = "blackBackground")]
-    pub black_background: Option<JpgImageData>,
+    pub black_background: Option<ImageData>,
     #[serde(rename = "whiteBackground")]
-    pub white_background: Option<JpgImageData>,
+    pub white_background: Option<ImageData>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Type)]
-pub struct JpgImageInfo {
+pub struct ImageInfo {
     pub width: u32,
     pub height: u32,
     pub path: PathBuf,
 }
 
 #[derive(Debug, Deserialize, Serialize, Type)]
-pub struct JpgImageData {
-    pub info: JpgImageInfo,
-    pub base64: String,
+pub struct ImageData {
+    pub info: ImageInfo,
+    pub data: Vec<u8>,
 }
-impl JpgImageData {
+impl ImageData {
     pub fn to_image(&self) -> anyhow::Result<image::DynamicImage> {
-        let decode = general_purpose::STANDARD.decode(self.base64.as_bytes())?;
-        let image = image::load_from_memory(&decode)?;
+        let image = image::load_from_memory(&self.data)?;
         Ok(image)
     }
 }

@@ -23,8 +23,7 @@ specta-typescript = { version = "0.0.7" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 
-base64 = { version = "0.22.1" }
-image = { version = "0.25.1", default-features = false, features = ["jpeg", "png"] }
+image = { version = "0.25.1", default-features = false, features = ["jpeg", "png", "webp", "gif"] }
 jpeg-encoder = { version = "0.6.0", features = ["simd"] }
 
 rayon = { version = "1.10" }
