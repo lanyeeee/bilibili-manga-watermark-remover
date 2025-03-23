@@ -13,7 +13,8 @@ use walkdir::WalkDir;
 
 use crate::errors::CommandResult;
 use crate::events;
-use crate::types::{ImageFormat, JpgImageData};
+use crate::extensions::PathIsImage;
+use crate::types::{ImageData, ImageFormat};
 
 #[tauri::command(async)]
 #[specta::specta]
@@ -24,7 +25,7 @@ pub fn remove_watermark(
     output_dir: &str,
     format: ImageFormat,
     optimize: bool,
-    backgrounds_data: Vec<(JpgImageData, JpgImageData)>,
+    backgrounds_data: Vec<(ImageData, ImageData)>,
 ) -> CommandResult<()> {
     let manga_dir = PathBuf::from(manga_dir);
     let manga_dir_without_name = manga_dir
@@ -110,7 +111,7 @@ pub fn remove_watermark(
     Ok(())
 }
 
-/// 构建一个`HashMap`，`key`是目录的路径，`value`是该目录下的所有jpg文件的路径
+/// 构建一个`HashMap`，`key`是目录的路径，`value`是该目录下的所有图片文件的路径
 #[allow(clippy::cast_possible_truncation)]
 fn create_dir_progress<'a>(
     app: &AppHandle,
@@ -134,7 +135,7 @@ fn create_dir_progress<'a>(
     Ok(dir_progress)
 }
 
-/// 构建一个`HashMap`，`key`是目录的路径，`value`是该目录下的所有jpg文件的路径
+/// 构建一个`HashMap`，`key`是目录的路径，`value`是该目录下的所有图片文件的路径
 fn create_dir_map(manga_dir: &PathBuf) -> HashMap<PathBuf, Vec<PathBuf>> {
     let mut dir_map: HashMap<PathBuf, Vec<PathBuf>> = HashMap::new();
     // 遍历manga_dir目录下的所有文件和子目录
@@ -143,11 +144,7 @@ fn create_dir_map(manga_dir: &PathBuf) -> HashMap<PathBuf, Vec<PathBuf>> {
         .filter_map(Result::ok)
         .filter_map(|entry| {
             let path = entry.into_path();
-            if !path.is_file() {
-                return None;
-            }
-            let ext = path.extension()?.to_str()?.to_lowercase();
-            if ext != "jpg" && ext != "jpeg" {
+            if !path.is_file() || !path.is_image() {
                 return None;
             }
             let parent = path.parent()?.to_path_buf();
@@ -159,7 +156,7 @@ fn create_dir_map(manga_dir: &PathBuf) -> HashMap<PathBuf, Vec<PathBuf>> {
 
 /// 构建一个`HashMap`，`key`是背景水印图的尺寸，`value`是黑色背景和白色背景水印图
 fn create_backgrounds(
-    backgrounds_data: &[(JpgImageData, JpgImageData)],
+    backgrounds_data: &[(ImageData, ImageData)],
 ) -> anyhow::Result<HashMap<(u32, u32), (RgbImage, RgbImage)>> {
     let backgrounds = backgrounds_data
         .iter()

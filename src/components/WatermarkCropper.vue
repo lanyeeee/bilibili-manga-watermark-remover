@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { commands, JpgImageInfo, MangaDirData, RectData } from '../bindings.ts'
+import { commands, ImageInfo, MangaDirData, RectData } from '../bindings.ts'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useMessage, useNotification } from 'naive-ui'
 
@@ -19,7 +19,7 @@ const showing = defineModel<boolean>('showing', { required: true })
 const MASKER_OPACITY = 0.7
 const srcImage: HTMLImageElement = new Image()
 
-let jpgImageInfos: JpgImageInfo[] = []
+let imageInfos: ImageInfo[] = []
 
 const rectData = ref<RectData | null>(null)
 const canvasContainer = ref<HTMLDivElement>()
@@ -30,8 +30,8 @@ const generating = ref<boolean>(false)
 
 // masker的值，深色遮罩为0，浅色遮罩为255
 const maskerValue = computed<number>(() => (isDarkMasker.value ? 0 : 255))
-const matchingJpgImageInfos = computed<JpgImageInfo[]>(() =>
-  jpgImageInfos.filter((info) => info.width == props.width && info.height == props.height),
+const matchingImageInfos = computed<ImageInfo[]>(() =>
+  imageInfos.filter((info) => info.width == props.width && info.height == props.height),
 )
 
 // 监听 srcImagePath 的变化，当路径变化时，加载对应的图片
@@ -45,20 +45,24 @@ watch(srcImagePath, async () => {
     notification.error({ title: '打开图片失败', description: result.error })
     return
   }
-  srcImage.src = `data:image/jpeg;base64,${result.data.base64}`
+
   rectData.value = null
+  URL.revokeObjectURL(srcImage.src)
+
+  const blob = new Blob([new Uint8Array(result.data.data)])
+  srcImage.src = URL.createObjectURL(blob)
 })
-// 监听 mangaDir 的变化，当路径变化时，获取对应路径下的所有jpg图片信息，并从中随机选择一张图片，将其路径赋值给srcImagePath
+// 监听 mangaDir 的变化，当路径变化时，获取对应路径下的所有图片信息，并从中随机选择一张图片，将其路径赋值给srcImagePath
 watch(
   () => props.mangaDir,
   async () => {
     if (props.mangaDir === undefined) {
       return
     }
-    // 获取mangaDir下所有jpg图片信息
-    jpgImageInfos = await commands.getJpgImageInfos(props.mangaDir)
+    // 获取mangaDir下所有图片信息
+    imageInfos = await commands.getImageInfos(props.mangaDir)
     // 随机选择一张图片，将其路径赋值给srcImagePath
-    srcImagePath.value = getRandomJpgImageInfo()?.path
+    srcImagePath.value = getRandomImageInfo()?.path
   },
   { immediate: true },
 )
@@ -95,12 +99,12 @@ onMounted(() => {
   }
 })
 
-// 随机从筛选后的jpg图片信息中选择一张图片
-function getRandomJpgImageInfo(): JpgImageInfo | null {
-  if (matchingJpgImageInfos.value.length === 0) {
+// 随机从筛选后的图片信息中选择一张图片
+function getRandomImageInfo(): ImageInfo | null {
+  if (matchingImageInfos.value.length === 0) {
     return null
   }
-  return matchingJpgImageInfos.value[Math.floor(Math.random() * matchingJpgImageInfos.value.length)]
+  return matchingImageInfos.value[Math.floor(Math.random() * matchingImageInfos.value.length)]
 }
 
 function handleMouseDown(event: MouseEvent) {
@@ -189,7 +193,7 @@ async function generateBackground() {
 }
 
 async function changeImage() {
-  srcImagePath.value = getRandomJpgImageInfo()?.path
+  srcImagePath.value = getRandomImageInfo()?.path
 }
 </script>
 
