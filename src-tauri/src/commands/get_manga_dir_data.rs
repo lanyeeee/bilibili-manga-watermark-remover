@@ -6,6 +6,7 @@ use walkdir::WalkDir;
 
 use crate::commands::open_image::open_image;
 use crate::errors::CommandResult;
+use crate::extensions::PathIsImage;
 use crate::types::MangaDirData;
 use crate::utils;
 
@@ -23,11 +24,7 @@ pub fn get_manga_dir_data(app: AppHandle, manga_dir: &str) -> CommandResult<Vec<
         .filter_map(Result::ok)
         .filter_map(|entry| {
             let path = entry.into_path();
-            if !path.is_file() {
-                return None;
-            }
-            let ext = path.extension()?.to_str()?.to_lowercase();
-            if ext != "jpg" && ext != "jpeg" {
+            if !path.is_file() || !path.is_image() {
                 return None;
             }
             // imagesize::size(&path).ok()

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useMessage, useNotification } from 'naive-ui'
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
-import { commands, Config, events, JpgImageData, MangaDirData } from './bindings.ts'
+import { commands, Config, events, ImageData, MangaDirData } from './bindings.ts'
 import {
   autoGenerateBackground,
   getBackgroundDirAbsPath,
@@ -89,9 +89,9 @@ async function removeWatermark() {
     return
   }
 
-  const backgroundsData: [JpgImageData, JpgImageData][] = mangaDirDataList.value
+  const backgroundsData: [ImageData, ImageData][] = mangaDirDataList.value
     .filter((data) => data.blackBackground !== null && data.whiteBackground !== null)
-    .map((data) => [data.blackBackground as JpgImageData, data.whiteBackground as JpgImageData])
+    .map((data) => [data.blackBackground as ImageData, data.whiteBackground as ImageData])
   const cfg = config.value
   let result = await commands.removeWatermark(
     mangaDir.value,

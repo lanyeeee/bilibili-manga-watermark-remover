@@ -28,7 +28,7 @@ fn main() {
             remove_watermark,
             open_image,
             get_manga_dir_data,
-            get_jpg_image_infos,
+            get_image_infos,
             show_path_in_file_manager,
             get_background_dir_relative_path,
             get_background_dir_abs_path,

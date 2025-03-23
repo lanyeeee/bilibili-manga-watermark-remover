@@ -17,24 +17,24 @@ pub struct MangaDirData {
     pub height: u32,
     pub count: u32,
     #[serde(rename = "blackBackground")]
-    pub black_background: Option<JpgImageData>,
+    pub black_background: Option<ImageData>,
     #[serde(rename = "whiteBackground")]
-    pub white_background: Option<JpgImageData>,
+    pub white_background: Option<ImageData>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Type)]
-pub struct JpgImageInfo {
+pub struct ImageInfo {
     pub width: u32,
     pub height: u32,
     pub path: PathBuf,
 }
 
 #[derive(Debug, Deserialize, Serialize, Type)]
-pub struct JpgImageData {
-    pub info: JpgImageInfo,
+pub struct ImageData {
+    pub info: ImageInfo,
     pub data: Vec<u8>,
 }
-impl JpgImageData {
+impl ImageData {
     pub fn to_image(&self) -> anyhow::Result<image::DynamicImage> {
         let image = image::load_from_memory(&self.data)?;
         Ok(image)
