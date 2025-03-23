@@ -96,7 +96,7 @@ removeWatermarkSuccessEvent: "remove-watermark-success-event"
 export type CommandError = string
 export type Config = { outputDir: string; outputFormat: ImageFormat; outputOptimize: boolean }
 export type ImageFormat = "Jpeg" | "Png"
-export type JpgImageData = { info: JpgImageInfo; base64: string }
+export type JpgImageData = { info: JpgImageInfo; data: number[] }
 export type JpgImageInfo = { width: number; height: number; path: string }
 export type MangaDirData = { width: number; height: number; count: number; blackBackground: JpgImageData | null; whiteBackground: JpgImageData | null }
 export type RectData = { left: number; top: number; right: number; bottom: number }

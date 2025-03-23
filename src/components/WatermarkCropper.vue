@@ -45,8 +45,12 @@ watch(srcImagePath, async () => {
     notification.error({ title: '打开图片失败', description: result.error })
     return
   }
-  srcImage.src = `data:image/jpeg;base64,${result.data.base64}`
+
   rectData.value = null
+  URL.revokeObjectURL(srcImage.src)
+
+  const blob = new Blob([new Uint8Array(result.data.data)])
+  srcImage.src = URL.createObjectURL(blob)
 })
 // 监听 mangaDir 的变化，当路径变化时，获取对应路径下的所有jpg图片信息，并从中随机选择一张图片，将其路径赋值给srcImagePath
 watch(
