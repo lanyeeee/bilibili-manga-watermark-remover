@@ -7,8 +7,11 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    AboutDialog: typeof import('./src/components/AboutDialog.vue')['default']
     MangaDirIndicator: typeof import('./src/components/MangaDirIndicator.vue')['default']
+    NA: typeof import('naive-ui')['NA']
     NButton: typeof import('naive-ui')['NButton']
+    NDialog: typeof import('naive-ui')['NDialog']
     NInput: typeof import('naive-ui')['NInput']
     NMessageProvider: typeof import('naive-ui')['NMessageProvider']
     NModal: typeof import('naive-ui')['NModal']
