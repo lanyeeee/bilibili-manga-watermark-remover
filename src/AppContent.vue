@@ -14,6 +14,7 @@ import MangaDirIndicator from './components/MangaDirIndicator.vue'
 import { open } from '@tauri-apps/plugin-dialog'
 import { path } from '@tauri-apps/api'
 import { BaseDirectory, exists } from '@tauri-apps/plugin-fs'
+import AboutDialog from './components/AboutDialog.vue'
 
 const message = useMessage()
 const notification = useNotification()
@@ -27,6 +28,8 @@ const removeWatermarkTasks = ref<Map<string, [number, number]>>(new Map())
 const cropperShowing = ref<boolean>(false)
 const cropperWidth = ref<number>(0)
 const cropperHeight = ref<number>(0)
+
+const aboutDialogShowing = ref<boolean>(false)
 
 const mangaDirExist = computed<boolean>(() => mangaDir.value !== undefined)
 const imagesExist = computed<boolean>(() => mangaDirDataList.value.length > 0)
@@ -288,6 +291,7 @@ async function test() {
     </n-radio-group>
 
     <n-button :disabled="removeWatermarkButtonDisabled" type="primary" @click="removeWatermark">开始去水印</n-button>
+    <n-button @click="aboutDialogShowing = true">关于</n-button>
 
     <n-button @click="test">测试用</n-button>
 
@@ -302,4 +306,5 @@ async function test() {
       :height="cropperHeight"
       v-model:showing="cropperShowing" />
   </n-modal>
+  <about-dialog v-model:showing="aboutDialogShowing" />
 </template>
