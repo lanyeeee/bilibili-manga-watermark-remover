@@ -13,7 +13,7 @@ async generateBackground(mangaDir: string, rectData: RectData | null, width: num
     else return { status: "error", error: e  as any };
 }
 },
-async removeWatermark(mangaDir: string, outputDir: string, format: ImageFormat, optimize: boolean, backgroundsData: ([JpgImageData, JpgImageData])[]) : Promise<Result<null, CommandError>> {
+async removeWatermark(mangaDir: string, outputDir: string, format: ImageFormat, optimize: boolean, backgroundsData: ([ImageData, ImageData])[]) : Promise<Result<null, CommandError>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("remove_watermark", { mangaDir, outputDir, format, optimize, backgroundsData }) };
 } catch (e) {
@@ -21,7 +21,7 @@ async removeWatermark(mangaDir: string, outputDir: string, format: ImageFormat, 
     else return { status: "error", error: e  as any };
 }
 },
-async openImage(path: string) : Promise<Result<JpgImageData, CommandError>> {
+async openImage(path: string) : Promise<Result<ImageData, CommandError>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("open_image", { path }) };
 } catch (e) {
@@ -37,8 +37,8 @@ async getMangaDirData(mangaDir: string) : Promise<Result<MangaDirData[], Command
     else return { status: "error", error: e  as any };
 }
 },
-async getJpgImageInfos(mangaDir: string) : Promise<JpgImageInfo[]> {
-    return await TAURI_INVOKE("get_jpg_image_infos", { mangaDir });
+async getImageInfos(mangaDir: string) : Promise<ImageInfo[]> {
+    return await TAURI_INVOKE("get_image_infos", { mangaDir });
 },
 async showPathInFileManager(path: string) : Promise<void> {
     await TAURI_INVOKE("show_path_in_file_manager", { path });
@@ -95,10 +95,10 @@ removeWatermarkSuccessEvent: "remove-watermark-success-event"
 
 export type CommandError = string
 export type Config = { outputDir: string; outputFormat: ImageFormat; outputOptimize: boolean }
+export type ImageData = { info: ImageInfo; data: number[] }
 export type ImageFormat = "Jpeg" | "Png"
-export type JpgImageData = { info: JpgImageInfo; base64: string }
-export type JpgImageInfo = { width: number; height: number; path: string }
-export type MangaDirData = { width: number; height: number; count: number; blackBackground: JpgImageData | null; whiteBackground: JpgImageData | null }
+export type ImageInfo = { width: number; height: number; path: string }
+export type MangaDirData = { width: number; height: number; count: number; blackBackground: ImageData | null; whiteBackground: ImageData | null }
 export type RectData = { left: number; top: number; right: number; bottom: number }
 export type RemoveWatermarkEndEvent = RemoveWatermarkEndEventPayload
 export type RemoveWatermarkEndEventPayload = { dirPath: string }

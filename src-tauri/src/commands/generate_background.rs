@@ -8,6 +8,7 @@ use tauri::AppHandle;
 use walkdir::WalkDir;
 
 use crate::errors::CommandResult;
+use crate::extensions::PathIsImage;
 use crate::types::RectData;
 use crate::utils;
 
@@ -119,7 +120,7 @@ pub fn generate_background(
     Ok(())
 }
 
-/// 遍历`manga_dir`目录下的所有jpg文件，收集尺寸符合`width`和`height`的图片的路径
+/// 遍历`manga_dir`目录下的所有图片文件，收集尺寸符合`width`和`height`的图片的路径
 #[allow(clippy::cast_possible_truncation)]
 fn create_image_paths(manga_dir: &str, width: u32, height: u32) -> Vec<PathBuf> {
     let image_paths: Vec<PathBuf> = WalkDir::new(PathBuf::from(manga_dir))
@@ -128,11 +129,7 @@ fn create_image_paths(manga_dir: &str, width: u32, height: u32) -> Vec<PathBuf> 
         .filter_map(Result::ok)
         .filter_map(|entry| {
             let path = entry.into_path();
-            if !path.is_file() {
-                return None;
-            }
-            let ext = path.extension()?.to_str()?.to_lowercase();
-            if ext != "jpg" && ext != "jpeg" {
+            if !path.is_file() || !path.is_image() {
                 return None;
             }
             // 只收集尺寸符合width和height的图片的路径
