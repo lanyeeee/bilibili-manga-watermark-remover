@@ -10,14 +10,14 @@ bilibili漫画 哔哩哔哩漫画 B漫 去水印工具(无痕 无损)，带图�
 
 **如果本项目对你有帮助，欢迎点个 Star⭐ 支持！你的支持是我持续更新维护的动力🙏**
 
-## 🖼️效果预览
+# 🖼️效果预览
 
 | 原图                                                         | 去水印                                                       |
 | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | ![少女终末旅行-原图](https://github.com/user-attachments/assets/832107b5-d40c-4a93-98f1-674bd761abfb) | ![少女终末旅行-去水印](https://github.com/user-attachments/assets/341d0c74-5076-42a8-af7d-304322bc85d2) |
 | ![炎拳-原图](https://github.com/user-attachments/assets/a42ab0df-d9a0-43e9-9d0b-46ac98798cd8) | ![炎拳-去水印](https://github.com/user-attachments/assets/6840a1bf-2607-4ee4-88e6-5367019911da) |
 
-## 🛠️使用方法
+# 📖使用方法
 
 ### 🧽去水印
 
@@ -42,7 +42,7 @@ https://github.com/user-attachments/assets/f7ad65d0-4211-4fe3-b090-419a722b2e45
 
 https://github.com/user-attachments/assets/52666942-27df-4e39-9dc1-dfcbe0461c44
 
-## ❓常见问题
+# ❓常见问题
 
 - [生成背景水印图失败](https://github.com/lanyeeee/bilibili-manga-watermark-remover/discussions/1)
 - [极个别图片去除水印失败](https://github.com/lanyeeee/bilibili-manga-watermark-remover/discussions/5)
@@ -53,7 +53,7 @@ https://github.com/user-attachments/assets/52666942-27df-4e39-9dc1-dfcbe0461c44
 
 [![Readme Card](https://github-readme-stats.vercel.app/api/pin/?username=lanyeeee&repo=bilibili-manga-downloader)](https://github.com/lanyeeee/bilibili-manga-downloader)  
 
-## 🧠去水印原理
+# 🧠去水印原理
 
 本工具的去水印算法基于[这个项目](https://github.com/yuchenxi2000/bilibili-watermark/tree/master)
 
@@ -66,7 +66,7 @@ https://github.com/user-attachments/assets/52666942-27df-4e39-9dc1-dfcbe0461c44
 
 [核心算法的Python实现](https://github.com/yuchenxi2000/bilibili-watermark/tree/master/B%E6%BC%AB)
 
-## ⚠️关于被杀毒软件误判为病毒
+# ⚠️关于被杀毒软件误判为病毒
 
 对于个人开发者来说，这个问题几乎是无解的(~~需要数字证书给软件签名，甚至给杀毒软件交保护费~~)  
 我能想到的解决办法只有：
@@ -120,7 +120,7 @@ pnpm tauri build
 4. 📝修订文档
 5. ⬆️升级、更新依赖的PR也会被接受
 
-## ⚠️免责声明
+# ⚠️免责声明
 
 - 本工具仅作学习、研究、交流使用，使用本工具的用户应自行承担风险
 - 作者不对使用本工具导致的任何损失、法律纠纷或其他后果负责
